@@ -23,7 +23,7 @@ export function ContentTab() {
       (data.items || []).forEach((i: any) => { m[i.id] = i.value; });
       setEditing(m);
       // Auto-pick the first available section if "hero" doesn't exist
-      const sections = Array.from(new Set((data.items || []).map((i: any) => i.section)));
+      const sections: string[] = Array.from(new Set((data.items || []).map((i: any) => i.section as string)));
       if (sections.length > 0 && !sections.includes("hero")) setActiveSection(sections[0]);
       setLoading(false);
     });
