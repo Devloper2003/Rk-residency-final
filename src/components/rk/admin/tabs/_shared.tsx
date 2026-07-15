@@ -38,11 +38,16 @@ export function KpiCard({ icon: Icon, label, value, sub, accent }: { icon: React
   );
 }
 
-export function Field({ label, value, onChange, type = "text", textarea }: { label: string; value: any; onChange: (v: string) => void; type?: string; textarea?: boolean }) {
+export function Field({ label, value, onChange, type = "text", textarea, hint, rows = 3 }: { label: string; value: any; onChange: (v: string) => void; type?: string; textarea?: boolean; hint?: string; rows?: number }) {
   return (
     <div>
       <Label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">{label}</Label>
-      {textarea ? <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3} className="w-full rounded-md border border-charcoal/15 bg-ivory-deep/30 px-3 py-2 font-display text-xs text-charcoal" /> : <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="bg-ivory-deep/30" />}
+      {textarea ? (
+        <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={rows} className="w-full rounded-md border border-charcoal/15 bg-ivory-deep/30 px-3 py-2 font-display text-xs text-charcoal focus:border-teal focus:outline-none focus:ring-1 focus:ring-teal/30" />
+      ) : (
+        <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="bg-ivory-deep/30 focus-visible:ring-teal/30" />
+      )}
+      {hint && <p className="mt-1 font-display text-[10px] text-charcoal-soft/70">{hint}</p>}
     </div>
   );
 }

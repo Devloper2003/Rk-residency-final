@@ -129,11 +129,13 @@ export async function GET(req: Request) {
       }
 
       case "bookings": {
+        const limit = Math.min(parseInt(url.searchParams.get("limit") || "20", 10) || 20, 100);
+        const offset = Math.max(parseInt(url.searchParams.get("offset") || "0", 10) || 0, 0);
         const where: any = {};
         if (status !== "ALL") where.status = status;
         if (search) { where.OR = [{ referenceCode: { contains: search } }, { guestName: { contains: search } }, { guestEmail: { contains: search } }, { guestPhone: { contains: search } }]; }
         const [bookings, total] = await Promise.all([
-          db.booking.findMany({ where, include: { room: { select: { name: true, slug: true } } }, orderBy: [{ createdAt: "desc" }], take: 100 }),
+          db.booking.findMany({ where, include: { room: { select: { name: true, slug: true } } }, orderBy: [{ createdAt: "desc" }], take: limit, skip: offset }),
           db.booking.count({ where }),
         ]);
         return NextResponse.json({ bookings, total });

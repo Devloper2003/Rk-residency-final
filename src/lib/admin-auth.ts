@@ -22,7 +22,9 @@ export async function verifyAdmin(req: Request): Promise<{
     }
     if (!token) return null;
 
-    const decoded = JSON.parse(Buffer.from(token, "base64").toString("utf-8"));
+    const decoded = JSON.parse(
+      Buffer.from(decodeURIComponent(token), "base64").toString("utf-8")
+    );
     if (!decoded.expires || decoded.expires < Date.now()) return null;
 
     const admin = await db.adminUser.findUnique({ where: { id: decoded.id } });

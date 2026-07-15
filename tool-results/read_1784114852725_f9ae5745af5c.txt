@@ -1,0 +1,242 @@
+   241→function DashboardTab({ stats }: { stats: any }) {
+   242→  return (
+   243→    <div className="space-y-6">
+   244→      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+   245→        <KpiCard icon={Percent} label="Occupancy" value={`${stats.occupancyPct}%`} accent="teal" />
+   246→        <KpiCard icon={IndianRupee} label="Total revenue" value={`₹${stats.totalRevenue.toLocaleString("en-IN")}`} sub={`ADR ₹${stats.adr.toLocaleString("en-IN")}`} accent="gold" />
+   247→        <KpiCard icon={CalendarDays} label="Total bookings" value={stats.totalBookings.toString()} sub={`${stats.cancelledBookings} cancelled`} accent="marsala" />
+   248→        <KpiCard icon={Users} label="Today" value={`${stats.arrivalsToday}/${stats.departuresToday}`} sub="arrivals/departures" accent="teal" />
+   249→      </div>
+   250→      <div className="rounded-2xl border border-charcoal/10 bg-white p-5">
+   251→        <div className="mb-4 flex items-center justify-between"><div><h3 className="font-serif text-base font-semibold text-charcoal">Revenue trend</h3><p className="font-display text-xs text-charcoal-soft">Last 7 days</p></div><TrendingUp className="h-5 w-5 text-teal" /></div>
+   252→        <div className="flex h-44 items-end justify-between gap-2 sm:gap-4">
+   253→          {stats.revenueTrend.map((d: any) => {
+   254→            const max = Math.max(...stats.revenueTrend.map((x: any) => x.revenue), 1);
+   255→            return (<div key={d.date} className="flex flex-1 flex-col items-center gap-1"><div className="text-[10px] font-semibold text-charcoal-soft">{d.revenue > 0 ? `₹${(d.revenue / 1000).toFixed(0)}k` : ""}</div><div className="flex w-full flex-1 items-end"><div className="w-full rounded-t-md bg-gradient-to-t from-teal to-teal-soft" style={{ height: `${Math.max(4, (d.revenue / max) * 100)}%` }} /></div><div className="font-display text-[10px] uppercase tracking-wider text-charcoal-soft">{d.label}</div></div>);
+   256→          })}
+   257→        </div>
+   258→      </div>
+   259→      <div className="rounded-2xl border border-charcoal/10 bg-white p-5">
+   260→        <h3 className="mb-4 font-serif text-base font-semibold text-charcoal">Bookings &amp; revenue by room</h3>
+   261→        <div className="space-y-3">
+   262→          {stats.roomTypeStats.map((r: any) => {
+   263→            const maxRev = Math.max(...stats.roomTypeStats.map((x: any) => x.revenue), 1);
+   264→            return (<div key={r.roomId}><div className="mb-1 flex items-center justify-between font-display text-xs"><span className="font-semibold text-charcoal">{r.roomName}</span><span className="text-charcoal-soft">{r.bookings} bookings · ₹{r.revenue.toLocaleString("en-IN")} · {r.occupancy}%</span></div><div className="h-2 overflow-hidden rounded-full bg-ivory-deep"><div className="h-full rounded-full bg-gradient-to-r from-gold to-gold-soft" style={{ width: `${(r.revenue / maxRev) * 100}%` }} /></div></div>);
+   265→          })}
+   266→        </div>
+   267→      </div>
+   268→    </div>
+   269→  );
+   270→}
+   271→
+   272→// =================== ANALYTICS ===================
+   273→function AnalyticsTab({ analytics }: { analytics: any }) {
+   274→  return (
+   275→    <div className="space-y-6">
+   276→      <div className="grid gap-4 sm:grid-cols-3">
+   277→        <KpiCard icon={MousePointerClick} label="Page views today" value={analytics.today.pageViews.toString()} accent="teal" />
+   278→        <KpiCard icon={Users} label="Unique visitors today" value={analytics.today.uniqueVisitors.toString()} accent="gold" />
+   279→        <KpiCard icon={Target} label="Conversion rate" value={`${analytics.bookingFunnel.conversionRate}%`} sub={`${analytics.bookingFunnel.bookings} bookings`} accent="marsala" />
+   280→      </div>
+   281→      <div className="rounded-2xl border border-charcoal/10 bg-white p-5">
+   282→        <h3 className="mb-4 font-serif text-base font-semibold text-charcoal">Visitor traffic (7 days)</h3>
+   283→        <div className="flex h-48 items-end justify-between gap-2 sm:gap-4">
+   284→          {analytics.last7Days.map((d: any) => {
+   285→            const max = Math.max(...analytics.last7Days.map((x: any) => x.pageViews), 1);
+   286→            return (<div key={d.date} className="flex flex-1 flex-col items-center gap-1"><div className="text-[10px] font-semibold text-charcoal-soft">{d.pageViews}</div><div className="flex w-full flex-1 items-end gap-1"><div className="flex-1 rounded-t-md bg-teal" style={{ height: `${Math.max(4, (d.pageViews / max) * 100)}%` }} /><div className="flex-1 rounded-t-md bg-gold" style={{ height: `${Math.max(4, (d.uniqueVisitors / max) * 100)}%` }} /></div><div className="font-display text-[10px] uppercase tracking-wider text-charcoal-soft">{d.label}</div></div>);
+   287→          })}
+   288→        </div>
+   289→      </div>
+   290→      <div className="rounded-2xl border border-charcoal/10 bg-white p-5">
+   291→        <h3 className="mb-4 font-serif text-base font-semibold text-charcoal">Monthly trend</h3>
+   292→        <div className="overflow-x-auto"><table className="w-full text-left font-display text-xs"><thead className="border-b border-charcoal/10 text-[10px] uppercase tracking-wider text-charcoal-soft"><tr><th className="py-2 pr-4">Month</th><th className="py-2 pr-4 text-right">Views</th><th className="py-2 pr-4 text-right">Visitors</th><th className="py-2 pr-4 text-right">Bookings</th><th className="py-2 text-right">Revenue</th></tr></thead><tbody className="divide-y divide-charcoal/8">{analytics.monthlyTrend.map((m: any) => (<tr key={m.month}><td className="py-2 pr-4 font-semibold text-charcoal">{m.label}</td><td className="py-2 pr-4 text-right text-charcoal-soft">{m.pageViews}</td><td className="py-2 pr-4 text-right text-charcoal-soft">{m.uniqueVisitors}</td><td className="py-2 pr-4 text-right text-charcoal-soft">{m.bookings}</td><td className="py-2 text-right font-semibold text-teal">₹{m.revenue.toLocaleString("en-IN")}</td></tr>))}</tbody></table></div>
+   293→      </div>
+   294→      <div className="grid gap-4 lg:grid-cols-2">
+   295→        <div className="rounded-2xl border border-charcoal/10 bg-white p-5"><h3 className="mb-4 font-serif text-base font-semibold text-charcoal">Top pages</h3><div className="space-y-2">{analytics.topPages.length === 0 ? <p className="font-display text-xs text-charcoal-soft">No data yet.</p> : analytics.topPages.map((p: any, i: number) => (<div key={p.path} className="flex items-center justify-between font-display text-xs"><span className="flex items-center gap-2"><span className="grid h-5 w-5 place-items-center rounded-full bg-teal/10 text-[10px] font-bold text-teal">{i + 1}</span>{p.path}</span><span className="font-semibold text-charcoal-soft">{p.views}</span></div>))}</div></div>
+   296→        <div className="rounded-2xl border border-charcoal/10 bg-white p-5"><h3 className="mb-4 font-serif text-base font-semibold text-charcoal">Top referrers</h3><div className="space-y-2">{analytics.topReferrers.length === 0 ? <p className="font-display text-xs text-charcoal-soft">No referrers yet.</p> : analytics.topReferrers.map((r: any, i: number) => (<div key={r.source} className="flex items-center justify-between font-display text-xs"><span className="flex items-center gap-2"><span className="grid h-5 w-5 place-items-center rounded-full bg-gold/10 text-[10px] font-bold text-gold-deep">{i + 1}</span>{r.source}</span><span className="font-semibold text-charcoal-soft">{r.visits}</span></div>))}</div></div>
+   297→      </div>
+   298→    </div>
+   299→  );
+   300→}
+   301→
+   302→// =================== BOOKINGS ===================
+   303→function BookingsTab({ bookings, data, onUpdate }: { bookings: any[]; data: AdminData; onUpdate: (d: AdminData) => void }) {
+   304→  const [statusFilter, setStatusFilter] = useState("ALL");
+   305→  const [search, setSearch] = useState("");
+   306→  const [loading, setLoading] = useState<Record<string, boolean>>({});
+   307→
+   308→  const filtered = bookings.filter((b) => {
+   309→    if (statusFilter !== "ALL" && b.status !== statusFilter) return false;
+   310→    if (search && !b.referenceCode.toLowerCase().includes(search.toLowerCase()) && !b.guestName.toLowerCase().includes(search.toLowerCase()) && !b.guestEmail.toLowerCase().includes(search.toLowerCase())) return false;
+   311→    return true;
+   312→  });
+   313→
+   314→  const action = async (id: string, a: string) => {
+   315→    setLoading((s) => ({ ...s, [id]: true }));
+   316→    const res = await adminFetch("/api/admin/all", { method: "PATCH", body: JSON.stringify({ action: "booking_status", id, bookingAction: a }) });
+   317→    if (res) {
+   318→      toast.success(`Booking ${a.toLowerCase().replace("_", " ")}`);
+   319→      onUpdate({ ...data, bookings: data.bookings.map((b) => b.id === id ? { ...b, status: res.booking.status, paymentStatus: res.booking.paymentStatus } : b) });
+   320→    } else toast.error("Action failed");
+   321→    setLoading((s) => ({ ...s, [id]: false }));
+   322→  };
+   323→
+   324→  const SC: Record<string, string> = { CONFIRMED: "bg-teal/10 text-teal", CHECKED_IN: "bg-gold/15 text-gold-deep", CHECKED_OUT: "bg-charcoal/10 text-charcoal-soft", CANCELLED: "bg-marsala/10 text-marsala" };
+   325→
+   326→  return (
+   327→    <div className="space-y-4">
+   328→      <div className="flex flex-col gap-3 sm:flex-row">
+   329→        <div className="relative flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-charcoal-soft" /><Input placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} className="bg-white pl-10" /></div>
+   330→        <Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="w-full bg-white sm:w-48"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ALL">All statuses</SelectItem><SelectItem value="CONFIRMED">Confirmed</SelectItem><SelectItem value="CHECKED_IN">Checked in</SelectItem><SelectItem value="CHECKED_OUT">Checked out</SelectItem><SelectItem value="CANCELLED">Cancelled</SelectItem></SelectContent></Select>
+   331→      </div>
+   332→      <div className="overflow-hidden rounded-2xl border border-charcoal/10 bg-white">
+   333→        <div className="scrollbar-thin overflow-x-auto"><table className="w-full text-left"><thead className="border-b border-charcoal/10 bg-ivory-deep font-display text-[10px] uppercase tracking-wider text-charcoal-soft"><tr><th className="px-4 py-3">Ref</th><th className="px-4 py-3">Guest</th><th className="px-4 py-3">Room</th><th className="px-4 py-3">Dates</th><th className="px-4 py-3 text-right">Total</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Pay</th><th className="px-4 py-3">Actions</th></tr></thead>
+   334→        <tbody className="divide-y divide-charcoal/8 font-display text-xs">
+   335→          {filtered.length === 0 ? <tr><td colSpan={8} className="px-4 py-10 text-center text-charcoal-soft">No bookings found.</td></tr> :
+   336→          filtered.map((b) => (
+   337→            <tr key={b.id} className="hover:bg-ivory-deep/30">
+   338→              <td className="px-4 py-3 font-mono text-[11px] font-semibold text-teal">{b.referenceCode}</td>
+   339→              <td className="px-4 py-3"><div className="font-semibold text-charcoal">{b.guestName}</div><div className="text-[10px] text-charcoal-soft">{b.guestEmail}</div></td>
+   340→              <td className="px-4 py-3 text-charcoal-soft">{b.room?.name || "—"}</td>
+   341→              <td className="px-4 py-3 text-charcoal-soft"><div>{new Date(b.checkIn).toLocaleDateString("en-IN",{day:"numeric",month:"short"})} → {new Date(b.checkOut).toLocaleDateString("en-IN",{day:"numeric",month:"short"})}</div><div className="text-[10px]">{b.nights}n · {b.adults}a</div></td>
+   342→              <td className="px-4 py-3 text-right font-serif text-sm font-bold text-teal">₹{b.totalAmount.toLocaleString("en-IN")}</td>
+   343→              <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${SC[b.status]||"bg-charcoal/10"}`}>{b.status.replace("_"," ")}</span></td>
+   344→              <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${b.paymentStatus==="PAID"?"bg-teal/10 text-teal":"bg-gold/15 text-gold-deep"}`}>{b.paymentStatus}</span></td>
+   345→              <td className="px-4 py-3"><div className="flex flex-wrap gap-1">
+   346→                {loading[b.id] ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+   347→                {b.status==="CONFIRMED"&&<ActionBtn label="Check-in" icon={ArrowDownToLine} onClick={()=>action(b.id,"CHECK_IN")} />}
+   348→                {b.status==="CHECKED_IN"&&<ActionBtn label="Check-out" icon={ArrowDownToLine} onClick={()=>action(b.id,"CHECK_OUT")} />}
+   349→                {b.paymentStatus==="PENDING"&&<ActionBtn label="Paid" icon={IndianRupee} onClick={()=>action(b.id,"MARK_PAID")} />}
+   350→                {b.status!=="CANCELLED"&&b.status!=="CHECKED_OUT"&&<ActionBtn label="Cancel" icon={X} onClick={()=>action(b.id,"CANCEL")} color="marsala" />}
+   351→                {b.paymentStatus==="PAID"&&<ActionBtn label="Refund" icon={IndianRupee} onClick={()=>action(b.id,"REFUND")} color="marsala" />}
+   352→              </div></td>
+   353→            </tr>
+   354→          ))}
+   355→        </tbody></table></div>
+   356→      </div>
+   357→    </div>
+   358→  );
+   359→}
+   360→
+   361→// =================== ROOMS ===================
+   362→function RoomsTab({ rooms }: { rooms: any[] }) {
+   363→  const [editing, setEditing] = useState<any | null>(null);
+   364→  const save = async (room: any) => {
+   365→    const method = room.id ? "PATCH" : "POST";
+   366→    const res = await adminFetch("/api/admin/rooms", { method, body: JSON.stringify(room) });
+   367→    if (res) { toast.success("Saved"); setEditing(null); } else toast.error("Failed");
+   368→  };
+   369→  return (
+   370→    <div className="space-y-4">
+   371→      <div className="flex items-center justify-between"><p className="font-display text-sm text-charcoal-soft">{rooms.length} rooms</p><Button onClick={() => setEditing({})} className="rounded-full bg-teal px-4 py-2 text-sm text-ivory"><Plus className="mr-1 h-4 w-4" /> New</Button></div>
+   372→      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+   373→        {rooms.map((r) => { const imgs = JSON.parse(r.imageUrls || "[]"); return (
+   374→          <div key={r.id} className="overflow-hidden rounded-2xl border border-charcoal/10 bg-white">
+   375→            <div className="relative h-32 overflow-hidden"><div className="h-full w-full bg-cover bg-center" style={{backgroundImage:`url(${imgs[0]||"/images/heritage-room.jpg"})`}} /><div className="absolute inset-0 bg-gradient-to-t from-charcoal/70 to-transparent" /><div className="absolute inset-x-0 bottom-0 p-3"><div className="font-serif text-sm font-semibold text-ivory">{r.name}</div><div className="font-serif text-base font-bold text-gold-soft">₹{r.basePrice.toLocaleString("en-IN")}/night</div></div></div>
+   376→            <div className="flex items-center justify-between p-3"><div className="font-display text-[11px] text-charcoal-soft">{r.totalCount} · {r.maxGuests} guests · {r.sizeSqft}sqft</div><div className="flex gap-1"><button onClick={() => setEditing(r)} className="grid h-8 w-8 place-items-center rounded-full border border-charcoal/15 text-charcoal-soft hover:bg-teal hover:text-ivory"><Edit className="h-3.5 w-3.5" /></button></div></div>
+   377→          </div>); })}
+   378→      </div>
+   379→      {editing && <EditorModal title={editing.id?"Edit room":"New room"} onClose={()=>setEditing(null)}><div className="space-y-3"><Field label="Name" value={editing.name||""} onChange={(v)=>setEditing({...editing,name:v})} /><Field label="Price" type="number" value={editing.basePrice||0} onChange={(v)=>setEditing({...editing,basePrice:parseInt(v)})} /><Field label="Description" textarea value={editing.description||""} onChange={(v)=>setEditing({...editing,description:v})} /><Button onClick={()=>save(editing)} className="rounded-full bg-teal px-6 py-2 text-ivory">Save</Button></div></EditorModal>}
+   380→    </div>
+   381→  );
+   382→}
+   383→
+   384→// =================== OFFERS ===================
+   385→function OffersTab({ offers }: { offers: any[] }) {
+   386→  return (<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{offers.map((o) => (<div key={o.id} className="overflow-hidden rounded-2xl border border-charcoal/10 bg-white"><div className="relative h-32 overflow-hidden">{o.imageUrl&&<div className="h-full w-full bg-cover bg-center" style={{backgroundImage:`url(${o.imageUrl})`}} />}<div className="absolute inset-0 bg-gradient-to-t from-charcoal/70 to-transparent" /><div className="absolute inset-x-0 bottom-0 p-3"><div className="font-serif text-sm font-semibold text-ivory">{o.title}</div>{o.discountPct&&<div className="font-serif text-base font-bold text-gold-soft">{o.discountPct}% OFF</div>}</div></div><div className="p-3 font-display text-[11px] text-charcoal-soft">{o.badge||"—"}</div></div>))}</div>);
+   387→}
+   388→
+   389→// =================== BLOG ===================
+   390→function BlogTab({ posts }: { posts: any[] }) {
+   391→  return (<div className="space-y-3">{posts.map((p) => (<div key={p.id} className="rounded-2xl border border-charcoal/10 bg-white p-4"><div className="flex items-center gap-2"><span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${p.published?"bg-teal/10 text-teal":"bg-marsala/10 text-marsala"}`}>{p.published?"Published":"Draft"}</span><span className="rounded-full bg-ivory-deep px-2 py-0.5 text-[10px] font-medium text-charcoal-soft">{p.category.replace("_"," ")}</span></div><h3 className="mt-1 font-serif text-base font-semibold text-charcoal">{p.title}</h3><p className="mt-0.5 font-display text-xs text-charcoal-soft">/{p.slug} · {p.readingMins} min</p></div>))}</div>);
+   392→}
+   393→
+   394→// =================== REVIEWS ===================
+   395→function ReviewsTab({ reviews, data, onUpdate }: { reviews: any[]; data: AdminData; onUpdate: (d: AdminData) => void }) {
+   396→  const toggle = async (id: string, action: "APPROVE" | "HIDE") => {
+   397→    const res = await adminFetch("/api/admin/all", { method: "PATCH", body: JSON.stringify({ action: "review", id, reviewAction: action }) });
+   398→    if (res) { toast.success(action === "APPROVE" ? "Approved" : "Hidden"); onUpdate({ ...data, reviews: data.reviews.map((r) => r.id === id ? { ...r, approved: res.review.approved } : r) }); }
+   399→  };
+   400→  return (<div className="grid gap-3">{reviews.map((r) => (<div key={r.id} className={`rounded-2xl border bg-white p-4 ${r.approved?"border-teal/30":"border-marsala/30"}`}><div className="flex items-start justify-between gap-3"><div className="flex-1"><div className="flex items-center gap-2"><div className="flex">{Array.from({length:5}).map((_,i)=><Star key={i} className={`h-3.5 w-3.5 ${i<r.rating?"fill-gold text-gold":"text-charcoal/20"}`} />)}</div><h4 className="font-serif text-sm font-semibold text-charcoal">{r.title}</h4><span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${r.approved?"bg-teal/10 text-teal":"bg-marsala/10 text-marsala"}`}>{r.approved?"Live":"Pending"}</span></div><p className="mt-1.5 font-display text-xs text-charcoal-soft">{r.body}</p><div className="mt-2 font-display text-[10px] text-charcoal-soft">— {r.guestName} · {r.source}</div></div><div>{r.approved?<button onClick={()=>toggle(r.id,"HIDE")} className="rounded-full border border-marsala/30 px-3 py-1 text-[10px] font-semibold text-marsala">Hide</button>:<button onClick={()=>toggle(r.id,"APPROVE")} className="rounded-full border border-teal/30 px-3 py-1 text-[10px] font-semibold text-teal">Approve</button>}</div></div></div>))}</div>);
+   401→}
+   402→
+   403→// =================== CONTENT ===================
+   404→function ContentTab({ items }: { items: any[] }) {
+   405→  const [activeSection, setActiveSection] = useState(items[0]?.section || "hero");
+   406→  const [editing, setEditing] = useState<Record<string, string>>({});
+   407→  const [saving, setSaving] = useState<Record<string, boolean>>({});
+   408→  const sections = Array.from(new Set(items.map((i) => i.section)));
+   409→  const visible = items.filter((i) => i.section === activeSection);
+   410→  const save = async (id: string) => {
+   411→    setSaving((s) => ({ ...s, [id]: true }));
+   412→    const res = await adminFetch("/api/admin/all", { method: "PATCH", body: JSON.stringify({ action: "content", id, value: editing[id] }) });
+   413→    if (res) toast.success("Updated — live on website!"); else toast.error("Failed");
+   414→    setSaving((s) => ({ ...s, [id]: false }));
+   415→  };
+   416→  return (
+   417→    <div className="space-y-4">
+   418→      <div className="rounded-2xl border border-teal/20 bg-teal/5 p-4"><p className="font-display text-sm text-charcoal-soft"><strong className="text-teal">Edit website content.</strong> Changes are live instantly.</p></div>
+   419→      <div className="flex flex-wrap gap-2">{sections.map((s) => (<button key={s} onClick={() => setActiveSection(s)} className={`rounded-full border px-4 py-1.5 text-sm font-medium ${activeSection===s?"border-teal bg-teal text-ivory":"border-charcoal/15 bg-white text-charcoal-soft"}`}>{s.charAt(0).toUpperCase()+s.slice(1)}</button>))}</div>
+   420→      <div className="space-y-3">{visible.map((item) => (
+   421→        <div key={item.id} className="rounded-2xl border border-charcoal/10 bg-white p-4">
+   422→          <div className="mb-2 flex items-center justify-between"><div><span className="font-serif text-sm font-semibold text-charcoal">{item.label||item.key}</span><span className="ml-2 font-mono text-[10px] text-charcoal-soft">{item.key}</span></div></div>
+   423→          {item.type==="textarea"?<textarea value={editing[item.id]??item.value} onChange={(e)=>setEditing((p)=>({...p,[item.id]:e.target.value}))} rows={3} className="w-full rounded-lg border border-charcoal/15 bg-ivory-deep/30 px-3 py-2 font-display text-sm text-charcoal" />:<Input value={editing[item.id]??item.value} onChange={(e)=>setEditing((p)=>({...p,[item.id]:e.target.value}))} className="bg-ivory-deep/30" />}
+   424→          <div className="mt-2 flex justify-end"><Button onClick={()=>save(item.id)} disabled={saving[item.id]} className="rounded-full bg-teal px-4 py-1.5 text-xs text-ivory">{saving[item.id]?<Loader2 className="h-3 w-3 animate-spin" />:<><Check className="mr-1 h-3 w-3" /> Save</>}</Button></div>
+   425→        </div>))}</div>
+   426→    </div>
+   427→  );
+   428→}
+   429→
+   430→// =================== THEME ===================
+   431→function ThemeTab({ themes }: { themes: any[] }) {
+   432→  const [editing, setEditing] = useState<Record<string, string>>({});
+   433→  const [saving, setSaving] = useState<Record<string, boolean>>({});
+   434→  const save = async (id: string) => { setSaving((s)=>({...s,[id]:true})); const r=await adminFetch("/api/admin/all",{method:"PATCH",body:JSON.stringify({action:"theme",id,value:editing[id]})}); if(r)toast.success("Color updated!"); else toast.error("Failed"); setSaving((s)=>({...s,[id]:false})); };
+   435→  return (<div className="space-y-4"><div className="rounded-2xl border border-teal/20 bg-teal/5 p-4"><p className="font-display text-sm text-charcoal-soft"><strong className="text-teal">Customize colors.</strong></p></div><div className="grid gap-4 sm:grid-cols-2">{themes.map((t)=>(<div key={t.id} className="rounded-2xl border border-charcoal/10 bg-white p-4"><div className="mb-2"><span className="font-serif text-sm font-semibold text-charcoal">{t.label||t.key}</span></div><div className="flex items-center gap-3"><input type="color" value={editing[t.id]??t.value} onChange={(e)=>setEditing((p)=>({...p,[t.id]:e.target.value}))} className="h-12 w-16 cursor-pointer rounded-lg border border-charcoal/15" /><Input value={editing[t.id]??t.value} onChange={(e)=>setEditing((p)=>({...p,[t.id]:e.target.value}))} className="flex-1 bg-ivory-deep/30 font-mono text-sm" /><div className="h-12 w-12 rounded-lg border border-charcoal/15" style={{backgroundColor:editing[t.id]??t.value}} /></div><div className="mt-2 flex justify-end"><Button onClick={()=>save(t.id)} disabled={saving[t.id]} className="rounded-full bg-teal px-4 py-1.5 text-xs text-ivory">{saving[t.id]?<Loader2 className="h-3 w-3 animate-spin" />:<><Check className="mr-1 h-3 w-3" /> Save</>}</Button></div></div>))}</div></div>);
+   436→}
+   437→
+   438→// =================== SETTINGS ===================
+   439→function SettingsTab({ settings }: { settings: any[] }) {
+   440→  const [editing, setEditing] = useState<Record<string, string>>({});
+   441→  const [saving, setSaving] = useState<Record<string, boolean>>({});
+   442→  const save = async (id: string) => { setSaving((s)=>({...s,[id]:true})); const r=await adminFetch("/api/admin/all",{method:"PATCH",body:JSON.stringify({action:"setting",id,value:editing[id]})}); if(r)toast.success("Saved"); else toast.error("Failed"); setSaving((s)=>({...s,[id]:false})); };
+   443→  const cats = Array.from(new Set(settings.map((s) => s.category)));
+   444→  return (<div className="space-y-6"><div className="rounded-2xl border border-teal/20 bg-teal/5 p-4"><p className="font-display text-sm text-charcoal-soft"><strong className="text-teal">Site settings.</strong></p></div>{cats.map((c)=>(<div key={c}><h3 className="mb-3 font-serif text-lg font-semibold text-charcoal">{c.charAt(0).toUpperCase()+c.slice(1)}</h3><div className="space-y-3">{settings.filter((s)=>s.category===c).map((s)=>(<div key={s.id} className="rounded-2xl border border-charcoal/10 bg-white p-4"><div className="mb-2"><span className="font-serif text-sm font-semibold text-charcoal">{s.label||s.key}</span></div><Input value={editing[s.id]??s.value} onChange={(e)=>setEditing((p)=>({...p,[s.id]:e.target.value}))} className="bg-ivory-deep/30" placeholder={s.key==="ga_measurement_id"?"G-XXXXXXXXXX":""} /><div className="mt-2 flex justify-end"><Button onClick={()=>save(s.id)} disabled={saving[s.id]} className="rounded-full bg-teal px-4 py-1.5 text-xs text-ivory">{saving[s.id]?<Loader2 className="h-3 w-3 animate-spin" />:<><Check className="mr-1 h-3 w-3" /> Save</>}</Button></div></div>))}</div></div>))}</div>);
+   445→}
+   446→
+   447→// =================== USERS ===================
+   448→function UsersTab({ users }: { users: any[] }) {
+   449→  const admin = getAdmin();
+   450→  if (admin?.role !== "SUPER_ADMIN") return <div className="rounded-2xl border border-marsala/30 bg-marsala/5 p-8 text-center"><ShieldCheck className="mx-auto mb-3 h-8 w-8 text-marsala" /><p className="font-serif text-lg font-semibold text-marsala">Access Denied</p></div>;
+   451→  const RC: Record<string,string> = { SUPER_ADMIN:"bg-marsala/10 text-marsala", MANAGER:"bg-teal/10 text-teal", FRONT_DESK:"bg-gold/15 text-gold-deep" };
+   452→  return (<div className="space-y-4"><div className="flex items-center justify-between"><p className="font-display text-sm text-charcoal-soft">{users.length} users</p></div><div className="overflow-hidden rounded-2xl border border-charcoal/10 bg-white"><table className="w-full text-left"><thead className="border-b border-charcoal/10 bg-ivory-deep font-display text-[10px] uppercase tracking-wider text-charcoal-soft"><tr><th className="px-4 py-3">Name</th><th className="px-4 py-3">Email</th><th className="px-4 py-3">Role</th><th className="px-4 py-3">Created</th></tr></thead><tbody className="divide-y divide-charcoal/8 font-display text-xs">{users.map((u)=>(<tr key={u.id}><td className="px-4 py-3 font-semibold text-charcoal">{u.name}</td><td className="px-4 py-3 text-charcoal-soft">{u.email}</td><td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${RC[u.role]||"bg-charcoal/10"}`}>{u.role.replace("_"," ")}</span></td><td className="px-4 py-3 text-charcoal-soft">{new Date(u.createdAt).toLocaleDateString("en-IN")}</td></tr>))}</tbody></table></div></div>);
+   453→}
+   454→
+   455→// =================== LEADS ===================
+   456→function LeadsTab({ messages, subscribers }: { messages: any[]; subscribers: any[] }) {
+   457→  const [view, setView] = useState<"messages"|"subscribers">("messages");
+   458→  return (<div className="space-y-4"><div className="flex gap-2"><button onClick={()=>setView("messages")} className={`rounded-full border px-4 py-1.5 text-sm font-medium ${view==="messages"?"border-teal bg-teal text-ivory":"border-charcoal/15 bg-white text-charcoal-soft"}`}>Leads ({messages.length})</button><button onClick={()=>setView("subscribers")} className={`rounded-full border px-4 py-1.5 text-sm font-medium ${view==="subscribers"?"border-teal bg-teal text-ivory":"border-charcoal/15 bg-white text-charcoal-soft"}`}>Newsletter ({subscribers.length})</button></div>{view==="messages"?<div className="space-y-3">{messages.length===0?<div className="rounded-2xl border border-charcoal/10 bg-white p-8 text-center"><Mail className="mx-auto mb-2 h-8 w-8 text-charcoal/30" /><p className="font-display text-sm text-charcoal-soft">No leads yet.</p></div>:messages.map((m)=>(<div key={m.id} className="rounded-2xl border border-charcoal/10 bg-white p-4"><div className="flex justify-between"><div><div className="font-serif text-sm font-semibold text-charcoal">{m.subject}</div><div className="font-display text-[10px] text-charcoal-soft">{m.name} · {m.email} · <span className="rounded-full bg-teal/8 px-1.5 py-0.5 font-semibold text-teal">{m.topic}</span></div></div><div className="font-display text-[10px] text-charcoal-soft">{new Date(m.createdAt).toLocaleString("en-IN")}</div></div><p className="mt-2 font-display text-xs text-charcoal-soft">{m.message}</p><a href={`mailto:${m.email}?subject=Re: ${encodeURIComponent(m.subject)}`} className="mt-3 inline-block rounded-full bg-teal px-3 py-1 font-display text-[10px] font-semibold text-ivory">Reply</a></div>))}</div>:<div className="rounded-2xl border border-charcoal/10 bg-white p-5"><div className="scrollbar-thin max-h-[60vh] space-y-1 overflow-y-auto">{subscribers.length===0?<p className="py-8 text-center font-display text-sm text-charcoal-soft">No subscribers yet.</p>:subscribers.map((s)=>(<div key={s.id} className="flex items-center justify-between border-b border-charcoal/5 py-2 last:border-0"><div><div className="font-serif text-sm font-semibold text-charcoal">{s.email}</div><div className="font-display text-[10px] text-charcoal-soft">{s.name||"—"} · {s.language}</div></div><div className="font-display text-[10px] text-charcoal-soft">{new Date(s.createdAt).toLocaleDateString("en-IN")}</div></div>))}</div></div>}</div>);
+   459→}
+   460→
+   461→// =================== AUDIT ===================
+   462→function AuditTab({ logs }: { logs: any[] }) {
+   463→  return (<div className="rounded-2xl border border-charcoal/10 bg-white p-5"><div className="mb-4 flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-teal" /><h3 className="font-serif text-base font-semibold text-charcoal">{logs.length} actions</h3></div><div className="scrollbar-thin max-h-[65vh] space-y-1 overflow-y-auto font-mono text-[11px]">{logs.map((l)=>(<div key={l.id} className="flex items-start gap-3 border-b border-charcoal/5 py-2 last:border-0"><span className="shrink-0 text-charcoal-soft">{new Date(l.createdAt).toLocaleString("en-IN",{dateStyle:"short",timeStyle:"short"})}</span><span className="shrink-0 rounded bg-gold/15 px-1.5 py-0.5 font-semibold text-gold-deep">{l.action}</span><span className="flex-1 text-charcoal">{l.details}{l.admin&&<span className="text-charcoal-soft"> · by {l.admin.name}</span>}</span></div>))}</div></div>);
+   464→}
+   465→
+   466→// =================== SHARED ===================
+   467→function KpiCard({ icon: Icon, label, value, sub, accent }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string; sub?: string; accent: "teal"|"gold"|"marsala" }) {
+   468→  const c = accent==="gold"?"bg-gold/10 text-gold-deep":accent==="marsala"?"bg-marsala/10 text-marsala":"bg-teal/10 text-teal";
+   469→  return (<div className="rounded-2xl border border-charcoal/10 bg-white p-4"><div className="mb-2"><span className={`grid h-9 w-9 place-items-center rounded-full ${c}`}><Icon className="h-4 w-4" /></span></div><div className="font-serif text-2xl font-bold text-charcoal">{value}</div><div className="font-display text-[10px] uppercase tracking-wider text-charcoal-soft">{label}</div>{sub&&<div className="mt-1 font-display text-[10px] text-charcoal-soft">{sub}</div>}</div>);
+   470→}
+   471→function ActionBtn({ label, icon: Icon, onClick, color = "teal" }: { label: string; icon: React.ComponentType<{ className?: string }>; onClick: () => void; color?: "teal"|"marsala" }) {
+   472→  const c = color==="marsala"?"border-marsala/30 text-marsala hover:bg-marsala hover:text-ivory":"border-teal/30 text-teal hover:bg-teal hover:text-ivory";
+   473→  return <button onClick={onClick} className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${c}`}><Icon className="h-3 w-3" /><span className="hidden sm:inline">{label}</span></button>;
+   474→}
+   475→function Field({ label, value, onChange, type="text", textarea }: { label: string; value: any; onChange: (v: string)=>void; type?: string; textarea?: boolean }) {
+   476→  return (<div><Label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">{label}</Label>{textarea?<textarea value={value} onChange={(e)=>onChange(e.target.value)} rows={3} className="w-full rounded-md border border-charcoal/15 bg-ivory-deep/30 px-3 py-2 font-display text-xs text-charcoal" />:<Input type={type} value={value} onChange={(e)=>onChange(e.target.value)} className="bg-ivory-deep/30" />}</div>);
+   477→}
+   478→function EditorModal({ title, onClose, children }: { title: string; onClose: ()=>void; children: React.ReactNode }) {
+   479→  return (<div className="fixed inset-0 z-[90] grid place-items-center bg-charcoal/70 p-4" onClick={onClose}><div className="w-full max-w-2xl rounded-3xl bg-ivory p-6" onClick={(e)=>e.stopPropagation()}><div className="mb-4 flex items-center justify-between"><h3 className="font-serif text-lg font-semibold text-charcoal">{title}</h3><button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full border border-charcoal/15 text-charcoal-soft"><X className="h-4 w-4" /></button></div>{children}</div></div>);
+   480→}
+
+[showing lines 241-480 of 481; use offset=481 with limit to continue reading]
