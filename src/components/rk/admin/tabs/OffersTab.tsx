@@ -55,8 +55,12 @@ export function OffersTab() {
 
   const del = async (id: string) => {
     if (!confirm("Delete this offer?")) return;
-    const r = await adminFetch(`/api/admin/offers?id=${id}`, { method: "DELETE" });
-    if (r) { toast.success("Deleted"); reload(); }
+    try {
+      const r = await adminFetch(`/api/admin/offers?id=${id}`, { method: "DELETE" });
+      if (r) { toast.success("Offer deleted"); reload(); }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Delete failed");
+    }
   };
 
   const toggleFeatured = async (o: any) => {

@@ -39,7 +39,8 @@ export function BlogListPage() {
       .then((data) => {
         setPosts(data.posts || []);
         setLoading(false);
-      });
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   const cats = ["ALL", ...Array.from(new Set(posts.map((p) => p.category)))];
@@ -96,7 +97,7 @@ export function BlogListPage() {
               >
                 <div className="relative h-52 overflow-hidden">
                   <img
-                    src={p.imageUrl || "/images/marigold-garland.jpg"}
+                    src={p.imageUrl || "/images/marigold-garland.webp"}
                     alt={p.title}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                     loading="lazy"
@@ -160,7 +161,8 @@ export function BlogDetailPage({ slug }: { slug: string }) {
       .then((data) => {
         setPost(data.post || null);
         setLoading(false);
-      });
+      })
+      .catch(() => setLoading(false));
   }, [slug]);
 
   if (loading) {
@@ -190,7 +192,7 @@ export function BlogDetailPage({ slug }: { slug: string }) {
       {/* Hero */}
       <div className="relative mb-8 aspect-[16/9] overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
         <img
-          src={post.imageUrl || "/images/marigold-garland.jpg"}
+          src={post.imageUrl || "/images/marigold-garland.webp"}
           alt={post.title}
           className="h-full w-full object-cover"
         />

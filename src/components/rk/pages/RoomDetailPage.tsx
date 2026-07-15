@@ -84,7 +84,7 @@ export function RoomDetailPage({ slug }: { slug: string }) {
 
   const images: string[] = JSON.parse(room.imageUrls || "[]");
   const amenities: string[] = JSON.parse(room.amenities || "[]");
-  const gallery = images.length > 0 ? images : ["/images/heritage-room.jpg"];
+  const gallery = images.length > 0 ? images : ["/images/heritage-room.webp"];
 
   return (
     <PageShell
@@ -285,7 +285,7 @@ export function RoomDetailPage({ slug }: { slug: string }) {
                     <div className="relative h-56 overflow-hidden">
                       <div
                         className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
-                        style={{ backgroundImage: `url(${relImgs[0] || "/images/heritage-room.jpg"})` }}
+                        style={{ backgroundImage: `url(${relImgs[0] || "/images/heritage-room.webp"})` }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-charcoal/85 via-transparent to-transparent" />
                       <div className="absolute inset-x-0 bottom-0 p-4">

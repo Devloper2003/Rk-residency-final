@@ -54,8 +54,12 @@ export function BlogTab() {
 
   const del = async (id: string) => {
     if (!confirm("Delete this post permanently?")) return;
-    const r = await adminFetch(`/api/admin/blog?id=${id}`, { method: "DELETE" });
-    if (r) { toast.success("Deleted"); reload(); }
+    try {
+      const r = await adminFetch(`/api/admin/blog?id=${id}`, { method: "DELETE" });
+      if (r) { toast.success("Post deleted"); reload(); }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Delete failed");
+    }
   };
 
   if (loading) return <LoadingSpinner />;

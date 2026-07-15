@@ -104,6 +104,16 @@ export async function DELETE(req: Request) {
     const id = url.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Room id required" }, { status: 400 });
 
+    // Block deletion when bookings exist — preserves historical data and
+    // prevents accidental cascade deletes that would erase revenue records.
+    const bookingCount = await db.booking.count({ where: { roomId: id } });
+    if (bookingCount > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete: ${bookingCount} booking(s) reference this room. Mark the room as unavailable (set inventory to 0) instead.` },
+        { status: 409 },
+      );
+    }
+
     await db.room.delete({ where: { id } });
     await db.auditLog.create({
       data: { adminId: admin.id, action: "ROOM_DELETED", entity: "Room", entityId: id, details: `Deleted room ${id}` },

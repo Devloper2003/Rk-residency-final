@@ -68,7 +68,7 @@ const EXPERIENCES: Experience[] = [
     timings: "Sunset Aarti · Daily (varies by season)",
     description:
       "Each evening at sunset, priests at Keshi Ghat perform the Yamuna Aarti — large brass lamps, conch shells, and the ancient chant of Yami-Krishna stotram. Pilgrims float small leaf-boats with marigold and diya onto the river. We arrange private boat access for our guests so you can witness the aarti from the water itself.",
-    image: "/images/yamuna-aarti.jpg",
+    image: "/images/yamuna-aarti.webp",
     accent: "from-teal-deep/85 to-marsala/40",
   },
 ];

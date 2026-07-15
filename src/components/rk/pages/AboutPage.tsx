@@ -86,7 +86,7 @@ export function AboutPage() {
           <div className="overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
             <div className="aspect-[4/5] overflow-hidden">
               <img
-                src="/images/heritage-room.jpg"
+                src="/images/heritage-room.webp"
                 alt="Heritage room interior at RK Residency"
                 className="h-full w-full object-cover"
               />

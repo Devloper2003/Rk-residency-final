@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { VisitorTracker } from "@/components/rk/VisitorTracker";
 import { GoogleAnalytics } from "@/components/rk/GoogleAnalytics";
@@ -61,7 +60,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/images/hero-vrindavan.jpg",
+        url: "/images/hero-vrindavan.webp",
         width: 1344,
         height: 768,
         alt: "RK Residency — golden-hour view of Vrindavan temple skyline",
@@ -73,7 +72,7 @@ export const metadata: Metadata = {
     title: "RK Residency — Heritage Luxury Stay in Vrindavan",
     description:
       "Spiritual luxury on the banks of the Yamuna. Direct booking with best-price guarantee.",
-    images: ["/images/hero-vrindavan.jpg"],
+    images: ["/images/hero-vrindavan.webp"],
   },
   robots: {
     index: true,
@@ -99,7 +98,6 @@ export default function RootLayout({
         {children}
         <VisitorTracker />
         <GoogleAnalytics />
-        <Toaster />
         <SonnerToaster position="bottom-right" richColors closeButton />
       </body>
     </html>

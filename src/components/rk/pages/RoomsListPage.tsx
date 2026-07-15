@@ -43,7 +43,8 @@ export function RoomsListPage() {
       .then((data) => {
         setRooms(data.rooms || []);
         setLoading(false);
-      });
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   const visible = rooms.filter((r) => matchFilter(r, filter));
@@ -95,7 +96,7 @@ export function RoomsListPage() {
                 <div className="relative h-64 overflow-hidden">
                   <div
                     className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                    style={{ backgroundImage: `url(${imgs[0] || "/images/heritage-room.jpg"})` }}
+                    style={{ backgroundImage: `url(${imgs[0] || "/images/heritage-room.webp"})` }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-charcoal/85 via-charcoal/20 to-transparent" />
                   {r.badge && (

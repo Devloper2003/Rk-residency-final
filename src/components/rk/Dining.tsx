@@ -124,7 +124,7 @@ export function Dining() {
           <Reveal>
             <div className="relative h-full min-h-[420px] overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
               <img
-                src="/images/satvik-dining.jpg"
+                src="/images/satvik-dining.webp"
                 alt="Satvik thali on a heritage brass plate at RK Residency"
                 className="h-full w-full object-cover"
                 loading="lazy"

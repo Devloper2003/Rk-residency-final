@@ -153,7 +153,7 @@ export const EXPERIENCES: Experience[] = [
       "Be respectful of the river — do not throw plastic in the Yamuna",
       "Wear warm layers in winter — the ghat gets cold after sunset",
     ],
-    image: "/images/yamuna-aarti.jpg",
+    image: "/images/yamuna-aarti.webp",
     accent: "from-teal-deep/85 to-marsala/40",
   },
 ];

@@ -144,7 +144,7 @@ export function ExitIntentModal({ onBookClick }: { onBookClick: () => void }) {
             {/* Image header */}
             <div className="relative h-44 overflow-hidden">
               <img
-                src="/images/marigold-garland.jpg"
+                src="/images/marigold-garland.webp"
                 alt="Marigold garland"
                 className="h-full w-full object-cover"
               />

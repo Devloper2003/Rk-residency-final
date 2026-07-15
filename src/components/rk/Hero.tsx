@@ -33,7 +33,7 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
       <motion.div style={{ y: skyY }} className="absolute inset-0 z-0">
         <div
           className="h-[120%] w-full bg-cover bg-center"
-          style={{ backgroundImage: "url('/images/hero-vrindavan.jpg')" }}
+          style={{ backgroundImage: "url('/images/hero-vrindavan.webp')" }}
           aria-hidden="true"
         />
       </motion.div>

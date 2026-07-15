@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Mail, MapPin, Phone, Send, Loader2, Facebook, Instagram, Youtube,
@@ -50,6 +50,9 @@ const TRUST = [
 export function Footer() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  // Use a stable initial value to match SSR markup; update on mount.
+  const [year, setYear] = useState(2026);
+  useEffect(() => { setYear(new Date().getFullYear()); }, []);
 
   const onSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -229,7 +232,7 @@ export function Footer() {
       <div className="border-t border-ivory/10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-5 sm:flex-row sm:px-6 lg:px-8">
           <div className="font-display text-xs text-ivory/60">
-            © {new Date().getFullYear()} RK Residency, Vrindavan. All rights reserved.
+            © {year} RK Residency, Vrindavan. All rights reserved.
           </div>
           <div className="flex items-center gap-4 font-display text-xs text-ivory/60">
             <a href="#" className="transition-colors hover:text-gold-soft">Privacy</a>

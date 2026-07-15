@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -55,9 +56,18 @@ server.log
 # Examples & mini-services (not part of the app)
 /examples/
 /mini-services/
-# Database
+# Database (contains live data — never commit)
 /db/
 # Screenshots
 /screenshots/
 # Upload
 /upload/
+# Download folder
+/download/
+# Runtime artifacts
+.zscripts/dev.pid
+.zscripts/mini-service-*.log
+# Tool-results from agent sessions
+tool-results/
+# Public uploads (admin-uploaded media)
+/public/uploads/

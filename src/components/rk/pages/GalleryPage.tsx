@@ -14,10 +14,10 @@ type GalleryItem = {
 };
 
 const GALLERY: GalleryItem[] = [
-  { src: "/images/hero-vrindavan.jpg", alt: "Sunrise over Vrindavan temple skyline", caption: "Sunrise over the temple skyline", category: "Temples" },
-  { src: "/images/heritage-room.jpg", alt: "Heritage luxury room with jharokha window", caption: "Yamuna Suite — jharokha window", category: "Rooms" },
-  { src: "/images/yamuna-aarti.jpg", alt: "Yamuna aarti at dusk", caption: "Yamuna aarti at Keshi Ghat", category: "Rituals" },
-  { src: "/images/satvik-dining.jpg", alt: "Satvik thali on brass plate", caption: "Braj Thali — rooftop dining", category: "Dining" },
+  { src: "/images/hero-vrindavan.webp", alt: "Sunrise over Vrindavan temple skyline", caption: "Sunrise over the temple skyline", category: "Temples" },
+  { src: "/images/heritage-room.webp", alt: "Heritage luxury room with jharokha window", caption: "Yamuna Suite — jharokha window", category: "Rooms" },
+  { src: "/images/yamuna-aarti.webp", alt: "Yamuna aarti at dusk", caption: "Yamuna aarti at Keshi Ghat", category: "Rituals" },
+  { src: "/images/satvik-dining.webp", alt: "Satvik thali on brass plate", caption: "Braj Thali — rooftop dining", category: "Dining" },
   { src: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80", alt: "Temple architecture detail", caption: "Prem Mandir marble detail", category: "Temples" },
   { src: "https://images.unsplash.com/photo-1604608672516-f1b9b1d37076?auto=format&fit=crop&w=1200&q=80", alt: "Marigold and diya offerings", caption: "Marigold & diya — daily offerings", category: "Rituals" },
   { src: "https://images.unsplash.com/photo-1567510297787-d5e2a5d63e0f?auto=format&fit=crop&w=1200&q=80", alt: "ISKCON kirtan", caption: "ISKCON evening kirtan", category: "Temples" },

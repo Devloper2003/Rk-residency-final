@@ -14,25 +14,25 @@ type GalleryItem = {
 
 const GALLERY: GalleryItem[] = [
   {
-    src: "/images/hero-vrindavan.jpg",
+    src: "/images/hero-vrindavan.webp",
     alt: "Golden-hour Vrindavan temple skyline from RK Residency rooftop",
     caption: "Sunrise over the temple skyline",
     span: "wide",
   },
   {
-    src: "/images/heritage-room.jpg",
+    src: "/images/heritage-room.webp",
     alt: "Heritage luxury room with hand-carved teak jharokha window",
     caption: "Yamuna Suite — jharokha window",
     span: "tall",
   },
   {
-    src: "/images/yamuna-aarti.jpg",
+    src: "/images/yamuna-aarti.webp",
     alt: "Yamuna aarti at dusk with floating diyas",
     caption: "Yamuna aarti at Keshi Ghat",
     span: "square",
   },
   {
-    src: "/images/satvik-dining.jpg",
+    src: "/images/satvik-dining.webp",
     alt: "Satvik thali on a heritage brass plate",
     caption: "Braj Thali — rooftop dining",
     span: "square",

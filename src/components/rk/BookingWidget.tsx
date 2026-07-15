@@ -266,7 +266,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
                                 <div
                                   className="h-14 w-14 shrink-0 rounded-lg bg-cover bg-center"
                                   style={{
-                                    backgroundImage: `url(${JSON.parse(r.imageUrls || "[]")[0] || "/images/heritage-room.jpg"})`,
+                                    backgroundImage: `url(${JSON.parse(r.imageUrls || "[]")[0] || "/images/heritage-room.webp"})`,
                                   }}
                                 />
                                 <div className="min-w-0 flex-1">
@@ -422,7 +422,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
                         <div
                           className="h-14 w-14 shrink-0 rounded-lg bg-cover bg-center"
                           style={{
-                            backgroundImage: `url(${JSON.parse(selectedRoom.imageUrls || "[]")[0] || "/images/heritage-room.jpg"})`,
+                            backgroundImage: `url(${JSON.parse(selectedRoom.imageUrls || "[]")[0] || "/images/heritage-room.webp"})`,
                           }}
                         />
                         <div>

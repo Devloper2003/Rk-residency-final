@@ -1,9 +1,17 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Home } from "lucide-react";
 import { useRouter, routeHref } from "@/lib/router";
 import { Logo, SectionDivider } from "./Motifs";
+
+// Stable year for SSR/client hydration; updated on mount.
+function useYear() {
+  const [y, setY] = useState(2026);
+  useEffect(() => { setY(new Date().getFullYear()); }, []);
+  return y;
+}
 
 /**
  * Full-screen page wrapper for the in-app router. Renders above the home
@@ -21,7 +29,7 @@ export function PageShell({
   accent?: "teal" | "gold" | "marsala";
 }) {
   const navigate = useRouter((s) => s.navigate);
-
+  const year = useYear();
   const accentBg =
     accent === "gold"
       ? "bg-gradient-to-r from-gold-soft/10 via-gold/5 to-transparent"
@@ -105,7 +113,7 @@ export function PageShell({
       <footer className="border-t border-charcoal/10 bg-ivory-deep py-6">
         <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
           <p className="font-display text-xs text-charcoal-soft">
-            © {new Date().getFullYear()} RK Residency, Vrindavan ·
+            © {year} RK Residency, Vrindavan ·
             <a
               href={routeHref("contact")}
               onClick={(e) => {

@@ -46,7 +46,7 @@ export default async function BlogDetailRoute({ params }: { params: Promise<{ sl
                 name: "RK Residency",
                 logo: {
                   "@type": "ImageObject",
-                  url: "https://rkresidency.in/images/heritage-room.jpg",
+                  url: "https://rkresidency.in/images/heritage-room.webp",
                 },
               },
               mainEntityOfPage: {

@@ -77,12 +77,21 @@ function TabFallback() {
 
 export function AdminPanel() {
   const navigate = useRouter((s) => s.navigate);
-  const [stored, setStored] = useState<AdminUser | null>(() => getAdmin());
+  // Hyration-safe initialization: render null on the server, then on mount
+  // read localStorage. This prevents the SSR/client markup mismatch that
+  // happens because localStorage only exists in the browser.
+  const [stored, setStored] = useState<AdminUser | null>(null);
+  const [mounted, setMounted] = useState(false);
   const authed = stored !== null;
   const [tab, setTab] = useState<Tab>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    setStored(getAdmin());
+    setMounted(true);
+  }, []);
 
   const handleLogin = useCallback((admin: AdminUser, token: string) => {
     setAdminSession(admin, token);
@@ -109,6 +118,20 @@ export function AdminPanel() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // SSR + first paint: render a neutral loading state so server markup
+  // matches the first client render. After mount, useEffect resolves the
+  // real auth state from localStorage.
+  if (!mounted) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-ivory">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-teal" />
+          <p className="font-display text-xs uppercase tracking-wider text-charcoal-soft">Loading admin console…</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!authed) {
     return <AdminLogin onLogin={handleLogin} onBack={() => navigate("home")} />;

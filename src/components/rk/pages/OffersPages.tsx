@@ -31,7 +31,8 @@ export function OffersListPage({ onBookClick }: { onBookClick?: () => void }) {
       .then((data) => {
         setOffers(data.offers || []);
         setLoading(false);
-      });
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   return (
@@ -71,7 +72,7 @@ export function OffersListPage({ onBookClick }: { onBookClick?: () => void }) {
               >
                 <div className="relative h-48 overflow-hidden">
                   <img
-                    src={o.imageUrl || "/images/marigold-garland.jpg"}
+                    src={o.imageUrl || "/images/marigold-garland.webp"}
                     alt={o.title}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                     loading="lazy"
@@ -145,7 +146,8 @@ export function OfferDetailPage({ slug, onBookClick }: { slug: string; onBookCli
       .then((data) => {
         setOffer((data.offers as Offer[]).find((o) => o.slug === slug) || null);
         setLoading(false);
-      });
+      })
+      .catch(() => setLoading(false));
   }, [slug]);
 
   if (loading) {
@@ -176,7 +178,7 @@ export function OfferDetailPage({ slug, onBookClick }: { slug: string; onBookCli
       {/* Hero */}
       <div className="relative mb-10 aspect-[16/9] overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
         <img
-          src={offer.imageUrl || "/images/marigold-garland.jpg"}
+          src={offer.imageUrl || "/images/marigold-garland.webp"}
           alt={offer.title}
           className="h-full w-full object-cover"
         />

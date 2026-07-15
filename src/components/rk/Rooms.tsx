@@ -52,7 +52,7 @@ function TiltCard({
 
   const images: string[] = JSON.parse(room.imageUrls || "[]");
   const amenities: string[] = JSON.parse(room.amenities || "[]");
-  const cover = images[0] || "/images/heritage-room.jpg";
+  const cover = images[0] || "/images/heritage-room.webp";
 
   return (
     <motion.article

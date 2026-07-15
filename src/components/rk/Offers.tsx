@@ -94,7 +94,7 @@ export function Offers({ onBookClick }: { onBookClick: () => void }) {
                   {/* Image */}
                   <div className="relative h-48 overflow-hidden">
                     <img
-                      src={o.imageUrl || "/images/marigold-garland.jpg"}
+                      src={o.imageUrl || "/images/marigold-garland.webp"}
                       alt={o.title}
                       className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                       loading="lazy"

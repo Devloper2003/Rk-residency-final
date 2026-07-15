@@ -50,9 +50,13 @@ export function RoomsTab() {
   };
 
   const del = async (id: string) => {
-    if (!confirm("Delete this room? Existing bookings will be preserved.")) return;
-    const res = await adminFetch(`/api/admin/rooms?id=${id}`, { method: "DELETE" });
-    if (res) { toast.success("Deleted"); reload(); }
+    if (!confirm("Delete this room?\n\nIf any bookings reference this room, the deletion will be blocked to preserve historical data. You can set inventory to 0 to hide the room instead.")) return;
+    try {
+      const res = await adminFetch(`/api/admin/rooms?id=${id}`, { method: "DELETE" });
+      if (res) { toast.success("Room deleted"); reload(); }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Delete failed");
+    }
   };
 
   const toggleFeatured = async (r: any) => {

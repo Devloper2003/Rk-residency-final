@@ -1,15 +1,35 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Star } from "lucide-react";
+import { Star, Inbox } from "lucide-react";
 import { adminApi, LoadingSpinner } from "./_shared";
+import { toast } from "sonner";
 
 export function ReviewsTab() {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const reload = useCallback(() => { adminApi.get("reviews").then((d) => { if (d) setReviews(d.reviews||[]); setLoading(false); }); }, []);
-  useEffect(() => { let c=false; adminApi.get("reviews").then((d)=>{ if(c)return; if(d)setReviews(d.reviews||[]); setLoading(false); }); return()=>{c=true}; }, []);
-  const toggle = async (id: string, action: "APPROVE"|"HIDE") => { await adminApi.patch("review", { id, reviewAction: action }); reload(); };
+  useEffect(() => { let c=false; adminApi.get("reviews").then((d)=>{ if(c)return; if(d)setReviews(d.reviews||[]); setLoading(false); }).catch(()=>setLoading(false)); return()=>{c=true}; }, []);
+  const toggle = async (id: string, action: "APPROVE"|"HIDE") => {
+    try {
+      const res = await adminApi.patch("review", { id, reviewAction: action });
+      if (res) {
+        toast.success(action === "APPROVE" ? "Review approved" : "Review hidden");
+        reload();
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Action failed");
+    }
+  };
   if (loading) return <LoadingSpinner />;
+  if (reviews.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-charcoal/15 bg-white p-12 text-center">
+        <Inbox className="mx-auto h-10 w-10 text-charcoal-soft/40" />
+        <p className="mt-2 font-serif text-base font-semibold text-charcoal">No reviews yet</p>
+        <p className="mt-1 font-display text-xs text-charcoal-soft">Guest reviews submitted on the site will appear here for approval.</p>
+      </div>
+    );
+  }
   return (
     <div className="grid gap-3">
       {reviews.map((r) => (
