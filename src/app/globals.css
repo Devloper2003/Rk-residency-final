@@ -1,0 +1,349 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* ===== RK Residency — Vrindavan Heritage Luxury Theme ===== */
+  /* Brand palette (Section 4 of brief) */
+  --color-teal: #0E4C4F;            /* Peacock Teal — primary */
+  --color-teal-deep: #08383a;
+  --color-teal-soft: #1a6a6e;
+  --color-gold: #C7A250;            /* Temple Gold — accent */
+  --color-gold-soft: #d8b96a;
+  --color-gold-deep: #a8843a;
+  --color-marsala: #6E1E36;         /* Marsala Maroon — secondary accent */
+  --color-marsala-soft: #8a2942;
+  --color-ivory: #FBF6EC;           /* Warm Ivory — background */
+  --color-ivory-deep: #f3ead6;
+  --color-charcoal: #231F1C;        /* Charcoal — text */
+  --color-charcoal-soft: #4a443e;
+
+  /* shadcn token aliases (kept for compatibility with existing UI components) */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-playfair), Georgia, "Times New Roman", serif;
+  --font-display: var(--font-cormorant), Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Custom keyframes */
+  --animate-diya-flicker: diya-flicker 2.4s ease-in-out infinite;
+  --animate-marquee: marquee 48s linear infinite;
+  --animate-marquee-reverse: marquee-reverse 48s linear infinite;
+  --animate-shimmer: shimmer 3s ease-in-out infinite;
+  --animate-float-slow: float-slow 7s ease-in-out infinite;
+  --animate-pulse-ring: pulse-ring 2.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-gradient-pan: gradient-pan 18s ease infinite;
+}
+
+:root {
+  --radius: 0.5rem;
+
+  /* RK Residency light theme — warm ivory background, deep teal primary */
+  --background: #FBF6EC;            /* warm ivory */
+  --foreground: #231F1C;            /* charcoal */
+  --card: #ffffff;
+  --card-foreground: #231F1C;
+  --popover: #ffffff;
+  --popover-foreground: #231F1C;
+  --primary: #0E4C4F;               /* peacock teal */
+  --primary-foreground: #FBF6EC;
+  --secondary: #f3ead6;             /* ivory deep */
+  --secondary-foreground: #231F1C;
+  --muted: #f3ead6;
+  --muted-foreground: #6b6258;
+  --accent: #C7A250;                /* temple gold */
+  --accent-foreground: #231F1C;
+  --destructive: #b3261e;
+  --border: rgba(35, 31, 28, 0.12);
+  --input: rgba(35, 31, 28, 0.14);
+  --ring: #0E4C4F;
+  --chart-1: #0E4C4F;
+  --chart-2: #C7A250;
+  --chart-3: #6E1E36;
+  --chart-4: #1a6a6e;
+  --chart-5: #a8843a;
+  --sidebar: #FBF6EC;
+  --sidebar-foreground: #231F1C;
+  --sidebar-primary: #0E4C4F;
+  --sidebar-primary-foreground: #FBF6EC;
+  --sidebar-accent: #f3ead6;
+  --sidebar-accent-foreground: #231F1C;
+  --sidebar-border: rgba(35, 31, 28, 0.12);
+  --sidebar-ring: #0E4C4F;
+}
+
+.dark {
+  --background: #0b2a2c;            /* deep teal-black */
+  --foreground: #FBF6EC;
+  --card: #103337;
+  --card-foreground: #FBF6EC;
+  --popover: #103337;
+  --popover-foreground: #FBF6EC;
+  --primary: #C7A250;               /* gold pops in dark */
+  --primary-foreground: #0b2a2c;
+  --secondary: #14464a;
+  --secondary-foreground: #FBF6EC;
+  --muted: #14464a;
+  --muted-foreground: #c5bda9;
+  --accent: #C7A250;
+  --accent-foreground: #0b2a2c;
+  --destructive: #ef4444;
+  --border: rgba(251, 246, 236, 0.12);
+  --input: rgba(251, 246, 236, 0.14);
+  --ring: #C7A250;
+  --chart-1: #C7A250;
+  --chart-2: #1a6a6e;
+  --chart-3: #8a2942;
+  --chart-4: #d8b96a;
+  --chart-5: #6E1E36;
+  --sidebar: #0b2a2c;
+  --sidebar-foreground: #FBF6EC;
+  --sidebar-primary: #C7A250;
+  --sidebar-primary-foreground: #0b2a2c;
+  --sidebar-accent: #14464a;
+  --sidebar-accent-foreground: #FBF6EC;
+  --sidebar-border: rgba(251, 246, 236, 0.12);
+  --sidebar-ring: #C7A250;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-playfair), Georgia, serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  ::selection {
+    background-color: rgba(199, 162, 80, 0.32);
+    color: #231F1C;
+  }
+}
+
+@layer utilities {
+  .font-serif { font-family: var(--font-playfair), Georgia, serif; }
+  .font-display { font-family: var(--font-cormorant), Georgia, serif; }
+  .font-sans { font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif; }
+
+  /* Brand color shortcuts */
+  .text-teal { color: #0E4C4F; }
+  .text-gold { color: #C7A250; }
+  .text-marsala { color: #6E1E36; }
+  .text-ivory { color: #FBF6EC; }
+  .text-charcoal { color: #231F1C; }
+  .bg-teal { background-color: #0E4C4F; }
+  .bg-gold { background-color: #C7A250; }
+  .bg-marsala { background-color: #6E1E36; }
+  .bg-ivory { background-color: #FBF6EC; }
+  .bg-charcoal { background-color: #231F1C; }
+  .border-teal { border-color: #0E4C4F; }
+  .border-gold { border-color: #C7A250; }
+  .border-marsala { border-color: #6E1E36; }
+
+  /* Jharokha (arched window) mask — used for image frames */
+  .mask-jharokha {
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120' preserveAspectRatio='none'><path d='M0,120 L0,40 Q0,0 50,0 Q100,0 100,40 L100,120 Z' fill='black'/></svg>");
+    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120' preserveAspectRatio='none'><path d='M0,120 L0,40 Q0,0 50,0 Q100,0 100,40 L100,120 Z' fill='black'/></svg>");
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+  }
+
+  /* Yamuna ripple texture */
+  .bg-yamuna-ripple {
+    background-image:
+      radial-gradient(ellipse 80% 40% at 20% 30%, rgba(199, 162, 80, 0.10), transparent 70%),
+      radial-gradient(ellipse 70% 50% at 80% 70%, rgba(14, 76, 79, 0.08), transparent 70%),
+      repeating-linear-gradient(
+        100deg,
+        transparent 0px,
+        transparent 6px,
+        rgba(35, 31, 28, 0.018) 6px,
+        rgba(35, 31, 28, 0.018) 7px
+      );
+  }
+
+  /* Gold foil text */
+  .text-gold-foil {
+    background: linear-gradient(120deg, #a8843a 0%, #d8b96a 25%, #f5e6b8 50%, #d8b96a 75%, #a8843a 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 6s ease-in-out infinite;
+  }
+
+  /* Glassmorphism */
+  .glass {
+    background: rgba(251, 246, 236, 0.72);
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    border: 1px solid rgba(199, 162, 80, 0.25);
+  }
+  .glass-dark {
+    background: rgba(11, 42, 44, 0.72);
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    border: 1px solid rgba(199, 162, 80, 0.32);
+  }
+
+  /* Magnetic CTA glow */
+  .cta-glow {
+    box-shadow:
+      0 0 0 0 rgba(199, 162, 80, 0.5),
+      0 8px 24px -8px rgba(14, 76, 79, 0.45);
+    transition: box-shadow 0.5s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .cta-glow:hover {
+    box-shadow:
+      0 0 0 8px rgba(199, 162, 80, 0.15),
+      0 14px 36px -8px rgba(14, 76, 79, 0.6);
+    transform: translateY(-2px);
+  }
+
+  /* Marigold garland divider */
+  .garland-divider {
+    background-image: radial-gradient(circle, #C7A250 18%, transparent 22%);
+    background-size: 24px 24px;
+    background-repeat: repeat-x;
+    background-position: center;
+    height: 24px;
+    opacity: 0.55;
+  }
+
+  /* Custom thin scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(199, 162, 80, 0.5) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgba(199, 162, 80, 0.45);
+    border-radius: 3px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover { background-color: rgba(199, 162, 80, 0.7); }
+
+  /* Hidden scrollbar for marquees */
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  /* Subtle 3D card tilt hover */
+  .card-tilt {
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s ease;
+  }
+
+  /* Focus ring — accessibility */
+  .focus-ring {
+    outline: none;
+  }
+  .focus-ring:focus-visible {
+    outline: 2px solid #C7A250;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Perspective container for tilt cards */
+  .perspective-1000 { perspective: 1000px; }
+  .preserve-3d { transform-style: preserve-3d; }
+  .backface-hidden { backface-visibility: hidden; }
+}
+
+/* ===== Keyframes ===== */
+@keyframes diya-flicker {
+  0%, 100% { opacity: 1; transform: scale(1) translateY(0); filter: drop-shadow(0 0 8px rgba(199, 162, 80, 0.8)); }
+  25%      { opacity: 0.92; transform: scale(0.98) translateY(-0.5px); filter: drop-shadow(0 0 6px rgba(199, 162, 80, 0.7)); }
+  50%      { opacity: 0.96; transform: scale(1.02) translateY(0.5px); filter: drop-shadow(0 0 10px rgba(199, 162, 80, 0.9)); }
+  75%      { opacity: 0.9; transform: scale(0.99) translateY(-0.3px); filter: drop-shadow(0 0 7px rgba(199, 162, 80, 0.75)); }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes marquee-reverse {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-10px) rotate(2deg); }
+}
+
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.5); }
+  70%  { box-shadow: 0 0 0 14px rgba(37, 211, 102, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+}
+
+@keyframes gradient-pan {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+/* ===== Reduced motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
