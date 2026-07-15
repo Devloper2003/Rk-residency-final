@@ -5,8 +5,12 @@ pkill -f "next-server" 2>/dev/null
 pkill -f "next dev" 2>/dev/null
 sleep 1
 rm -f /home/z/my-project/dev.log
+# Clear any stale DATABASE_URL from the parent shell so the .env file is
+# the single source of truth (the agent shell sometimes leaks an old
+# SQLite URL from earlier in the session).
+unset DATABASE_URL
 # Use setsid to fully detach from the controlling terminal.
-setsid bun run dev > /home/z/my-project/dev.log 2>&1 < /dev/null &
+setsid env -u DATABASE_URL bun run dev > /home/z/my-project/dev.log 2>&1 < /dev/null &
 PID=$!
 disown $PID 2>/dev/null || true
 echo "dev server launched, pid=$PID"
