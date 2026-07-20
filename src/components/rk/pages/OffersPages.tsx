@@ -7,6 +7,7 @@ import { PageShell } from "../PageShell";
 import { Button } from "@/components/ui/button";
 import { Reveal, Lotus } from "../Motifs";
 import { useRouter } from "@/lib/router";
+import { useContactInfo } from "@/lib/use-contact-info";
 
 type Offer = {
   id: string; slug: string; title: string; tagline: string; description: string;
@@ -132,6 +133,7 @@ export function OffersListPage({ onBookClick }: { onBookClick?: () => void }) {
 export function OfferDetailPage({ slug, onBookClick }: { slug: string; onBookClick?: () => void }) {
   const navigate = useRouter((s) => s.navigate);
   const openBooking = useRouter((s) => s.openBooking);
+  const info = useContactInfo();
   const [offer, setOffer] = useState<Offer | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -263,7 +265,7 @@ export function OfferDetailPage({ slug, onBookClick }: { slug: string; onBookCli
               Reserve this package
             </Button>
             <a
-              href="https://wa.me/919876543210"
+              href={info.waUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-3 block rounded-full border border-[#25D366]/40 bg-[#25D366]/5 py-2.5 text-center font-display text-xs font-semibold text-[#1a7d3a] transition-colors hover:bg-[#25D366]/10"

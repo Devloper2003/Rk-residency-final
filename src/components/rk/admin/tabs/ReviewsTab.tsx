@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Star, Inbox } from "lucide-react";
 import { adminApi, LoadingSpinner } from "./_shared";
+import { refreshSiteContent } from "@/lib/site-content";
 import { toast } from "sonner";
 
 export function ReviewsTab() {
@@ -14,6 +15,7 @@ export function ReviewsTab() {
       const res = await adminApi.patch("review", { id, reviewAction: action });
       if (res) {
         toast.success(action === "APPROVE" ? "Review approved" : "Review hidden");
+        refreshSiteContent();
         reload();
       }
     } catch (e) {

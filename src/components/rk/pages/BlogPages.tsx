@@ -6,6 +6,7 @@ import { Clock, ArrowRight, ArrowLeft, Calendar, Tag } from "lucide-react";
 import { PageShell } from "../PageShell";
 import { Reveal, Lotus } from "../Motifs";
 import { useRouter } from "@/lib/router";
+import { useContactInfo } from "@/lib/use-contact-info";
 
 type BlogPost = {
   id: string; slug: string; title: string; excerpt: string; body: string;
@@ -152,6 +153,7 @@ export function BlogListPage() {
 
 export function BlogDetailPage({ slug }: { slug: string }) {
   const navigate = useRouter((s) => s.navigate);
+  const info = useContactInfo();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -261,7 +263,7 @@ export function BlogDetailPage({ slug }: { slug: string }) {
               <p className="mt-1 font-display text-sm text-charcoal-soft">
                 Our concierge team writes the Braj Journal from first-hand experience —
                 most have lived in Vrindavan for over a decade. Questions about this story?
-                Write to stay@rkresidency.in.
+                Write to <a href={info.mailtoUrl} className="text-teal underline-offset-2 hover:underline">{info.emailPrimary}</a>.
               </p>
             </div>
           </div>

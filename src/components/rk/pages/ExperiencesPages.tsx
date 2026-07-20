@@ -5,6 +5,7 @@ import { Clock, MapPin, Footprints, Sun, Moon, Sunrise, ArrowRight } from "lucid
 import { PageShell } from "../PageShell";
 import { Reveal, Lotus } from "../Motifs";
 import { useRouter } from "@/lib/router";
+import { useContactInfo } from "@/lib/use-contact-info";
 
 type Experience = {
   slug: string;
@@ -241,6 +242,7 @@ export function ExperiencesListPage() {
 
 export function ExperienceDetailPage({ slug }: { slug: string }) {
   const navigate = useRouter((s) => s.navigate);
+  const info = useContactInfo();
   const exp = EXPERIENCES.find((e) => e.slug === slug);
   const idx = EXPERIENCES.findIndex((e) => e.slug === slug);
   const next = EXPERIENCES[(idx + 1) % EXPERIENCES.length];
@@ -334,10 +336,10 @@ export function ExperienceDetailPage({ slug }: { slug: string }) {
               transfers through our front desk.
             </p>
             <a
-              href="tel:+915652345678"
+              href={info.telUrl}
               className="mt-4 inline-block rounded-full bg-teal px-5 py-2 font-serif text-sm font-semibold text-ivory transition-colors hover:bg-teal-deep"
             >
-              +91 565 234 5678
+              {info.phoneDisplay}
             </a>
           </div>
         </div>

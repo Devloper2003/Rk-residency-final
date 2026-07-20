@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { adminApi, LoadingSpinner, ErrorState } from "./_shared";
+import { refreshSiteContent } from "@/lib/site-content";
 import { ActionBtn } from "./_shared";
 import { toast } from "sonner";
 

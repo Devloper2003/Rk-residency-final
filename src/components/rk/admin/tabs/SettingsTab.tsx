@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { adminApi, LoadingSpinner } from "./_shared";
 import { ImageUploader } from "../ImageUploader";
+import { refreshSiteContent } from "@/lib/site-content";
 import { toast } from "sonner";
 
 const CATEGORY_META: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; description: string }> = {
@@ -43,6 +44,9 @@ export function SettingsTab() {
     if (res) {
       toast.success("Setting updated — live on website!");
       setSettings((prev) => prev.map((s) => s.id === id ? { ...s, value: editing[id] } : s));
+      // Invalidate the public-site cache so the new value shows up instantly
+      // across every open browser tab.
+      refreshSiteContent();
     } else toast.error("Failed");
     setSaving((s) => ({ ...s, [id]: false }));
   };

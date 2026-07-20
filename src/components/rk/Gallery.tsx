@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
+import { useContactInfo } from "@/lib/use-contact-info";
 
 type GalleryItem = {
   src: string;
@@ -70,6 +71,7 @@ const SPAN_CLASSES: Record<NonNullable<GalleryItem["span"]>, string> = {
 };
 
 export function Gallery() {
+  const info = useContactInfo();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const close = () => setLightboxIndex(null);
@@ -146,7 +148,7 @@ export function Gallery() {
             <SectionDivider className="mb-6" />
             <p className="text-center font-display text-sm text-charcoal-soft">
               A full 360° virtual tour of every room category is available on request —
-              write to <a href="mailto:stay@rkresidency.in" className="text-teal underline-offset-2 hover:underline">stay@rkresidency.in</a>.
+              write to <a href={info.mailtoUrl} className="text-teal underline-offset-2 hover:underline">{info.emailPrimary}</a>.
             </p>
           </div>
         </Reveal>

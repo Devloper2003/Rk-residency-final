@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Reveal, Lotus, PeacockFeather } from "../Motifs";
 import { AvailabilityCalendar } from "../AvailabilityCalendar";
 import { useRouter } from "@/lib/router";
+import { useContactInfo } from "@/lib/use-contact-info";
 
 type Room = {
   id: string;
@@ -41,6 +42,7 @@ const AMENITY_ICONS: Record<string, React.ComponentType<{ className?: string }>>
 export function RoomDetailPage({ slug }: { slug: string }) {
   const navigate = useRouter((s) => s.navigate);
   const openBooking = useRouter((s) => s.openBooking);
+  const info = useContactInfo();
   const [room, setRoom] = useState<Room | null>(null);
   const [related, setRelated] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
@@ -252,7 +254,7 @@ export function RoomDetailPage({ slug }: { slug: string }) {
             </div>
 
             <a
-              href="https://wa.me/919876543210"
+              href={info.waUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-4 block rounded-full border border-[#25D366]/40 bg-[#25D366]/5 py-2.5 text-center font-display text-xs font-semibold text-[#1a7d3a] transition-colors hover:bg-[#25D366]/10"

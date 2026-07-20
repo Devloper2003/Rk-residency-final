@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { adminApi, LoadingSpinner } from "./_shared";
 import { ImageUploader } from "../ImageUploader";
+import { refreshSiteContent } from "@/lib/site-content";
 import { toast } from "sonner";
 
 // Friendly section labels + descriptions
@@ -54,6 +55,10 @@ export function ContentTab() {
     if (res) {
       toast.success("Updated — live on website!");
       setItems((prev) => prev.map((i) => i.id === id ? { ...i, value: editing[id] } : i));
+      // Invalidate the public-site cache so the new value shows up instantly
+      // in any open browser tab (same tab via custom event, other tabs via
+      // localStorage event).
+      refreshSiteContent();
     } else toast.error("Failed");
     setSaving((s) => ({ ...s, [id]: false }));
   };

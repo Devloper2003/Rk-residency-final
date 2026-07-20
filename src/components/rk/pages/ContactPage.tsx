@@ -6,15 +6,10 @@ import {
 } from "lucide-react";
 import { PageShell } from "../PageShell";
 import { Reveal, Lotus } from "../Motifs";
+import { useContactInfo } from "@/lib/use-contact-info";
+import { useContentValue, parseJsonArray } from "@/lib/site-content";
 
-const CONTACT_INFO = [
-  { icon: MapPin, label: "Address", lines: ["RK Residency, Parikrama Marg", "Vrindavan, Mathura", "Uttar Pradesh 281121, India"] },
-  { icon: Phone, label: "Phone & WhatsApp", lines: ["+91 565 234 5678 (Front desk)", "+91 98765 43210 (Reservations)"] },
-  { icon: Mail, label: "Email", lines: ["stay@rkresidency.in", "events@rkresidency.in (satsang & weddings)"] },
-  { icon: Clock, label: "Reception", lines: ["Open 24 hours, 7 days", "Check-in 2:00 PM · Check-out 11:00 AM"] },
-];
-
-const NEARBY = [
+const NEARBY_FALLBACK = [
   { name: "Banke Bihari Mandir", dist: "0.6 km", time: "8 min walk" },
   { name: "ISKCON Sri Krishna Balaram", dist: "1.4 km", time: "18 min walk" },
   { name: "Prem Mandir", dist: "2.1 km", time: "25 min walk" },
@@ -26,10 +21,21 @@ const NEARBY = [
 ];
 
 export function ContactPage() {
+  const info = useContactInfo();
+  const nearbyRaw = useContentValue("contact.nearby", "[]");
+  const nearby = parseJsonArray<{ name: string; distance: string; time: string }>(nearbyRaw, NEARBY_FALLBACK.map((n) => ({ ...n, distance: n.dist, time2: n.time })));
+
+  const CONTACT_INFO = [
+    { icon: MapPin, label: "Address", lines: [info.addrLine1, info.addrLine2, info.addrLine3] },
+    { icon: Phone, label: "Phone & WhatsApp", lines: [`${info.phoneDisplay} (Front desk)`, `${info.phoneReservations} (Reservations)`] },
+    { icon: Mail, label: "Email", lines: [info.emailPrimary, `${info.emailEvents} (satsang & weddings)`] },
+    { icon: Clock, label: "Reception", lines: ["Open 24 hours, 7 days", `Check-in ${info.checkinTime} · Check-out ${info.checkoutTime}`] },
+  ];
+
   return (
     <PageShell
       title="Begin your Braj journey"
-      subtitle="Whether you are planning a pilgrimage, a satsang retreat or a small wedding — write to us. Our concierge replies within four hours, 7 AM – 11 PM IST."
+      subtitle={`Whether you are planning a pilgrimage, a satsang retreat or a small wedding — write to us. Our concierge replies within four hours, ${info.conciergeHours}.`}
       accent="teal"
     >
       <div className="grid gap-8 lg:grid-cols-2">
@@ -54,17 +60,17 @@ export function ContactPage() {
           <div className="relative overflow-hidden rounded-2xl border border-charcoal/10 shadow-sm">
             <iframe
               title="RK Residency location map"
-              src="https://www.openstreetmap.org/export/embed.html?bbox=77.6950%2C27.5650%2C77.7250%2C27.5850&layer=mapnik&marker=27.5756%2C77.7100"
+              src={info.mapEmbedUrl}
               className="h-72 w-full"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
             />
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-charcoal/10 bg-white px-4 py-3">
               <div className="font-display text-xs text-charcoal-soft">
-                Parikrama Marg · Vrindavan · 281121
+                {info.addrLine1} · {info.addrLine2} · {info.addrLine3}
               </div>
               <a
-                href="https://www.google.com/maps/dir/?api=1&destination=Vrindavan%20Uttar%20Pradesh"
+                href={info.mapDirectionsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-full bg-teal px-3 py-1.5 font-display text-xs font-semibold text-ivory transition-colors hover:bg-teal-deep"
@@ -83,13 +89,13 @@ export function ContactPage() {
               </span>
             </div>
             <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-              {NEARBY.map((n) => (
+              {nearby.map((n) => (
                 <div key={n.name} className="flex items-center justify-between border-b border-charcoal/5 py-1.5 last:border-0">
                   <div>
                     <div className="font-display text-xs text-charcoal-soft">{n.name}</div>
-                    <div className="font-display text-[10px] text-charcoal-soft/70">{n.time}</div>
+                    <div className="font-display text-[10px] text-charcoal-soft/70">{n.time || n.distance}</div>
                   </div>
-                  <span className="font-serif text-xs font-semibold text-teal">{n.dist}</span>
+                  <span className="font-serif text-xs font-semibold text-teal">{n.distance}</span>
                 </div>
               ))}
             </div>
@@ -97,7 +103,7 @@ export function ContactPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <a
-              href="https://wa.me/919876543210"
+              href={info.waUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="group flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-4 py-3 font-serif text-sm font-semibold text-white transition-all hover:shadow-lg"
@@ -106,7 +112,7 @@ export function ContactPage() {
               Chat on WhatsApp
             </a>
             <a
-              href="tel:+915652345678"
+              href={info.telUrl}
               className="group flex items-center justify-center gap-2 rounded-2xl bg-teal px-4 py-3 font-serif text-sm font-semibold text-ivory transition-all hover:bg-teal-deep hover:shadow-lg"
             >
               <Phone className="h-4 w-4 transition-transform group-hover:scale-110" />

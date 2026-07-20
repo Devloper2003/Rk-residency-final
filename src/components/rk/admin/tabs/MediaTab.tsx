@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { RefreshCw, Trash2, Copy, Upload, ImageIcon, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { adminFetch, LoadingSpinner, ErrorState } from "./_shared";
+import { refreshSiteContent } from "@/lib/site-content";
 import { ImageUploader } from "../ImageUploader";
 import { getAdminToken } from "@/lib/admin-client";
 import { toast } from "sonner";
@@ -61,6 +62,7 @@ export function MediaTab() {
       if (!res.ok) throw new Error(data.error || "Failed");
       toast.success("File deleted");
       setConfirmDel(null);
+      refreshSiteContent();
       reload();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Delete failed");

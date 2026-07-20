@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, HelpCircle, Phone, Mail, MessageCircle } from "lucide-react";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { useRouter } from "@/lib/router";
+import { useSettingValue } from "@/lib/site-content";
 
 type FAQ = {
   q: string;
@@ -96,6 +97,10 @@ export function FAQ() {
   const [open, setOpen] = useState<number | null>(0);
   const [category, setCategory] = useState("All");
   const navigate = useRouter((s) => s.navigate);
+  const phoneDisplay = useSettingValue("phone_primary", "+91 565 234 5678");
+  const phoneTel = useSettingValue("phone_primary_tel", "+915652345678");
+  const whatsappNumber = useSettingValue("whatsapp_number", "919876543210").replace(/[^\d]/g, "");
+  const waUrl = `https://wa.me/${whatsappNumber}`;
 
   const visible = category === "All" ? FAQS : FAQS.filter((f) => f.category === category);
 
@@ -215,7 +220,7 @@ export function FAQ() {
               </p>
               <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
                 <a
-                  href="https://wa.me/919876543210"
+                  href={waUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 font-serif text-sm font-semibold text-white transition-all hover:shadow-lg"
@@ -224,11 +229,11 @@ export function FAQ() {
                   WhatsApp us
                 </a>
                 <a
-                  href="tel:+915652345678"
+                  href={`tel:${phoneTel}`}
                   className="inline-flex items-center gap-2 rounded-full border border-teal/40 bg-white px-5 py-2.5 font-serif text-sm font-semibold text-teal transition-all hover:bg-teal hover:text-ivory"
                 >
                   <Phone className="h-4 w-4" />
-                  +91 565 234 5678
+                  {phoneDisplay}
                 </a>
                 <button
                   onClick={() => navigate("contact")}

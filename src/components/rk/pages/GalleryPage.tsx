@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, ZoomIn, Filter } from "lucide-react";
 import { PageShell } from "../PageShell";
 import { Reveal, Lotus } from "../Motifs";
+import { useContactInfo } from "@/lib/use-contact-info";
 
 type GalleryItem = {
   src: string;
@@ -34,6 +35,7 @@ const GALLERY: GalleryItem[] = [
 const CATEGORIES = ["All", "Temples", "Rooms", "Rituals", "Dining", "Festivals"];
 
 export function GalleryPage() {
+  const info = useContactInfo();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [category, setCategory] = useState("All");
 
@@ -111,7 +113,7 @@ export function GalleryPage() {
       <div className="mt-12 flex items-center justify-center">
         <Lotus size={18} className="text-gold" />
         <span className="mx-3 font-display text-xs text-charcoal-soft">
-          A full 360° virtual tour is available on request — write to stay@rkresidency.in
+          A full 360° virtual tour is available on request — write to <a href={info.mailtoUrl} className="text-teal underline-offset-2 hover:underline">{info.emailPrimary}</a>
         </span>
         <Lotus size={18} className="text-gold" />
       </div>

@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Plus, Edit, Trash2, X, Save, BedDouble, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { adminApi, adminFetch, LoadingSpinner, Field } from "./_shared";
+import { refreshSiteContent } from "@/lib/site-content";
 import { ImageUploader } from "../ImageUploader";
 import { toast } from "sonner";
 
@@ -42,6 +43,7 @@ export function RoomsTab() {
     const res = await adminFetch("/api/admin/rooms", { method, body: JSON.stringify(room) });
     if (res) {
       toast.success(room.id ? "Room updated" : "Room created");
+      refreshSiteContent();
       setEditing(null);
       reload();
     } else {

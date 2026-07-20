@@ -34,7 +34,8 @@ export function Contact() {
   const addrLine3 = useSettingValue("address_line3", "Uttar Pradesh 281121, India");
   const mapEmbedUrl = useSettingValue("map_embed_url", "https://www.openstreetmap.org/export/embed.html?bbox=77.6950%2C27.5650%2C77.7250%2C27.5850&layer=mapnik&marker=27.5756%2C77.7100");
   const mapDirectionsUrl = useSettingValue("map_directions_url", "https://www.google.com/maps/dir/?api=1&destination=Vrindavan%20Uttar%20Pradesh");
-  const whatsappNumber = useSettingValue("whatsapp_number", "919876543210");
+  const whatsappNumberRaw = useSettingValue("whatsapp_number", "919876543210");
+  const whatsappNumber = whatsappNumberRaw.replace(/[^\d]/g, "");
   const whatsappPrefill = useContentValue("contact.whatsapp_prefill_text", "I would like to enquire about availability at RK Residency");
   const checkinTime = useSettingValue("checkin_time", "2:00 PM");
   const checkoutTime = useSettingValue("checkout_time", "11:00 AM");

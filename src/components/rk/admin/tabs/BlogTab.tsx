@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { adminApi, adminFetch, LoadingSpinner, Field } from "./_shared";
+import { refreshSiteContent } from "@/lib/site-content";
 import { ImageUploader } from "../ImageUploader";
 import { toast } from "sonner";
 
@@ -47,6 +48,7 @@ export function BlogTab() {
     const r = await adminFetch("/api/admin/blog", { method, body: JSON.stringify(payload) });
     if (r) {
       toast.success(p.id ? "Post updated" : "Post created");
+      refreshSiteContent();
       setEditing(null);
       reload();
     }

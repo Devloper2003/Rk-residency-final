@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Calendar, CalendarDays, Check, X, Loader2, A
 import { Button } from "@/components/ui/button";
 import { Reveal } from "./Motifs";
 import { toast } from "sonner";
+import { useContactInfo } from "@/lib/use-contact-info";
 
 type BookedDate = {
   date: string; // YYYY-MM-DD
@@ -48,6 +49,7 @@ export function AvailabilityCalendar({
   totalCount: number;
   onBookClick: () => void;
 }) {
+  const info = useContactInfo();
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -207,7 +209,7 @@ export function AvailabilityCalendar({
           <div className="flex h-40 flex-col items-center justify-center text-center">
             <AlertCircle className="mb-2 h-8 w-8 text-marsala" />
             <p className="font-display text-sm text-charcoal-soft">
-              Unable to load availability. Please call us at +91 565 234 5678.
+              Unable to load availability. Please call us at {info.phoneDisplay}.
             </p>
           </div>
         ) : (

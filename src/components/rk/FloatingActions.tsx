@@ -14,10 +14,12 @@ export function FloatingWhatsApp() {
   const [showLabel, setShowLabel] = useState(false);
 
   // Live editable contact info
-  const whatsappNumber = useSettingValue("whatsapp_number", "919876543210");
+  const whatsappNumberRaw = useSettingValue("whatsapp_number", "919876543210");
   const conciergeReplyWindow = useSettingValue("concierge_reply_window", "Replies in ~5 min");
   const conciergeHours = useSettingValue("concierge_hours", "7 AM – 11 PM IST");
   const prefillText = useContentValue("contact.whatsapp_prefill_text", "I would like to enquire about availability at RK Residency");
+  // Strip +, spaces, dashes — wa.me needs digits only.
+  const whatsappNumber = whatsappNumberRaw.replace(/[^\d]/g, "");
 
   // After 6 seconds, briefly show a hover label as a hint
   useEffect(() => {

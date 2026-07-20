@@ -4,6 +4,7 @@ import { Check, Loader2, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { adminApi, LoadingSpinner } from "./_shared";
+import { refreshSiteContent } from "@/lib/site-content";
 import { toast } from "sonner";
 
 export function ThemeTab() {
@@ -28,7 +29,11 @@ export function ThemeTab() {
   const save = async (id: string) => {
     setSaving((s) => ({ ...s, [id]: true }));
     const res = await adminApi.patch("theme", { id, value: editing[id] });
-    if (res) { toast.success("Color updated!"); setThemes((prev) => prev.map((t) => t.id === id ? { ...t, value: editing[id] } : t)); }
+    if (res) {
+      toast.success("Color updated — live on website!");
+      setThemes((prev) => prev.map((t) => t.id === id ? { ...t, value: editing[id] } : t));
+      refreshSiteContent();
+    }
     else toast.error("Failed");
     setSaving((s) => ({ ...s, [id]: false }));
   };
