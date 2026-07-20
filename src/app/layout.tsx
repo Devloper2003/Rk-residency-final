@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { VisitorTracker } from "@/components/rk/VisitorTracker";
 import { GoogleAnalytics } from "@/components/rk/GoogleAnalytics";
+import { GlobalBookingWidget } from "@/components/rk/GlobalBookingWidget";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -96,6 +97,7 @@ export default function RootLayout({
         className={`${playfair.variable} ${cormorant.variable} ${inter.variable} antialiased bg-ivory text-charcoal font-sans`}
       >
         {children}
+        <GlobalBookingWidget />
         <VisitorTracker />
         <GoogleAnalytics />
         <SonnerToaster position="bottom-right" richColors closeButton />

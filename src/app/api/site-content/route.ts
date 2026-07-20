@@ -24,7 +24,11 @@ export async function GET() {
       if (!bySection[it.section]) bySection[it.section] = [];
       bySection[it.section].push({ key: it.key, value: it.value, type: it.type, label: it.label });
     }
-    return NextResponse.json({ content, bySection });
+    const res = NextResponse.json({ content, bySection });
+    res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    res.headers.set("Pragma", "no-cache");
+    res.headers.set("Expires", "0");
+    return res;
   } catch (e) {
     console.error("[/api/site-content] error:", e);
     return NextResponse.json({ content: {}, bySection: {} });

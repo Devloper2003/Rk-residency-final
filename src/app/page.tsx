@@ -15,15 +15,11 @@ import { Contact } from "@/components/rk/Contact";
 import { Footer } from "@/components/rk/Footer";
 import { FloatingWhatsApp, ExitIntentModal } from "@/components/rk/FloatingActions";
 import { ScrollProgress } from "@/components/rk/ScrollProgress";
-import { BookingWidget } from "@/components/rk/BookingWidget";
 import { useRouter } from "@/lib/router";
 import type { Room as RoomType } from "@/components/rk/Rooms";
 
 export default function Home() {
-  const bookingOpen = useRouter((s) => s.bookingOpen);
-  const bookingRoomSlug = useRouter((s) => s.bookingRoomSlug);
   const openBooking = useRouter((s) => s.openBooking);
-  const closeBooking = useRouter((s) => s.closeBooking);
 
   const [rooms, setRooms] = useState<RoomType[]>([]);
 
@@ -36,10 +32,6 @@ export default function Home() {
 
   const openBookingCb = useCallback(() => openBooking(), [openBooking]);
   const openBookingWithRoom = useCallback((room: RoomType) => openBooking(room.slug), [openBooking]);
-
-  const preselectRoom = bookingRoomSlug
-    ? rooms.find((r) => r.slug === bookingRoomSlug) || null
-    : null;
 
   return (
     <div className="flex min-h-screen flex-col bg-ivory">
@@ -96,12 +88,7 @@ export default function Home() {
 
       <FloatingWhatsApp />
       <ExitIntentModal onBookClick={openBookingCb} />
-
-      <BookingWidget
-        open={bookingOpen}
-        onOpenChange={(o) => (o ? openBooking() : closeBooking())}
-        preselectRoom={preselectRoom}
-      />
+      {/* BookingWidget is rendered globally in layout.tsx (GlobalBookingWidget) */}
     </div>
   );
 }
