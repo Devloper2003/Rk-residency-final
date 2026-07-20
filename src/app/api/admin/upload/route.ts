@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { verifyAdmin } from "@/lib/admin-auth";
 import sharp from "sharp";
 import { createHash } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir } from "fs/promises";
 import path from "path";
 
 export const dynamic = "force-dynamic";

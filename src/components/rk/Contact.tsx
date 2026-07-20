@@ -15,46 +15,62 @@ import {
 } from "@/components/ui/select";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { toast } from "sonner";
-
-const CONTACT_INFO = [
-  {
-    icon: MapPin,
-    label: "Address",
-    lines: ["RK Residency, Parikrama Marg", "Vrindavan, Mathura", "Uttar Pradesh 281121, India"],
-  },
-  {
-    icon: Phone,
-    label: "Phone & WhatsApp",
-    lines: ["+91 565 234 5678 (Front desk)", "+91 98765 43210 (Reservations)"],
-  },
-  {
-    icon: Mail,
-    label: "Email",
-    lines: ["stay@rkresidency.in", "events@rkresidency.in (satsang & weddings)"],
-  },
-  {
-    icon: Clock,
-    label: "Reception",
-    lines: ["Open 24 hours, 7 days", "Check-in 2:00 PM · Check-out 11:00 AM"],
-  },
-];
-
-const NEARBY = [
-  { name: "Banke Bihari Mandir", dist: "0.6 km" },
-  { name: "ISKCON Sri Krishna Balaram", dist: "1.4 km" },
-  { name: "Prem Mandir", dist: "2.1 km" },
-  { name: "Nidhivan", dist: "0.9 km" },
-  { name: "Keshi Ghat (Yamuna Aarti)", dist: "1.1 km" },
-  { name: "Mathura Junction (railway)", dist: "12 km" },
-  { name: "Agra Airport (Kheria)", dist: "65 km" },
-  { name: "Indira Gandhi Intl. (DEL)", dist: "150 km" },
-];
+import { useSettingValue, useContentValue, parseJsonArray } from "@/lib/site-content";
 
 export function Contact() {
   const [form, setForm] = useState({
     name: "", email: "", phone: "", subject: "", message: "", topic: "GENERAL",
   });
   const [submitting, setSubmitting] = useState(false);
+
+  // Live editable contact info (with fallbacks)
+  const phoneDisplay = useSettingValue("phone_primary", "+91 565 234 5678");
+  const phoneTel = useSettingValue("phone_primary_tel", "+915652345678");
+  const phoneReservations = useSettingValue("phone_reservations", "+91 98765 43210");
+  const emailPrimary = useSettingValue("email_primary", "stay@rkresidency.in");
+  const emailEvents = useSettingValue("email_events", "events@rkresidency.in");
+  const addrLine1 = useSettingValue("address_line1", "RK Residency, Parikrama Marg");
+  const addrLine2 = useSettingValue("address_line2", "Vrindavan, Mathura");
+  const addrLine3 = useSettingValue("address_line3", "Uttar Pradesh 281121, India");
+  const mapEmbedUrl = useSettingValue("map_embed_url", "https://www.openstreetmap.org/export/embed.html?bbox=77.6950%2C27.5650%2C77.7250%2C27.5850&layer=mapnik&marker=27.5756%2C77.7100");
+  const mapDirectionsUrl = useSettingValue("map_directions_url", "https://www.google.com/maps/dir/?api=1&destination=Vrindavan%20Uttar%20Pradesh");
+  const whatsappNumber = useSettingValue("whatsapp_number", "919876543210");
+  const whatsappPrefill = useContentValue("contact.whatsapp_prefill_text", "I would like to enquire about availability at RK Residency");
+  const checkinTime = useSettingValue("checkin_time", "2:00 PM");
+  const checkoutTime = useSettingValue("checkout_time", "11:00 AM");
+  const conciergeHours = useSettingValue("concierge_hours", "7 AM – 11 PM IST");
+  const nearbyRaw = useContentValue("contact.nearby", "[]");
+  const nearby = parseJsonArray<{ name: string; distance: string; time: string }>(nearbyRaw, [
+    { name: "Banke Bihari Mandir", distance: "450 m", time: "6 min walk" },
+    { name: "ISKCON Vrindavan", distance: "1.2 km", time: "15 min walk" },
+    { name: "Prem Mandir", distance: "2 km", time: "25 min walk" },
+    { name: "Keshi Ghat", distance: "650 m", time: "8 min walk" },
+    { name: "Mathura Junction", distance: "12 km", time: "30 min drive" },
+    { name: "Agra Airport", distance: "65 km", time: "90 min drive" },
+  ]);
+
+  const CONTACT_INFO = [
+    {
+      icon: MapPin,
+      label: "Address",
+      lines: [addrLine1, addrLine2, addrLine3],
+    },
+    {
+      icon: Phone,
+      label: "Phone & WhatsApp",
+      lines: [`${phoneDisplay} (Front desk)`, `${phoneReservations} (Reservations)`],
+    },
+    {
+      icon: Mail,
+      label: "Email",
+      lines: [emailPrimary, `${emailEvents} (satsang & weddings)`],
+    },
+    {
+      icon: Clock,
+      label: "Reception",
+      lines: ["Open 24 hours, 7 days", `Check-in ${checkinTime} · Check-out ${checkoutTime}`],
+    },
+  ];
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +84,7 @@ export function Contact() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to send message");
       toast.success("Message sent", {
-        description: "Our concierge will reply within 4 hours.",
+        description: `Our concierge will reply within ${conciergeHours}.`,
       });
       setForm({ name: "", email: "", phone: "", subject: "", message: "", topic: "GENERAL" });
     } catch (e: unknown) {
@@ -78,6 +94,9 @@ export function Contact() {
       setSubmitting(false);
     }
   };
+
+  // WhatsApp URL with prefill text
+  const waUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappPrefill)}`;
 
   return (
     <section id="contact" className="relative bg-ivory py-24 lg:py-32">
@@ -132,21 +151,21 @@ export function Contact() {
                 ))}
               </div>
 
-              {/* Embedded map (OpenStreetMap iframe of Vrindavan) */}
+              {/* Embedded map */}
               <div className="relative overflow-hidden rounded-2xl border border-charcoal/10 shadow-sm">
                 <iframe
                   title="RK Residency location map"
-                  src="https://www.openstreetmap.org/export/embed.html?bbox=77.6950%2C27.5650%2C77.7250%2C27.5850&layer=mapnik&marker=27.5756%2C77.7100"
+                  src={mapEmbedUrl}
                   className="h-72 w-full"
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                 />
                 <div className="flex flex-wrap items-center justify-between gap-2 border-t border-charcoal/10 bg-white px-4 py-3">
                   <div className="font-display text-xs text-charcoal-soft">
-                    Parikrama Marg · Vrindavan · 281121
+                    {addrLine1} · {addrLine2} · {addrLine3}
                   </div>
                   <a
-                    href="https://www.google.com/maps/dir/?api=1&destination=Vrindavan%20Uttar%20Pradesh"
+                    href={mapDirectionsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 rounded-full bg-teal px-3 py-1.5 font-display text-xs font-semibold text-ivory transition-colors hover:bg-teal-deep"
@@ -166,13 +185,13 @@ export function Contact() {
                   </span>
                 </div>
                 <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                  {NEARBY.map((n) => (
+                  {nearby.map((n) => (
                     <div
                       key={n.name}
                       className="flex items-center justify-between border-b border-charcoal/5 py-1.5 last:border-0"
                     >
                       <span className="font-display text-xs text-charcoal-soft">{n.name}</span>
-                      <span className="font-serif text-xs font-semibold text-teal">{n.dist}</span>
+                      <span className="font-serif text-xs font-semibold text-teal">{n.distance}</span>
                     </div>
                   ))}
                 </div>
@@ -181,7 +200,7 @@ export function Contact() {
               {/* Quick WhatsApp + Call */}
               <div className="grid grid-cols-2 gap-3">
                 <a
-                  href="https://wa.me/919876543210"
+                  href={waUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-4 py-3 font-serif text-sm font-semibold text-white transition-all hover:shadow-lg"
@@ -190,7 +209,7 @@ export function Contact() {
                   Chat on WhatsApp
                 </a>
                 <a
-                  href="tel:+915652345678"
+                  href={`tel:${phoneTel}`}
                   className="group flex items-center justify-center gap-2 rounded-2xl bg-teal px-4 py-3 font-serif text-sm font-semibold text-ivory transition-all hover:bg-teal-deep hover:shadow-lg"
                 >
                   <Phone className="h-4 w-4 transition-transform group-hover:scale-110" />
@@ -210,7 +229,7 @@ export function Contact() {
                 Send us a message
               </h3>
               <p className="mt-1 font-display text-xs text-charcoal-soft">
-                Our concierge replies within 4 hours, 7 AM – 11 PM IST.
+                Our concierge replies within 4 hours, {conciergeHours}.
               </p>
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2">

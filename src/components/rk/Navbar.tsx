@@ -6,6 +6,7 @@ import { Menu, X, Phone, Globe, CalendarDays } from "lucide-react";
 import { Logo } from "./Motifs";
 import { Button } from "@/components/ui/button";
 import { useRouter, type RouteName } from "@/lib/router";
+import { useSettingValue } from "@/lib/site-content";
 
 // Each nav item: clicking scrolls to the section on home; if not on home, navigates to dedicated page.
 const NAV_ITEMS: { id: string; route: RouteName; label: string; labelHi: string }[] = [
@@ -23,6 +24,11 @@ export function Navbar({ onBookClick }: { onBookClick: () => void }) {
   const [lang, setLang] = useState<"en" | "hi">("en");
   const [activeId, setActiveId] = useState<string>("");
   const navigate = useRouter((s) => s.navigate);
+  // Live editable brand info
+  const brandName = useSettingValue("brand_name", "RK Residency");
+  const brandTagline = useSettingValue("brand_tagline", "Vrindavan · Braj");
+  const phoneDisplay = useSettingValue("phone_primary", "+91 565 234 5678");
+  const phoneTel = useSettingValue("phone_primary_tel", "+915652345678");
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -103,14 +109,14 @@ export function Navbar({ onBookClick }: { onBookClick: () => void }) {
                   scrolled ? "text-teal" : "text-ivory"
                 }`}
               >
-                RK Residency
+                {brandName}
               </span>
               <span
                 className={`font-display text-[10px] uppercase tracking-[0.28em] transition-colors ${
                   scrolled ? "text-gold-deep" : "text-gold-soft"
                 }`}
               >
-                Vrindavan · Braj
+                {brandTagline}
               </span>
             </span>
           </button>
@@ -180,16 +186,16 @@ export function Navbar({ onBookClick }: { onBookClick: () => void }) {
 
             {/* Phone (desktop) */}
             <a
-              href="tel:+915652345678"
+              href={`tel:${phoneTel}`}
               className={`hidden items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all focus-ring md:flex ${
                 scrolled
                   ? "border-charcoal/15 text-charcoal-soft hover:border-teal/40 hover:text-teal"
                   : "border-white/25 text-ivory/85 hover:border-gold/60 hover:text-ivory"
               }`}
-              aria-label="Call RK Residency"
+              aria-label={`Call ${brandName}`}
             >
               <Phone className="h-3.5 w-3.5" />
-              +91 565 234 5678
+              {phoneDisplay}
             </a>
 
             {/* Book CTA */}
@@ -243,7 +249,7 @@ export function Navbar({ onBookClick }: { onBookClick: () => void }) {
                   <span className="grid h-9 w-9 place-items-center rounded-full bg-teal text-ivory">
                     <Logo size={20} />
                   </span>
-                  <span className="font-serif text-lg font-semibold text-teal">RK Residency</span>
+                  <span className="font-serif text-lg font-semibold text-teal">{brandName}</span>
                 </div>
                 <button
                   onClick={() => setMobileOpen(false)}
@@ -288,11 +294,11 @@ export function Navbar({ onBookClick }: { onBookClick: () => void }) {
                   Check Availability
                 </Button>
                 <a
-                  href="tel:+915652345678"
+                  href={`tel:${phoneTel}`}
                   className="mt-3 flex items-center justify-center gap-2 text-sm font-medium text-charcoal-soft"
                 >
                   <Phone className="h-4 w-4" />
-                  +91 565 234 5678
+                  {phoneDisplay}
                 </a>
                 <button
                   onClick={() => setLang(lang === "en" ? "hi" : "en")}

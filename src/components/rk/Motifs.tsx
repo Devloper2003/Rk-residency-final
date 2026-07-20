@@ -1,10 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useSettingValue } from "@/lib/site-content";
 
 /**
  * RK Residency brand monogram — a stylized peacock + lotus emblem
  * rendered as inline SVG so it scales crisply and inherits currentColor.
+ *
+ * If the admin uploads a custom logo (SiteSetting `logo_image_url`), that
+ * image is rendered instead of the inline SVG. Falls back to the inline
+ * SVG on first render (SSR-safe) and while settings are loading.
  */
 export function Logo({
   className = "",
@@ -13,6 +18,22 @@ export function Logo({
   className?: string;
   size?: number;
 }) {
+  const logoUrl = useSettingValue("logo_image_url", "");
+
+  if (logoUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={logoUrl}
+        alt="RK Residency"
+        width={size}
+        height={size}
+        className={className}
+        style={{ objectFit: "contain" }}
+      />
+    );
+  }
+
   return (
     <svg
       width={size}

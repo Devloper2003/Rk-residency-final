@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X } from "lucide-react";
 import { toast } from "sonner";
+import { useSettingValue, useContentValue } from "@/lib/site-content";
 
 /**
  * Floating WhatsApp button — fixed bottom-right, with subtle pulse ring.
@@ -11,6 +12,12 @@ import { toast } from "sonner";
  */
 export function FloatingWhatsApp() {
   const [showLabel, setShowLabel] = useState(false);
+
+  // Live editable contact info
+  const whatsappNumber = useSettingValue("whatsapp_number", "919876543210");
+  const conciergeReplyWindow = useSettingValue("concierge_reply_window", "Replies in ~5 min");
+  const conciergeHours = useSettingValue("concierge_hours", "7 AM – 11 PM IST");
+  const prefillText = useContentValue("contact.whatsapp_prefill_text", "I would like to enquire about availability at RK Residency");
 
   // After 6 seconds, briefly show a hover label as a hint
   useEffect(() => {
@@ -22,9 +29,11 @@ export function FloatingWhatsApp() {
     };
   }, []);
 
+  const waUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(prefillText)}`;
+
   return (
     <motion.a
-      href="https://wa.me/919876543210?text=I%20would%20like%20to%20enquire%20about%20availability%20at%20RK%20Residency"
+      href={waUrl}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat with RK Residency on WhatsApp"
@@ -59,7 +68,7 @@ export function FloatingWhatsApp() {
                 Chat with us
               </span>
               <span className="font-display text-[11px] text-charcoal-soft">
-                Replies in ~5 min, 7 AM–11 PM IST
+                {conciergeReplyWindow}, {conciergeHours}
               </span>
             </div>
           </motion.div>

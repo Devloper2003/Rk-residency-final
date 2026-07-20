@@ -6,6 +6,7 @@ import { CalendarDays, ChevronDown, MapPin, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Diya } from "./Motifs";
 import { WeatherWidget } from "./WeatherWidget";
+import { useContentValue } from "@/lib/site-content";
 
 export function Hero({ onBookClick }: { onBookClick: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -14,6 +15,17 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
     target: ref,
     offset: ["start start", "end start"],
   });
+
+  // Live editable content (with fallbacks matching the original hardcoded text)
+  const bgImage = useContentValue("hero.background_image", "/images/hero-vrindavan.webp");
+  const locationBadge = useContentValue("hero.location_badge", "Vrindavan · On the banks of the Yamuna");
+  const headlineLine1 = useContentValue("hero.headline_line1", "Where the spirit of Braj");
+  const headlineLine2 = useContentValue("hero.headline_line2", "finds its rest");
+  const subheadline = useContentValue("hero.subheadline", "A heritage-luxury residency steps from Banke Bihari Mandir & ISKCON Vrindavan. Calm, dignified comfort for pilgrims, devotee families and cultural travellers.");
+  const ctaPrimary = useContentValue("hero.cta_primary", "Check Availability");
+  const ctaSecondary = useContentValue("hero.cta_secondary", "Explore Rooms");
+  const ratingText = useContentValue("hero.rating_text", "4.9 · 1,240+ verified stays");
+  const featuredOnText = useContentValue("hero.featured_on_text", "Featured on Google · TripAdvisor");
 
   // Parallax layers (disabled when reduced motion)
   const skyY = useTransform(scrollYProgress, [0, 1], ["0%", prefersReducedMotion ? "0%" : "30%"]);
@@ -33,7 +45,7 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
       <motion.div style={{ y: skyY }} className="absolute inset-0 z-0">
         <div
           className="h-[120%] w-full bg-cover bg-center"
-          style={{ backgroundImage: "url('/images/hero-vrindavan.webp')" }}
+          style={{ backgroundImage: `url('${bgImage}')` }}
           aria-hidden="true"
         />
       </motion.div>
@@ -76,7 +88,7 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
           <div className="flex items-center gap-2 rounded-full border border-gold/40 bg-charcoal/30 px-4 py-1.5 backdrop-blur-sm">
             <MapPin className="h-3.5 w-3.5 text-gold" />
             <span className="font-display text-xs uppercase tracking-[0.3em] text-ivory/90">
-              Vrindavan · On the banks of the Yamuna
+              {locationBadge}
             </span>
           </div>
           <WeatherWidget />
@@ -89,9 +101,9 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
           transition={{ delay: 0.55, duration: 0.95, ease: [0.16, 1, 0.3, 1] }}
           className="font-serif text-4xl font-semibold leading-[1.05] text-ivory sm:text-6xl lg:text-7xl xl:text-[5.5rem]"
         >
-          Where the spirit of Braj
+          {headlineLine1}
           <br />
-          <span className="text-gold-foil italic">finds its rest</span>
+          <span className="text-gold-foil italic">{headlineLine2}</span>
         </motion.h1>
 
         {/* Sub-headline */}
@@ -101,8 +113,7 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
           transition={{ delay: 0.75, duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
           className="mt-6 max-w-2xl font-display text-base leading-relaxed text-ivory/85 sm:text-xl"
         >
-          A heritage-luxury residency steps from Banke Bihari Mandir &amp; ISKCON Vrindavan.
-          Calm, dignified comfort for pilgrims, devotee families and cultural travellers.
+          {subheadline}
         </motion.p>
 
         {/* CTAs */}
@@ -117,7 +128,7 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
             className="cta-glow group rounded-full bg-gradient-to-r from-gold via-gold-soft to-gold px-8 py-3.5 text-base font-semibold text-charcoal hover:from-gold-deep hover:to-gold"
           >
             <CalendarDays className="mr-2 h-5 w-5 transition-transform group-hover:scale-110" />
-            Check Availability
+            {ctaPrimary}
           </Button>
           <a
             href="#rooms"
@@ -127,7 +138,7 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
             }}
             className="rounded-full border border-ivory/40 bg-white/5 px-8 py-3.5 text-base font-semibold text-ivory backdrop-blur-sm transition-all hover:border-gold hover:bg-white/10 focus-ring"
           >
-            Explore Rooms
+            {ctaSecondary}
           </a>
         </motion.div>
 
@@ -145,12 +156,12 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
               ))}
             </div>
             <span className="text-sm font-medium text-ivory/90">
-              4.9 · <span className="text-ivory/70">1,240+ verified stays</span>
+              {ratingText}
             </span>
           </div>
           <div className="hidden h-4 w-px bg-ivory/30 sm:block" />
           <div className="text-xs uppercase tracking-wider text-ivory/70">
-            Featured on Google · TripAdvisor
+            {featuredOnText}
           </div>
         </motion.div>
       </motion.div>
