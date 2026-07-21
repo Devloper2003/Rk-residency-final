@@ -196,9 +196,9 @@ const contentItems = [
   { key: "footer.newsletter_heading", value: "Stay in the circle", section: "footer", type: "text", label: "Newsletter heading" },
   { key: "footer.newsletter_title", value: "Festival calendars, member offers & Braj stories", section: "footer", type: "text", label: "Newsletter title" },
   { key: "footer.newsletter_body", value: "One email a fortnight. No spam, no sharing — we treat your inbox like our guestbook.", section: "footer", type: "textarea", label: "Newsletter body" },
-  { key: "footer.privacy_url", value: "#", section: "footer", type: "text", label: "Privacy link" },
-  { key: "footer.terms_url", value: "#", section: "footer", type: "text", label: "Terms link" },
-  { key: "footer.cancellation_url", value: "#", section: "footer", type: "text", label: "Cancellation policy link" },
+  { key: "footer.privacy_url", value: "/privacy-policy", section: "footer", type: "text", label: "Privacy link" },
+  { key: "footer.terms_url", value: "/terms-and-conditions", section: "footer", type: "text", label: "Terms link" },
+  { key: "footer.cancellation_url", value: "/cancellation-policy", section: "footer", type: "text", label: "Cancellation policy link" },
 
   // ===================== EXIT MODAL (FloatingActions) =====================
   { key: "exit_modal.image", value: "/images/marigold-garland.webp", section: "exit_modal", type: "image", label: "Image" },
