@@ -43,8 +43,11 @@ export function ImageUploader({ value, multiple = false, onChange, label, hint, 
     : [];
 
   const uploadFiles = useCallback(async (files: FileList | File[]) => {
-    const arr = Array.from(files).filter((f) => f.type.startsWith("image/"));
-    if (arr.length === 0) return;
+    const arr = Array.from(files).filter((f) => f.type.startsWith("image/") || /\.(png|jpe?g|webp|gif|avif|bmp|tiff?|svg|ico|heic|heif)$/i.test(f.name));
+    if (arr.length === 0) {
+      toast.error("Please select an image file (PNG, JPG, WebP, GIF, SVG, etc.)");
+      return;
+    }
     setUploading(true);
     try {
       const fd = new FormData();
@@ -55,10 +58,45 @@ export function ImageUploader({ value, multiple = false, onChange, label, hint, 
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         body: fd,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed");
+      // Read body as text first, then try to parse — avoids the cryptic
+      // "Failed to execute 'json' on 'Response': Unexpected end of JSON input"
+      // error when the server returns an empty body (e.g. 413 from Vercel's
+      // 4.5MB body limit, or a Next.js compile error returning HTML).
+      const text = await res.text();
+      let data: any = {};
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          // Body is not JSON — likely an HTML error page from the platform.
+          if (!res.ok) {
+            throw new Error(
+              res.status === 401
+                ? "Your session has expired. Please sign out and sign back in to the admin panel, then try again."
+                : res.status === 413
+                ? "Image is too large. Maximum allowed size is 12 MB. Please use a smaller image."
+                : res.status === 404
+                ? "Upload endpoint not found. The site may be deploying — please try again in 30 seconds."
+                : `Upload failed (HTTP ${res.status}). The server returned a non-JSON response. Please try again.`
+            );
+          }
+        }
+      } else if (!res.ok) {
+        // Empty body + non-200 status.
+        throw new Error(
+          res.status === 401
+            ? "Session expired. Please sign out and sign back in."
+            : `Upload failed (HTTP ${res.status}) with empty response body.`
+        );
+      }
+      if (!res.ok) {
+        throw new Error(data.error || `Upload failed (HTTP ${res.status})`);
+      }
       const got: string[] = data.urls || [];
-      if (got.length === 0) throw new Error("No files uploaded");
+      if (got.length === 0) {
+        const errs: string[] = data.errors || [];
+        throw new Error(errs.length ? errs.join("; ") : "No files were uploaded. Please try a different image.");
+      }
       if (multiple) {
         onChange([...list, ...got]);
       } else {

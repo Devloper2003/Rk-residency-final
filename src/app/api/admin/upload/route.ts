@@ -7,6 +7,10 @@ import path from "path";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+// Allow up to 60 seconds for the upload to complete on Vercel — sharp
+// processing of large PNGs (e.g. 967KB at 1254x1254) can take a few seconds,
+// and the default 10-second timeout on Hobby plans is too tight.
+export const maxDuration = 60;
 
 const MAX_BYTES = 12 * 1024 * 1024; // 12 MB upload cap (raised from 8MB for high-res photos)
 
@@ -142,14 +146,28 @@ export async function POST(req: Request) {
         await writeFile(outPath, buf);
         urls.push(`/uploads/${outName}`);
       } else {
-        // Raster image — convert to optimized WebP.
-        const outName = `${hash}.webp`;
-        const outPath = path.join(uploadDir, outName);
-        await sharp(buf, { animated: file.type === "image/gif" })
-          .resize({ width: 1920, withoutEnlargement: true })
-          .webp({ quality: 82 })
-          .toFile(outPath);
-        urls.push(`/uploads/${outName}`);
+        // Raster image — try to convert to optimized WebP via sharp.
+        // If sharp fails for any reason (corrupt file, unusual color profile,
+        // animated PNG, etc.), fall back to saving the original file as-is
+        // so the user doesn't lose their upload entirely.
+        try {
+          const outName = `${hash}.webp`;
+          const outPath = path.join(uploadDir, outName);
+          await sharp(buf, { animated: file.type === "image/gif" })
+            .resize({ width: 1920, withoutEnlargement: true })
+            .webp({ quality: 82 })
+            .toFile(outPath);
+          urls.push(`/uploads/${outName}`);
+        } catch (sharpErr) {
+          console.error("[/api/admin/upload] sharp failed, saving original:", sharpErr);
+          const ext = extFor(file.name, file.type);
+          const outName = `${hash}.${ext}`;
+          const outPath = path.join(uploadDir, outName);
+          const { writeFile } = await import("fs/promises");
+          await writeFile(outPath, buf);
+          urls.push(`/uploads/${outName}`);
+          errors.push(`${file.name}: optimized conversion failed, saved original instead.`);
+        }
       }
     } catch (e) {
       console.error("[/api/admin/upload] sharp error:", e);
