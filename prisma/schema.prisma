@@ -247,4 +247,15 @@ model ThemeSetting {
   updatedAt DateTime @updatedAt
 }
 
+// Uploaded media files — stored as binary in the DB so they work on
+// Vercel's read-only filesystem. Served via /uploads/[filename] route.
+model MediaAsset {
+  id        String   @id @default(cuid())
+  filename  String   @unique // e.g. "abc123.webp" — used in /uploads/abc123.webp URLs
+  mimeType  String   // e.g. "image/webp"
+  data      Bytes    // the actual image bytes
+  size      Int      // file size in bytes
+  createdAt DateTime @default(now())
+}
+
 
