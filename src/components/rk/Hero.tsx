@@ -76,7 +76,7 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
       {/* Content */}
       <motion.div
         style={{ y: contentY, opacity: contentOpacity }}
-        className="absolute inset-0 z-40 flex flex-col items-center justify-center px-6 text-center"
+        className="absolute inset-0 z-40 flex flex-col items-center justify-center px-6 pt-20 text-center sm:pt-24"
       >
         {/* Tagline pill + weather */}
         <motion.div

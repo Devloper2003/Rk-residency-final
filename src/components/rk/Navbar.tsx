@@ -103,16 +103,16 @@ export function Navbar({ onBookClick }: { onBookClick: () => void }) {
             >
               <Logo size={24} />
             </span>
-            <span className="flex flex-col items-start leading-none">
+            <span className="flex flex-col items-start gap-1.5 leading-none sm:gap-2">
               <span
-                className={`font-serif text-lg font-semibold tracking-wide transition-colors ${
+                className={`font-serif text-base font-semibold tracking-wide transition-colors sm:text-lg ${
                   scrolled ? "text-teal" : "text-ivory"
                 }`}
               >
                 {brandName}
               </span>
               <span
-                className={`font-display text-[10px] uppercase tracking-[0.28em] transition-colors ${
+                className={`font-display text-[9px] uppercase tracking-[0.24em] transition-colors sm:text-[10px] sm:tracking-[0.28em] ${
                   scrolled ? "text-gold-deep" : "text-gold-soft"
                 }`}
               >
