@@ -7,7 +7,7 @@ import {
   ScrollText, LogOut, Lock, Loader2, Menu, X,
   Tag, FileText, ShieldCheck, Edit, Sparkles,
   BarChart3, Users, Search, ExternalLink, Image as ImageIcon,
-  Eye, EyeOff,
+  Eye, EyeOff, MapPin, Utensils, Camera, CreditCard,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +26,7 @@ type AdminUser = { id: string; email: string; name: string; role: string };
 type Tab =
   | "dashboard" | "analytics" | "bookings" | "rooms" | "offers"
   | "blog" | "reviews" | "content" | "theme"
+  | "experiences" | "dining" | "gallery" | "payment"
   | "settings" | "users" | "leads" | "audit" | "media";
 
 const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }>; group: string }[] = [
@@ -34,11 +35,15 @@ const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: st
   { id: "bookings", label: "Bookings", icon: CalendarDays, group: "Operations" },
   { id: "rooms", label: "Rooms & Rates", icon: BedDouble, group: "Operations" },
   { id: "offers", label: "Offers", icon: Tag, group: "Operations" },
+  { id: "experiences", label: "Experiences", icon: MapPin, group: "Operations" },
+  { id: "dining", label: "Dining", icon: Utensils, group: "Operations" },
+  { id: "gallery", label: "Gallery", icon: Camera, group: "Operations" },
   { id: "reviews", label: "Reviews", icon: Star, group: "Operations" },
   { id: "content", label: "Page Editor", icon: Edit, group: "Content" },
   { id: "blog", label: "Blog", icon: FileText, group: "Content" },
   { id: "media", label: "Media Library", icon: ImageIcon, group: "Content" },
   { id: "theme", label: "Theme & Colors", icon: Sparkles, group: "Settings" },
+  { id: "payment", label: "Payment Settings", icon: CreditCard, group: "Settings" },
   { id: "settings", label: "Site Settings", icon: ShieldCheck, group: "Settings" },
   { id: "users", label: "User Management", icon: Users, group: "Settings" },
   { id: "leads", label: "Leads & Messages", icon: Mail, group: "Settings" },
@@ -62,6 +67,10 @@ const UsersTab = lazy(() => import("./tabs/UsersTab").then(m => ({ default: m.Us
 const LeadsTab = lazy(() => import("./tabs/LeadsTab").then(m => ({ default: m.LeadsTab })));
 const AuditTab = lazy(() => import("./tabs/AuditTab").then(m => ({ default: m.AuditTab })));
 const MediaTab = lazy(() => import("./tabs/MediaTab").then(m => ({ default: m.MediaTab })));
+const ExperiencesTab = lazy(() => import("./tabs/ExperiencesTab").then(m => ({ default: m.ExperiencesTab })));
+const DiningTab = lazy(() => import("./tabs/DiningTab").then(m => ({ default: m.DiningTab })));
+const GalleryTab = lazy(() => import("./tabs/GalleryTab").then(m => ({ default: m.GalleryTab })));
+const PaymentTab = lazy(() => import("./tabs/PaymentTab").then(m => ({ default: m.PaymentTab })));
 
 function TabFallback() {
   return (
@@ -272,11 +281,15 @@ export function AdminPanel() {
                 {tab === "bookings" && <BookingsTab />}
                 {tab === "rooms" && <RoomsTab />}
                 {tab === "offers" && <OffersTab />}
+                {tab === "experiences" && <ExperiencesTab />}
+                {tab === "dining" && <DiningTab />}
+                {tab === "gallery" && <GalleryTab />}
                 {tab === "blog" && <BlogTab />}
                 {tab === "reviews" && <ReviewsTab />}
                 {tab === "content" && <ContentTab />}
                 {tab === "media" && <MediaTab />}
                 {tab === "theme" && <ThemeTab />}
+                {tab === "payment" && <PaymentTab />}
                 {tab === "settings" && <SettingsTab />}
                 {tab === "users" && <UsersTab />}
                 {tab === "leads" && <LeadsTab />}

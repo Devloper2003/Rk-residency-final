@@ -71,3 +71,4 @@ server.log
 tool-results/
 # Public uploads (admin-uploaded media)
 /public/uploads/
+backups/

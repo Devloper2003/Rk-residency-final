@@ -263,6 +263,17 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ ok: true, review });
       }
 
+      case "setting_create": {
+        const { key, value, label, category } = body as { key: string; value: string; label?: string; category?: string };
+        const setting = await db.siteSetting.upsert({
+          where: { key },
+          create: { key, value, label: label || key, category: category || "general" },
+          update: { value, label: label || key, category: category || "general" },
+        });
+        await db.auditLog.create({ data: { adminId: admin.id, action: "SETTING_CREATED", entity: "SiteSetting", entityId: setting.id, details: `Created setting ${key}` } });
+        return NextResponse.json({ ok: true, setting });
+      }
+
       default:
         return NextResponse.json({ error: "Unknown action" }, { status: 400 });
     }
