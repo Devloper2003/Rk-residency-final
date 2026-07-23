@@ -37,10 +37,10 @@ const STATS = [
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = { HandHeart, Sparkles, Heart, Award, Users, Quote };
 
 export function AboutPage() {
-  const titleLine1 = useContentValue("about.title_line1", "A heritage home on the");
-  const titleLine2 = useContentValue("about.title_line2", "banks of the Yamuna");
-  const image = useContentValue("about.image", "/images/heritage-room.webp");
-  const imageAlt = useContentValue("about.image_alt", "Heritage room interior at RK Residency");
+  const titleLine1 = useContentValue("about.title_line1", "A divine home on the");
+  const titleLine2 = useContentValue("about.title_line2", "Braj bhoomi");
+  const image = useContentValue("about.image", "/uploads/dd88570b240cc0ef.webp");
+  const imageAlt = useContentValue("about.image_alt", "A Peaceful Retreat in the Heart of Vrindavan");
   const imageCaptionLabel = useContentValue("about.image_caption_label", "{imageCaptionLabel}");
   const imageCaptionSub = useContentValue("about.image_caption_sub", "{imageCaptionSub}");
   const closingQuote = useContentValue("about.closing_quote", "Krishna sends them. We serve them. That is the arrangement.");
@@ -53,7 +53,7 @@ export function AboutPage() {
   return (
     <PageShell
       title={`${titleLine1} ${titleLine2}`}
-      subtitle="RK Residency began as the Khandelwal family home — a household that for three generations hosted every visiting sadhu, kirtaniya and pilgrim family that knocked on its door."
+      subtitle="Where the Divine Blessings of Shri Banke Bihari Ji Welcome Every Guest into a World of Peace, Comfort, and Heartfelt Hospitality."
       accent="teal"
     >
       <PeacockFeather size={100} className="pointer-events-none absolute right-4 top-24 hidden rotate-12 text-teal/10 lg:block" />
