@@ -14,22 +14,21 @@ const VALUES = [
 ];
 
 const TIMELINE = [
-  { year: "1986", title: "The Khandelwal home", body: "Shyam Khandelwal's grandparents build a four-room house on Parikrama Marg. The family hosts every visiting sadhu and pilgrim that knocks." },
-  { year: "2014", title: "Five rooms, no signboard", body: "After three generations, the family opens the residence to its first paying guests. Word spreads through temple circles — no marketing needed." },
-  { year: "2018", title: "Heritage Wing opens", body: "The residence expands to 35 rooms across three wings, all designed by Braj artisans. The original four rooms become the Bansuri Heritage Rooms." },
-  { year: "2022", title: "Gokul Royal Villa", body: "The two-bedroom villa with private courtyard is added for satsang groups and intimate celebrations. The in-house pandit service begins." },
-  { year: "2026", title: "Today", body: "RK Residency hosts 48,000+ devotee guests from 42 countries. The founding principle — a guest is a visiting deity — remains unchanged." },
+  { year: "2024", title: "RK Residency Opens Its Doors", body: "Established in the holy city of Vrindavan, RK Residency was founded as a tribute to the legacy of Late Shri Ravi Karan Singh and a humble offering of service to the devotees of Shri Banke Bihari Ji. Every guest was welcomed with warmth, comfort, and heartfelt hospitality." },
+  { year: "2025", title: "A Growing Family of Devotees", body: "Through genuine hospitality and memorable guest experiences, RK Residency earned the trust of pilgrims and travelers from across India. Our commitment to cleanliness, personalized service, and spiritual comfort became the foundation of our growing reputation." },
+  { year: "2026", title: "Continuing a Legacy of Service", body: "Today, RK Residency continues its journey with the same purpose that inspired its beginning—to serve every devotee with excellence, preserve the values of faith and selfless hospitality, and make every stay in Vrindavan truly unforgettable." },
+  
 ];
 
 const TEAM = [
-  { name: "Shyam Khandelwal", role: "Founder & Host", bio: "Third-generation Vrindavan resident. Personally greets every guest at check-in." },
-  { name: "Meera Khandelwal", role: "Kitchen & Cuisine", bio: "Trained in satvik cooking by the cooks of Banke Bihari Mandir. Heads the rooftop kitchen." },
-  { name: "Pandit Ramesh Sharma", role: "Resident Pandit", bio: "Conducts pujas, havans and satsangs. 25 years at the Banke Bihari aarti before joining us." },
-  { name: "Anand Tiwari", role: "Head Concierge", bio: "Walked every ghat and temple of Braj for 18 years. Arranges darshan passes and guided yatras." },
+  { name: "Shailedra Singh", role: "Founder & Managing Director", bio: "Third-generation Vrindavan resident. Personally greets every guest at check-in." },
+  { name: "Shikha Chaudhary", role: "Administrator", bio: "Committed to making every stay in Vrindavan comfortable, peaceful, and memorable." },
+  { name: "Anil Sharma", role: "Operation Manager", bio: "Passionate about operational excellence and creating memorable guest experiences every day." },
+  
 ];
 
 const STATS = [
-  { end: 12, suffix: "", label: "Years of paying hospitality" },
+  { end: 3, suffix: "", label: "Years of paying hospitality" },
   { end: 35, suffix: "", label: "Rooms, suites & villas" },
   { end: 48000, suffix: "+", label: "Devotee guests hosted" },
   { end: 42, suffix: "", label: "Countries guests come from" },
