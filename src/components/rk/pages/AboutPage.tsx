@@ -66,35 +66,40 @@ export function AboutPage() {
           </h2>
                  <div className="mt-5 space-y-4 font-display text-base leading-relaxed text-charcoal-soft">
             <p>
-              In 1986, Shyam Khandelwal's grandparents — both Vrindavan natives — built a
-              modest four-room house on Parikrama Marg, a five-minute walk from Banke Bihari
-              Mandir. They were not hoteliers; they were a Braj family. And like every Braj
-              family of their generation, they believed that the door of a home should never
-              be closed to a visitor.
-            </p>
-            <p>
-              For twenty-eight years, the house was simply the Khandelwal home. Sadhus on
-              parikrama stayed the night. Kirtaniyas from Bengal and Maharashtra came for the
-              festival seasons. ISKCON devotees from the West, lost and jet-lagged, were
-              fed satvik thalis at the family table. No one was charged. The family's
-              grandmother, Sushila Devi, would say: <em className="text-teal">"Krishna sends
-              them. We serve them. That is the arrangement."</em>
-            </p>
-            <p>
-              In 2014, after Sushila Devi's passing, the family made a difficult decision —
-              to honour her memory by opening the residence to paying guests, so the
-              hospitality she had practised for free could be sustained for generations to
-              come. They converted five rooms, hired no consultant, printed no brochure. The
-              signboard was a simple brass plate by the door: <span className="text-marsala">RK Residency</span>.
-            </p>
-            <p>
-              By 2018, word-of-mouth among temple circles had filled the residence year-round.
-              The family added the Heritage Wing, then the Gokul Royal Villa. Today, RK
-              Residency has 35 rooms, a rooftop dining pavilion, an in-house pandit, and a
-              concierge team that can arrange darshan at every major Braj temple. But the
-              founding principle — <em className="text-teal">atithi devo bhava</em>, a guest
-              is a visiting deity — has never been a slogan. It is how the family was raised.
-            </p>
+  Founded in <strong>2024</strong>, <span className="text-marsala">RK Residency</span> was established in the
+  sacred city of Vrindavan as a heartfelt tribute to the legacy of
+  <strong> Late Shri Ravi Karan Singh</strong>, whose supreme sacrifice during
+  the <em className="text-teal">Kargil War</em> continues to inspire us.
+  Guided by the divine blessings of <strong>Shri Banke Bihari Ji</strong>, our
+  vision was to create more than just a hotel—a peaceful sanctuary where every
+  devotee experiences comfort, warmth, and genuine hospitality.
+</p>
+
+<p>
+  At RK Residency, we believe that every guest who visits the holy land of
+  Vrindavan deserves to be welcomed with respect, compassion, and heartfelt
+  care. Inspired by the timeless Indian tradition of
+  <em className="text-teal"> "Atithi Devo Bhava"</em>, our dedicated team is
+  committed to ensuring that every stay becomes a memorable part of each
+  guest's spiritual journey.
+</p>
+
+<p>
+  Since opening our doors, RK Residency has proudly welcomed thousands of
+  pilgrims and travelers from across India. Every room has been thoughtfully
+  designed to provide comfort and tranquility, while our personalized service,
+  immaculate cleanliness, and peaceful atmosphere reflect the values upon which
+  our hotel was founded.
+</p>
+
+<p>
+  Today, <span className="text-marsala">RK Residency</span> continues to grow
+  with the same purpose that inspired its beginning—to serve the devotees of
+  <strong>Shri Banke Bihari Ji</strong> with humility, excellence, and warmth.
+  More than a place to stay, RK Residency is a destination where
+  <em className="text-teal"> faith, devotion, and hospitality</em> come
+  together to create unforgettable memories in the heart of Vrindavan.
+</p>
           </div>
         </div>
         <div className="lg:sticky lg:top-24 lg:self-start">
