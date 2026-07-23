@@ -1,6 +1,6 @@
-"use client";
-
 import { useEffect, useState } from "react";
+
+import { useContentValue } from "@/lib/site-content";
 import { motion } from "framer-motion";
 import { Star, BadgeCheck, Quote, ExternalLink } from "lucide-react";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
@@ -77,6 +77,11 @@ function ReviewCard({ r }: { r: Review }) {
 }
 
 export function Testimonials() {
+  const tLabel = useContentValue("testimonials.label", "Guests & devotees");
+  const tTitle = useContentValue("testimonials.title", "Voices from our Braj family");
+  const tRating = useContentValue("testimonials.aggregate_rating", "4.9");
+  const tGoogleCount = useContentValue("testimonials.google_review_count", "840+ reviews");
+  const tTripAdvisorCount = useContentValue("testimonials.tripadvisor_review_count", "400+ reviews");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 

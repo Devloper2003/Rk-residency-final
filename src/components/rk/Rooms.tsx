@@ -1,6 +1,6 @@
-"use client";
-
 import { useEffect, useState, useRef } from "react";
+
+import { useContentValue } from "@/lib/site-content";
 import { motion, useReducedMotion } from "framer-motion";
 import { Users, Maximize, BedDouble, Eye, ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -196,6 +196,9 @@ function matchFilter(room: Room, filter: string): boolean {
 }
 
 export function Rooms({ onBookRoom }: { onBookRoom: (room: Room) => void }) {
+  const rLabel = useContentValue("rooms.label", "Accommodation");
+  const rTitle = useContentValue("rooms.title", "Rooms, suites & a private villa");
+  const rSubtitle = useContentValue("rooms.subtitle", "");
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");

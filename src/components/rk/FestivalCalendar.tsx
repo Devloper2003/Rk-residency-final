@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Clock, Sparkles, ArrowRight } from "lucide-react";
+import { useContentValue, parseJsonArray } from "@/lib/site-content";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { useRouter } from "@/lib/router";
 
@@ -106,6 +107,10 @@ const ACCENT_TEXT = {
 };
 
 export function FestivalCalendar() {
+  const festLabel = useContentValue("festivals.label", "Braj Calendar");
+  const festTitle = useContentValue("festivals.title", "Braj Festival Calendar 2026");
+  const festSubtitle = useContentValue("festivals.subtitle", "");
+  const festivals = parseJsonArray(useContentValue("festivals.items", "[]"), FESTIVALS);
   const navigate = useRouter((s) => s.navigate);
 
   // Sort by date

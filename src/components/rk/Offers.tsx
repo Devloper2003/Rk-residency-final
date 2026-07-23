@@ -1,6 +1,6 @@
-"use client";
-
 import { useEffect, useState } from "react";
+
+import { useContentValue } from "@/lib/site-content";
 import { motion } from "framer-motion";
 import { Tag, Calendar, Check, ArrowRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,9 @@ type Offer = {
 };
 
 export function Offers({ onBookClick }: { onBookClick: () => void }) {
+  const oLabel = useContentValue("offers.label", "Offers & Packages");
+  const oTitle = useContentValue("offers.title", "Sacred seasons, thoughtfully packaged");
+  const oSubtitle = useContentValue("offers.subtitle", "");
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
 

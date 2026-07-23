@@ -1,5 +1,7 @@
 "use client";
 
+import { useContentValue } from "@/lib/site-content";
+
 import { motion } from "framer-motion";
 import {
   Leaf, Soup, Wheat, Flower2, Flame, Droplets, HandPlatter, Sparkles, Clock,
@@ -54,6 +56,9 @@ const FULL_MENU = [
 ];
 
 export function DiningPage() {
+  const dLabel = useContentValue("dining.label", "Satvik Dining");
+  const dTitle = useContentValue("dining.title", "Pure food, prepared with intention");
+  const dSubtitle = useContentValue("dining.subtitle", "");
   return (
     <PageShell
       title="Food as prasadam, not just sustenance"

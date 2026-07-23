@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, HelpCircle, Phone, Mail, MessageCircle } from "lucide-react";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { useRouter } from "@/lib/router";
+import { useContentValue, parseJsonArray } from "@/lib/site-content";
 import { useSettingValue } from "@/lib/site-content";
 
 type FAQ = {
@@ -97,6 +98,9 @@ export function FAQ() {
   const [open, setOpen] = useState<number | null>(0);
   const [category, setCategory] = useState("All");
   const navigate = useRouter((s) => s.navigate);
+  const faqLabel = useContentValue("faq.label", "Questions & answers");
+  const faqTitle = useContentValue("faq.title", "Everything a Braj pilgrim asks us");
+  const faqItems = parseJsonArray(useContentValue("faq.items", "[]"), FAQS);
   const phoneDisplay = useSettingValue("phone_primary", "+91 565 234 5678");
   const phoneTel = useSettingValue("phone_primary_tel", "+915652345678");
   const whatsappNumber = useSettingValue("whatsapp_number", "919876543210").replace(/[^\d]/g, "");
