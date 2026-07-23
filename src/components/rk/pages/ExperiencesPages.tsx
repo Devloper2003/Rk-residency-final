@@ -26,8 +26,8 @@ export const EXPERIENCES: Experience[] = [
   {
     slug: "banke-bihari-mandir",
     name: "Banke Bihari Mandir",
-    distance: "0.6 km",
-    walkTime: "8 min walk",
+    distance: "1.2 km",
+    walkTime: "40 min walk",
     bestTime: "dawn",
     timings: "Mangala 7:45 AM · Evening 7:00 PM",
     description:
@@ -52,8 +52,8 @@ export const EXPERIENCES: Experience[] = [
   {
     slug: "iskcon-krishna-balaram",
     name: "ISKCON Sri Krishna Balaram Mandir",
-    distance: "1.4 km",
-    walkTime: "18 min walk",
+    distance: "2.4 km",
+    walkTime: "1.5 hrs walk",
     bestTime: "evening",
     timings: "Sandhya Aarti 7:00 PM · Kirtan till 8:30 PM",
     description:
@@ -73,14 +73,14 @@ export const EXPERIENCES: Experience[] = [
       "Photography allowed in the courtyard, not inside the sanctum",
       "International visitors can request an English guide at the office",
     ],
-    image: "https://images.unsplash.com/photo-1567510297787-d5e2a5d63e0f?auto=format&fit=crop&w=1400&q=80",
+    image: "/uploads/d8278639f939d1d5.webp?auto=format&fit=crop&w=1400&q=80",
     accent: "from-teal/85 to-teal/30",
   },
   {
     slug: "prem-mandir",
     name: "Prem Mandir",
-    distance: "2.1 km",
-    walkTime: "25 min walk",
+    distance: "2 km",
+    walkTime: "60 min walk",
     bestTime: "evening",
     timings: "Illumination 7:30 PM · Closes 9:00 PM",
     description:
@@ -100,14 +100,14 @@ export const EXPERIENCES: Experience[] = [
       "Photography is permitted throughout the complex",
       "The temple is wheelchair accessible",
     ],
-    image: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1400&q=80",
+    image: "/uploads/d624900c0a75cde5.webp?auto=format&fit=crop&w=1400&q=80",
     accent: "from-gold/85 to-gold/30",
   },
   {
     slug: "nidhivan",
     name: "Nidhivan",
-    distance: "0.9 km",
-    walkTime: "12 min walk",
+    distance: "1.9 km",
+    walkTime: "1 hrs walk",
     bestTime: "day",
     timings: "Open till 6:00 PM · Closed after dusk",
     description:
@@ -127,14 +127,14 @@ export const EXPERIENCES: Experience[] = [
       "Do not attempt to stay after closing — tradition is strictly enforced",
       "Photography is allowed in the outer courtyard, not inside Rang Mahal",
     ],
-    image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1400&q=80",
+    image: "/uploads/cd5954906d1083df.webp?auto=format&fit=crop&w=1400&q=80",
     accent: "from-marsala/85 to-teal/40",
   },
   {
     slug: "yamuna-aarti-keshi-ghat",
     name: "Yamuna Aarti at Keshi Ghat",
-    distance: "1.1 km",
-    walkTime: "15 min walk",
+    distance: "2.5 km",
+    walkTime: "2 hrs walk",
     bestTime: "evening",
     timings: "Sunset Aarti · Daily (varies by season)",
     description:
@@ -154,7 +154,7 @@ export const EXPERIENCES: Experience[] = [
       "Be respectful of the river — do not throw plastic in the Yamuna",
       "Wear warm layers in winter — the ghat gets cold after sunset",
     ],
-    image: "/images/yamuna-aarti.webp",
+    image: "/uploads/63e4076580ba26bc.webp",
     accent: "from-teal-deep/85 to-marsala/40",
   },
 ];
