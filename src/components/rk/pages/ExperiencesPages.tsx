@@ -46,7 +46,7 @@ export const EXPERIENCES: Experience[] = [
       "Dress modestly — shoulders and knees covered",
       "Avoid Saturdays and Janmashtami week unless pre-booked",
     ],
-    image: "https://images.unsplash.com/photo-1604608672516-f1b9b1d37076?auto=format&fit=crop&w=1400&q=80",
+    image: "/uploads/a78f283997ee8a40.webp?auto=format&fit=crop&w=1400&q=80",
     accent: "from-marsala/85 to-marsala/30",
   },
   {
