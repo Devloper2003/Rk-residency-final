@@ -15,7 +15,23 @@ import { Contact } from "@/components/rk/Contact";
 import { Footer } from "@/components/rk/Footer";
 import { FloatingWhatsApp, ExitIntentModal } from "@/components/rk/FloatingActions";
 import { ScrollProgress } from "@/components/rk/ScrollProgress";
-import { useRouter } from "@/lib/router";
+import { useRouter, routeHref } from "@/lib/router";
+import { ArrowRight } from "lucide-react";
+
+/** "See More" button that links to a dedicated page */
+function SeeMoreButton({ href, label }: { href: string; label: string }) {
+  return (
+    <div className="flex justify-center pb-4">
+      <a
+        href={href}
+        className="group inline-flex items-center gap-2 rounded-full border border-teal/30 bg-white px-6 py-2.5 font-display text-sm font-semibold text-teal transition-all hover:bg-teal hover:text-ivory"
+      >
+        {label}
+        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+      </a>
+    </div>
+  );
+}
 import type { Room as RoomType } from "@/components/rk/Rooms";
 
 export default function Home() {
@@ -74,12 +90,19 @@ export default function Home() {
         <Hero onBookClick={openBookingCb} />
         <TrustBadges />
         <About />
+        <SeeMoreButton href="/about" label="Read our full story" />
         <Rooms onBookRoom={openBookingWithRoom} />
+        <SeeMoreButton href="/rooms" label="View all rooms & suites" />
         <Experiences />
+        <SeeMoreButton href="/experiences" label="Explore all Braj experiences" />
         <Dining />
+        <SeeMoreButton href="/dining" label="See full dining menu" />
         <Gallery />
+        <SeeMoreButton href="/gallery" label="View full gallery" />
         <Offers onBookClick={openBookingCb} />
+        <SeeMoreButton href="/offers" label="See all offers & packages" />
         <Testimonials />
+        <SeeMoreButton href="/blog" label="Read the Braj Journal" />
         <FAQ />
         <Contact />
       </main>

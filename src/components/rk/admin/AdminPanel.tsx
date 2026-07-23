@@ -26,7 +26,7 @@ type AdminUser = { id: string; email: string; name: string; role: string };
 type Tab =
   | "dashboard" | "analytics" | "bookings" | "rooms" | "offers"
   | "blog" | "reviews" | "content" | "theme"
-  | "experiences" | "dining" | "gallery" | "payment"
+  | "experiences" | "dining" | "gallery" | "payment" | "hero"
   | "settings" | "users" | "leads" | "audit" | "media";
 
 const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }>; group: string }[] = [
@@ -39,6 +39,7 @@ const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: st
   { id: "dining", label: "Dining", icon: Utensils, group: "Operations" },
   { id: "gallery", label: "Gallery", icon: Camera, group: "Operations" },
   { id: "reviews", label: "Reviews", icon: Star, group: "Operations" },
+  { id: "hero", label: "Hero Section", icon: Sparkles, group: "Content" },
   { id: "content", label: "Page Editor", icon: Edit, group: "Content" },
   { id: "blog", label: "Blog", icon: FileText, group: "Content" },
   { id: "media", label: "Media Library", icon: ImageIcon, group: "Content" },
@@ -71,6 +72,7 @@ const ExperiencesTab = lazy(() => import("./tabs/ExperiencesTab").then(m => ({ d
 const DiningTab = lazy(() => import("./tabs/DiningTab").then(m => ({ default: m.DiningTab })));
 const GalleryTab = lazy(() => import("./tabs/GalleryTab").then(m => ({ default: m.GalleryTab })));
 const PaymentTab = lazy(() => import("./tabs/PaymentTab").then(m => ({ default: m.PaymentTab })));
+const HeroTab = lazy(() => import("./tabs/HeroTab").then(m => ({ default: m.HeroTab })));
 
 function TabFallback() {
   return (
@@ -286,6 +288,7 @@ export function AdminPanel() {
                 {tab === "gallery" && <GalleryTab />}
                 {tab === "blog" && <BlogTab />}
                 {tab === "reviews" && <ReviewsTab />}
+                {tab === "hero" && <HeroTab />}
                 {tab === "content" && <ContentTab />}
                 {tab === "media" && <MediaTab />}
                 {tab === "theme" && <ThemeTab />}

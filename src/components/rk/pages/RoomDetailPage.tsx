@@ -115,13 +115,13 @@ export function RoomDetailPage({ slug }: { slug: string }) {
             </div>
           )}
         </motion.div>
-        {/* Thumbnails */}
-        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-          {gallery.slice(0, 4).map((img, i) => (
+        {/* Thumbnails — horizontal scroll on mobile, grid on desktop */}
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin lg:grid lg:grid-cols-1 lg:overflow-visible">
+          {gallery.slice(0, 6).map((img, i) => (
             <button
               key={i}
               onClick={() => setActiveImage(i)}
-              className={`relative aspect-[4/3] overflow-hidden rounded-2xl border-2 transition-all ${
+              className={`relative aspect-[4/3] h-20 w-28 shrink-0 overflow-hidden rounded-2xl border-2 transition-all lg:h-auto lg:w-auto ${
                 activeImage === i
                   ? "border-gold shadow-md"
                   : "border-transparent opacity-70 hover:opacity-100"
