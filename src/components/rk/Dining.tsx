@@ -74,13 +74,8 @@ const SIGNATURE_DISHES = [
 const AMENITIES = [
   { icon: Sparkles, label: "Daily Satvik Breakfast", group: "Dining" },
   { icon: HandPlatter, label: "In-room Dining till 10 PM", group: "Dining" },
-  { icon: BellRing, label: "Brass Diya Turn-down Ritual", group: "Service" },
-  { icon: Bath, label: "Ayurvedic Spa (Sat-Sundays)", group: "Wellness" },
-  { icon: Dumbbell, label: "Yoga Pavilion at Sunrise", group: "Wellness" },
-  { icon: Flower2, label: "Marigold Garland Daily", group: "Service" },
   { icon: Wifi, label: "High-speed Wi-Fi", group: "Connectivity" },
   { icon: Car, label: "Airport & Temple Transfers", group: "Transport" },
-  { icon: BookOpen, label: "Spiritual Library & Puja Nook", group: "Leisure" },
   { icon: Baby, label: "Family & Kids' Satvik Menu", group: "Family" },
   { icon: ShieldCheck, label: "24/7 Security & Doctor-on-call", group: "Safety" },
   { icon: Soup, label: "Private Satsang Catering", group: "Events" },
