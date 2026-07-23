@@ -102,6 +102,14 @@ export function AdminPanel() {
   useEffect(() => {
     setStored(getAdmin());
     setMounted(true);
+    // Listen for session-clear events (when a 401 is received, the session
+    // is cleared and this event fires — we need to show the login form).
+    const onSessionCleared = () => {
+      setStored(null);
+      toast.error("Session expired. Please sign in again.");
+    };
+    window.addEventListener("rk-admin-session-cleared", onSessionCleared);
+    return () => window.removeEventListener("rk-admin-session-cleared", onSessionCleared);
   }, []);
 
   const handleLogin = useCallback((admin: AdminUser, token: string) => {

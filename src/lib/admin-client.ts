@@ -33,6 +33,8 @@ export function clearAdminSession() {
   if (typeof window === "undefined") return;
   localStorage.removeItem(ADMIN_KEY);
   localStorage.removeItem(TOKEN_KEY);
+  // Dispatch event so AdminPanel can detect session loss and show login.
+  window.dispatchEvent(new Event("rk-admin-session-cleared"));
 }
 
 /**
