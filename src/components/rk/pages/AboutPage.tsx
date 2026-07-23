@@ -64,38 +64,63 @@ export function AboutPage() {
           <h2 className="font-serif text-2xl font-semibold text-charcoal sm:text-3xl">
             Our story
           </h2>
-          <div className="mt-5 space-y-4 font-display text-base leading-relaxed text-charcoal-soft">
-            <p>
-              In 1986, Shyam Khandelwal's grandparents — both Vrindavan natives — built a
-              modest four-room house on Parikrama Marg, a five-minute walk from Banke Bihari
-              Mandir. They were not hoteliers; they were a Braj family. And like every Braj
-              family of their generation, they believed that the door of a home should never
-              be closed to a visitor.
-            </p>
-            <p>
-              For twenty-eight years, the house was simply the Khandelwal home. Sadhus on
-              parikrama stayed the night. Kirtaniyas from Bengal and Maharashtra came for the
-              festival seasons. ISKCON devotees from the West, lost and jet-lagged, were
-              fed satvik thalis at the family table. No one was charged. The family's
-              grandmother, Sushila Devi, would say: <em className="text-teal">"Krishna sends
-              them. We serve them. That is the arrangement."</em>
-            </p>
-            <p>
-              In 2014, after Sushila Devi's passing, the family made a difficult decision —
-              to honour her memory by opening the residence to paying guests, so the
-              hospitality she had practised for free could be sustained for generations to
-              come. They converted five rooms, hired no consultant, printed no brochure. The
-              signboard was a simple brass plate by the door: <span className="text-marsala">RK Residency</span>.
-            </p>
-            <p>
-              By 2018, word-of-mouth among temple circles had filled the residence year-round.
-              The family added the Heritage Wing, then the Gokul Royal Villa. Today, RK
-              Residency has 35 rooms, a rooftop dining pavilion, an in-house pandit, and a
-              concierge team that can arrange darshan at every major Braj temple. But the
-              founding principle — <em className="text-teal">atithi devo bhava</em>, a guest
-              is a visiting deity — has never been a slogan. It is how the family was raised.
-            </p>
-          </div>
+          <h2 className="font-display text-4xl text-charcoal">
+
+  <p>
+    Every meaningful journey begins with a purpose, and ours is rooted in
+    <em className="text-teal"> faith, sacrifice, and selfless service.</em>
+    {" "}Hotel RK Residency was established in 2024 in the sacred city of
+    Vrindavan with a vision to provide devotees and travelers with a peaceful,
+    comfortable, and memorable stay while serving them with genuine warmth and
+    hospitality.
+  </p>
+
+  <p>
+    The inspiration behind <span className="text-marsala">RK Residency</span>
+    {" "}comes from the legacy of <strong>Late Shri Ravi Karan Singh</strong>,
+    who made the supreme sacrifice for the nation during the
+    <em className="text-teal"> Kargil War.</em> His courage, dedication, and
+    unwavering spirit continue to inspire us every day. With his blessings and
+    the divine grace of <strong>Shri Banke Bihari Ji</strong>, this hotel was
+    founded as a humble offering of service to the countless devotees visiting
+    the holy land of Vrindavan.
+  </p>
+
+  <p>
+    At RK Residency, we believe that serving the devotees of
+    <em className="text-teal"> Shri Banke Bihari Ji</em> is not merely a
+    responsibility but a privilege. Every guest is welcomed with respect, care,
+    and heartfelt hospitality. Our dedicated team strives to create an
+    atmosphere where comfort, cleanliness, and personalized service become a
+    meaningful part of every spiritual journey.
+  </p>
+
+  <p>
+    Since opening our doors in <strong>2024</strong>,
+    <span className="text-marsala"> RK Residency</span> has had the honor of
+    welcoming thousands of pilgrims and travelers from across India. Our
+    commitment has always been to provide a peaceful retreat where guests can
+    relax, rejuvenate, and focus on their spiritual experience while feeling
+    completely at home.
+  </p>
+
+  <p>
+    As we continue to grow, our purpose remains unchanged—to uphold the values
+    of <em className="text-teal">faith, integrity, and selfless service</em>.
+    Every smile we receive from our guests motivates us to continue our mission
+    of creating memorable experiences and making every visit to Vrindavan even
+    more special.
+  </p>
+
+  <p>
+    <em className="text-teal">
+      "Inspired by sacrifice, guided by faith, and dedicated to serving every
+      devotee with warmth, respect, and devotion."
+    </em>
+    {" "}— This is the spirit of
+    <span className="text-marsala"> Hotel RK Residency.</span>
+  </p>
+</div>
         </div>
         <div className="lg:sticky lg:top-24 lg:self-start">
           <div className="overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
