@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Heart, Sparkles, HandHeart, Award, Users, Quote } from "lucide-react";
 import { PageShell } from "../PageShell";
 import { Reveal, Lotus, PeacockFeather, CountUp, SectionDivider } from "../Motifs";
+import { useContentValue, parseJsonArray } from "@/lib/site-content";
 
 const VALUES = [
   { icon: HandHeart, title: "Atithi Devo Bhava", body: "A guest is a visiting deity. Every interaction — from check-in to turn-down — is conducted as a small act of devotion. We do not have 'customers'. We have guests." },
@@ -34,10 +35,25 @@ const STATS = [
   { end: 42, suffix: "", label: "Countries guests come from" },
 ];
 
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = { HandHeart, Sparkles, Heart, Award, Users, Quote };
+
 export function AboutPage() {
+  const titleLine1 = useContentValue("about.title_line1", "A heritage home on the");
+  const titleLine2 = useContentValue("about.title_line2", "banks of the Yamuna");
+  const image = useContentValue("about.image", "/images/heritage-room.webp");
+  const imageAlt = useContentValue("about.image_alt", "Heritage room interior at RK Residency");
+  const imageCaptionLabel = useContentValue("about.image_caption_label", "{imageCaptionLabel}");
+  const imageCaptionSub = useContentValue("about.image_caption_sub", "{imageCaptionSub}");
+  const closingQuote = useContentValue("about.closing_quote", "Krishna sends them. We serve them. That is the arrangement.");
+  const closingAttribution = useContentValue("about.closing_attribution", "{closingAttribution}");
+  const story = parseJsonArray<string>(useContentValue("about.story", "[]"), ["In 1986, Shyam Khandelwal's grandparents built a modest four-room house on Parikrama Marg.", "For twenty-eight years, the house was simply the Khandelwal home.", "In 2014, the family opened the residence to paying guests.", "Today, RK Residency has 35 rooms and the founding principle remains unchanged."]);
+  const values = parseJsonArray<{ icon: string; title: string; body: string }>(useContentValue("about.values", "[]"), VALUES.map(v => ({ icon: v.icon.name, title: v.title, body: v.body })));
+  const timeline = parseJsonArray<{ year: string; title: string; body: string }>(useContentValue("about.timeline", "[]"), TIMELINE);
+  const team = parseJsonArray<{ name: string; role: string; bio: string }>(useContentValue("about.team", "[]"), TEAM);
+  const stats = parseJsonArray<{ value: string; suffix: string; label: string }>(useContentValue("about.stats", "[]"), STATS.map(s => ({ value: String(s.end), suffix: s.suffix, label: s.label })));
   return (
     <PageShell
-      title="A heritage home on the banks of the Yamuna"
+      title={`${titleLine1} ${titleLine2}`}
       subtitle="RK Residency began as the Khandelwal family home — a household that for three generations hosted every visiting sadhu, kirtaniya and pilgrim family that knocked on its door."
       accent="teal"
     >
@@ -86,16 +102,16 @@ export function AboutPage() {
           <div className="overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
             <div className="aspect-[4/5] overflow-hidden">
               <img
-                src="/images/heritage-room.webp"
-                alt="Heritage room interior at RK Residency"
+                src={image}
+                alt={imageAlt}
                 className="h-full w-full object-cover"
               />
             </div>
             <div className="bg-teal px-5 py-4 text-ivory">
               <div className="font-display text-[10px] uppercase tracking-[0.28em] text-gold-soft">
-                Heritage Wing · Est. 2014
+                {imageCaptionLabel}
               </div>
-              <div className="font-serif text-lg">Hand-carved teak · Makrana marble</div>
+              <div className="font-serif text-lg">{imageCaptionSub}</div>
             </div>
           </div>
         </div>
@@ -105,10 +121,10 @@ export function AboutPage() {
       <div className="mb-16 rounded-3xl border border-charcoal/10 bg-ivory-deep p-8">
         <SectionDivider className="mb-8" />
         <div className="grid grid-cols-2 gap-6 sm:gap-8 lg:grid-cols-4">
-          {STATS.map((s) => (
-            <div key={s.label} className="text-center">
+          {stats.map((s, i) => (
+            <div key={i} className="text-center">
               <div className="font-serif text-4xl font-bold text-teal sm:text-5xl">
-                <CountUp end={s.end} suffix={s.suffix} />
+                {s.value}{s.suffix}
               </div>
               <div className="mt-2 font-display text-xs uppercase tracking-[0.2em] text-charcoal-soft sm:text-sm">
                 {s.label}
@@ -127,11 +143,13 @@ export function AboutPage() {
           </h2>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          {VALUES.map((v, i) => (
-            <Reveal key={v.title} delay={i * 0.06}>
+          {values.map((v, i) => {
+            const Icon = ICON_MAP[v.icon] || Heart;
+            return (
+            <Reveal key={i} delay={i * 0.06}>
               <div className="flex h-full items-start gap-4 rounded-2xl border border-charcoal/10 bg-white p-5 transition-all hover:border-gold/40 hover:shadow-lg">
                 <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-marsala/8 text-marsala">
-                  <v.icon className="h-5 w-5" />
+                  <Icon className="h-5 w-5" />
                 </div>
                 <div>
                   <h3 className="font-serif text-lg font-semibold text-charcoal">{v.title}</h3>
@@ -139,7 +157,8 @@ export function AboutPage() {
                 </div>
               </div>
             </Reveal>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -202,10 +221,10 @@ export function AboutPage() {
       <div className="rounded-3xl border border-gold/30 bg-gold/5 p-8 text-center">
         <Quote className="mx-auto h-8 w-8 text-gold" />
         <p className="mx-auto mt-3 max-w-2xl font-serif text-xl italic leading-relaxed text-charcoal sm:text-2xl">
-          "Krishna sends them. We serve them. That is the arrangement."
+          "{closingQuote}"
         </p>
         <div className="mt-4 font-display text-xs uppercase tracking-wider text-charcoal-soft">
-          — Sushila Devi Khandelwal, grandmother of the founder
+          {closingAttribution}
         </div>
       </div>
     </PageShell>

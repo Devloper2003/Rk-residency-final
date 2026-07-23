@@ -20,6 +20,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
+import { useContentValue, parseJsonArray } from "@/lib/site-content";
 
 const SATVIK_PRINCIPLES = [
   {
@@ -82,6 +83,7 @@ const AMENITIES = [
 ];
 
 export function Dining() {
+  const dishes = parseJsonArray<{ name: string; desc: string; price: string; veg: boolean }>(useContentValue("dining.signature_dishes", "[]"), SIGNATURE_DISHES);
   return (
     <section id="dining" className="relative bg-ivory py-24 lg:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { useContactInfo } from "@/lib/use-contact-info";
+import { useContentValue, parseJsonArray } from "@/lib/site-content";
 
 type GalleryItem = {
   src: string;
@@ -72,14 +73,16 @@ const SPAN_CLASSES: Record<NonNullable<GalleryItem["span"]>, string> = {
 
 export function Gallery() {
   const info = useContactInfo();
+  const galleryRaw = useContentValue("gallery.items", "[]");
+  const gallery = parseJsonArray<GalleryItem>(galleryRaw, GALLERY);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const close = () => setLightboxIndex(null);
   const next = () =>
-    setLightboxIndex((i) => (i === null ? null : (i + 1) % GALLERY.length));
+    setLightboxIndex((i) => (i === null ? null : (i + 1) % gallery.length));
   const prev = () =>
     setLightboxIndex((i) =>
-      i === null ? null : (i - 1 + GALLERY.length) % GALLERY.length
+      i === null ? null : (i - 1 + gallery.length) % gallery.length
     );
 
   return (
@@ -110,7 +113,7 @@ export function Gallery() {
 
         {/* Masonry grid */}
         <div className="grid auto-rows-[180px] grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4 lg:auto-rows-[240px]">
-          {GALLERY.map((item, i) => (
+          {gallery.map((item, i) => (
             <Reveal
               key={i}
               delay={(i % 4) * 0.05}
@@ -216,7 +219,7 @@ export function Gallery() {
                   {GALLERY[lightboxIndex].caption}
                 </div>
                 <div className="mt-1 font-display text-xs uppercase tracking-wider text-gold-soft">
-                  {lightboxIndex + 1} / {GALLERY.length}
+                  {lightboxIndex + 1} / {gallery.length}
                 </div>
               </div>
             </motion.div>

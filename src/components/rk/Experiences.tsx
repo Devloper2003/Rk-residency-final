@@ -3,6 +3,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { Clock, MapPin, Footprints, Sun, Moon, Sunrise } from "lucide-react";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
+import { useContentValue, parseJsonArray } from "@/lib/site-content";
 
 type Experience = {
   name: string;
@@ -81,6 +82,8 @@ const BEST_TIME_META = {
 
 export function Experiences() {
   const prefersReducedMotion = useReducedMotion();
+  const experiencesRaw = useContentValue("experiences.items", "[]");
+  const experiences = parseJsonArray<Experience>(experiencesRaw, EXPERIENCES);
   return (
     <section
       id="experiences"
@@ -127,10 +130,10 @@ export function Experiences() {
           <div className="absolute left-1/2 top-0 hidden h-full w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-gold/40 to-transparent lg:block" />
 
           <div className="space-y-12 lg:space-y-24">
-            {EXPERIENCES.map((exp, i) => {
+            {experiences.map((exp, i) => {
               const isRight = i % 2 === 1;
-              const meta = BEST_TIME_META[exp.bestTime];
-              const TimeIcon = meta.icon;
+              const meta = BEST_TIME_META[exp.bestTime as keyof typeof BEST_TIME_META] || BEST_TIME_META.day;
+              const TimeIcon = meta?.icon || Sun;
               return (
                 <div
                   key={exp.name}
@@ -162,8 +165,8 @@ export function Experiences() {
                       </div>
                       {/* Best time pill */}
                       <div className="absolute right-4 top-4 rounded-full border border-gold/40 bg-charcoal/70 px-3 py-1.5 text-xs font-medium text-ivory backdrop-blur-sm">
-                        <TimeIcon className={`mr-1 inline h-3.5 w-3.5 ${meta.color}`} />
-                        {meta.label}
+                        <TimeIcon className={`mr-1 inline h-3.5 w-3.5 ${meta?.color || "text-marsala"}`} />
+                        {meta?.label || "Anytime"}
                       </div>
                     </div>
                   </Reveal>

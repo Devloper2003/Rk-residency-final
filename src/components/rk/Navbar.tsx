@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Phone, Globe, CalendarDays } from "lucide-react";
+import { Menu, X, Phone, Globe } from "lucide-react";
 import { Logo } from "./Motifs";
-import { Button } from "@/components/ui/button";
 import { useRouter, type RouteName } from "@/lib/router";
 import { useSettingValue } from "@/lib/site-content";
 
@@ -18,7 +17,7 @@ const NAV_ITEMS: { id: string; route: RouteName; label: string; labelHi: string 
   { id: "contact", route: "contact", label: "Contact", labelHi: "संपर्क" },
 ];
 
-export function Navbar({ onBookClick }: { onBookClick: () => void }) {
+export function Navbar({ onBookClick: _onBookClick }: { onBookClick?: () => void }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [lang, setLang] = useState<"en" | "hi">("en");
@@ -184,28 +183,15 @@ export function Navbar({ onBookClick }: { onBookClick: () => void }) {
               {lang === "en" ? "EN" : "हि"}
             </button>
 
-            {/* Phone (desktop) */}
+            {/* Phone (desktop) — highlighted */}
             <a
               href={`tel:${phoneTel}`}
-              className={`hidden items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all focus-ring md:flex ${
-                scrolled
-                  ? "border-charcoal/15 text-charcoal-soft hover:border-teal/40 hover:text-teal"
-                  : "border-white/25 text-ivory/85 hover:border-gold/60 hover:text-ivory"
-              }`}
+              className="hidden items-center gap-2 rounded-full bg-gradient-to-r from-gold via-gold-soft to-gold px-4 py-2 text-sm font-bold text-charcoal shadow-md transition-all hover:from-gold-deep hover:to-gold md:inline-flex"
               aria-label={`Call ${brandName}`}
             >
-              <Phone className="h-3.5 w-3.5" />
+              <Phone className="h-4 w-4" />
               {phoneDisplay}
             </a>
-
-            {/* Book CTA */}
-            <Button
-              onClick={onBookClick}
-              className="hidden cta-glow rounded-full bg-gradient-to-r from-gold via-gold-soft to-gold px-5 py-2 text-sm font-semibold text-charcoal shadow-md hover:from-gold-deep hover:to-gold sm:inline-flex"
-            >
-              <CalendarDays className="mr-1.5 h-4 w-4" />
-              Check Availability
-            </Button>
 
             {/* Mobile hamburger */}
             <button
@@ -283,19 +269,9 @@ export function Navbar({ onBookClick }: { onBookClick: () => void }) {
                 </button>
               </nav>
               <div className="mt-auto border-t border-charcoal/10 px-5 py-4">
-                <Button
-                  onClick={() => {
-                    setMobileOpen(false);
-                    onBookClick();
-                  }}
-                  className="w-full rounded-full bg-gradient-to-r from-gold via-gold-soft to-gold py-3 font-semibold text-charcoal cta-glow"
-                >
-                  <CalendarDays className="mr-2 h-4 w-4" />
-                  Check Availability
-                </Button>
                 <a
                   href={`tel:${phoneTel}`}
-                  className="mt-3 flex items-center justify-center gap-2 text-sm font-medium text-charcoal-soft"
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-gold via-gold-soft to-gold py-3 font-bold text-charcoal shadow-md"
                 >
                   <Phone className="h-4 w-4" />
                   {phoneDisplay}

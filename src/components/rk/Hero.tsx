@@ -1,12 +1,12 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import { CalendarDays, ChevronDown, MapPin, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Diya } from "./Motifs";
 import { WeatherWidget } from "./WeatherWidget";
-import { useContentValue } from "@/lib/site-content";
+import { useContentValue, parseJsonArray } from "@/lib/site-content";
 
 export function Hero({ onBookClick }: { onBookClick: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -16,7 +16,6 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
     offset: ["start start", "end start"],
   });
 
-  // Live editable content (with fallbacks matching the original hardcoded text)
   const bgImage = useContentValue("hero.background_image", "/images/hero-vrindavan.webp");
   const locationBadge = useContentValue("hero.location_badge", "Vrindavan · On the banks of the Yamuna");
   const headlineLine1 = useContentValue("hero.headline_line1", "Where the spirit of Braj");
@@ -27,7 +26,24 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
   const ratingText = useContentValue("hero.rating_text", "4.9 · 1,240+ verified stays");
   const featuredOnText = useContentValue("hero.featured_on_text", "Featured on Google · TripAdvisor");
 
-  // Parallax layers (disabled when reduced motion)
+  // Slider
+  const slidesRaw = useContentValue("hero.slides", "[]");
+  const slides = parseJsonArray<{ image: string; headline_line1?: string; headline_line2?: string; subheadline?: string }>(slidesRaw, []);
+  const allImages = slides.length > 0 ? slides.map((s) => s.image) : [bgImage];
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    if (paused || allImages.length <= 1) return;
+    const t = setInterval(() => { setCurrentSlide((i) => (i + 1) % allImages.length); }, 5000);
+    return () => clearInterval(t);
+  }, [paused, allImages.length]);
+
+  const currentSlideData = slides[currentSlide] || {};
+  const currentHeadline1 = currentSlideData.headline_line1 || headlineLine1;
+  const currentHeadline2 = currentSlideData.headline_line2 || headlineLine2;
+  const currentSubheadline = currentSlideData.subheadline || subheadline;
+
   const skyY = useTransform(scrollYProgress, [0, 1], ["0%", prefersReducedMotion ? "0%" : "30%"]);
   const midY = useTransform(scrollYProgress, [0, 1], ["0%", prefersReducedMotion ? "0%" : "18%"]);
   const foreY = useTransform(scrollYProgress, [0, 1], ["0%", prefersReducedMotion ? "0%" : "8%"]);
@@ -40,14 +56,20 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
       id="home"
       ref={ref}
       className="relative h-[100svh] min-h-[640px] w-full overflow-hidden bg-teal-deep"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
     >
-      {/* Layer 1 — sky / background image */}
+      {/* Layer 1 — sky / background image slider */}
       <motion.div style={{ y: skyY }} className="absolute inset-0 z-0">
-        <div
-          className="h-[120%] w-full bg-cover bg-center"
-          style={{ backgroundImage: `url('${bgImage}')` }}
-          aria-hidden="true"
-        />
+        <div className="relative h-[120%] w-full" aria-hidden="true">
+          {allImages.map((img, i) => (
+            <div
+              key={i}
+              className="absolute inset-0 bg-cover bg-center transition-opacity duration-[1500ms] ease-in-out"
+              style={{ backgroundImage: `url('${img}')`, opacity: i === currentSlide ? 1 : 0 }}
+            />
+          ))}
+        </div>
       </motion.div>
 
       {/* Layer 2 — mid-ground temple silhouette & atmospheric overlay */}
@@ -101,9 +123,9 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
           transition={{ delay: 0.55, duration: 0.95, ease: [0.16, 1, 0.3, 1] }}
           className="font-serif text-4xl font-semibold leading-[1.05] text-ivory sm:text-6xl lg:text-7xl xl:text-[5.5rem]"
         >
-          {headlineLine1}
+          {currentHeadline1}
           <br />
-          <span className="text-gold-foil italic">{headlineLine2}</span>
+          <span className="text-gold-foil italic">{currentHeadline2}</span>
         </motion.h1>
 
         {/* Sub-headline */}
@@ -113,7 +135,7 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
           transition={{ delay: 0.75, duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
           className="mt-6 max-w-2xl font-display text-base leading-relaxed text-ivory/85 sm:text-xl"
         >
-          {subheadline}
+          {currentSubheadline}
         </motion.p>
 
         {/* CTAs */}
@@ -184,6 +206,22 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
           <ChevronDown className="h-4 w-4" />
         </motion.div>
       </motion.button>
+
+      {/* Slider navigation dots */}
+      {allImages.length > 1 && (
+        <div className="absolute bottom-24 left-1/2 z-50 flex -translate-x-1/2 gap-2">
+          {allImages.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentSlide(i)}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                i === currentSlide ? "w-8 bg-gold" : "w-2 bg-ivory/40 hover:bg-ivory/70"
+              }`}
+              aria-label={`Go to slide ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
