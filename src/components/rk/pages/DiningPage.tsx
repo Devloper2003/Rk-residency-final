@@ -62,22 +62,22 @@ export function DiningPage() {
   return (
     <PageShell
       title="Food as prasadam, not just sustenance"
-      subtitle="Our kitchen follows the strict satvik tradition of Braj — no onion, no garlic, no eggs. Every meal is prepared after a kitchen aarti and served as prasadam. The rooftop dining pavilion overlooks the Yamuna and serves dinner under candlelight."
+      subtitle="Our kitchen follows the strict satvik tradition of Braj — no onion, no garlic, no eggs. Every meal is prepared after a kitchen aarti and served as prasadam."
       accent="marsala"
     >
       {/* Hero image */}
       <div className="relative mb-12 aspect-[16/9] overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
         <img
-          src="/images/satvik-dining.webp"
-          alt="Satvik thali on a heritage brass plate at RK Residency"
+          src="/uploads/f32211d164477b35.webp"
+          alt="Satvik thali on a heritage crockrey plate at RK Residency"
           className="h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-transparent to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-6 text-ivory">
           <div className="font-display text-xs uppercase tracking-[0.28em] text-gold-soft">
-            Rooftop Yamuna Pavilion
+            Freshly Prepared. Thoughtfully Served.
           </div>
-          <div className="font-serif text-2xl">Dinner under candlelight, 7 PM – 10 PM</div>
+          <div className="font-serif text-2xl">Authentic Satvik Dining, Inspired by the Sacred Flavors of Braj · 7:00 PM – 10:30 PM</div>
         </div>
       </div>
 
