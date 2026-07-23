@@ -84,7 +84,6 @@ export function useSiteContent(): ContentMap | null {
   const [localVersion, setLocalVersion] = useState(contentVersion);
 
   useEffect(() => {
-    // Pick up version bumps from other tabs (admin tab saved a change).
     const onStorage = (e: StorageEvent) => {
       if (e.key === VERSION_KEY && e.newValue) {
         const v = parseInt(e.newValue, 10) || 0;
@@ -98,7 +97,6 @@ export function useSiteContent(): ContentMap | null {
         }
       }
     };
-    // Also listen for same-tab saves (admin in same tab as preview — rare but possible).
     const onCustom = () => {
       contentVersion++;
       contentCache = null;
@@ -110,9 +108,27 @@ export function useSiteContent(): ContentMap | null {
     window.addEventListener("storage", onStorage);
     window.addEventListener("rk-content-updated", onCustom);
     fetchContent().then(setContent);
+
+    // Poll every 30 seconds for fresh data — ensures admin changes
+    // appear on the public site even across different devices/browsers.
+    const pollInterval = setInterval(() => {
+      contentCache = null;
+      contentPromise = null;
+      fetchContent().then((fresh) => {
+        // Only update state if data actually changed (compare JSON)
+        setContent((prev) => {
+          if (!prev) return fresh;
+          const prevStr = JSON.stringify(prev);
+          const freshStr = JSON.stringify(fresh);
+          return prevStr === freshStr ? prev : fresh;
+        });
+      });
+    }, 30000);
+
     return () => {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener("rk-content-updated", onCustom);
+      clearInterval(pollInterval);
     };
   }, [localVersion]);
 
@@ -149,9 +165,25 @@ export function useSiteSettings(): SettingsMap | null {
     window.addEventListener("storage", onStorage);
     window.addEventListener("rk-content-updated", onCustom);
     fetchSettings().then(setSettings);
+
+    // Poll every 30 seconds for fresh data
+    const pollInterval = setInterval(() => {
+      settingsCache = null;
+      settingsPromise = null;
+      fetchSettings().then((fresh) => {
+        setSettings((prev) => {
+          if (!prev) return fresh;
+          const prevStr = JSON.stringify(prev);
+          const freshStr = JSON.stringify(fresh);
+          return prevStr === freshStr ? prev : fresh;
+        });
+      });
+    }, 30000);
+
     return () => {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener("rk-content-updated", onCustom);
+      clearInterval(pollInterval);
     };
   }, [localVersion]);
 
