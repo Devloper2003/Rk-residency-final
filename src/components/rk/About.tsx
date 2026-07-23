@@ -12,6 +12,9 @@ const stats = [
   { end: 4, suffix: "", label: "Temples within 1.5 km" },
 ];
 
+export function About() {
+  const ref = useRef<HTMLDivElement>(null);
+  const prefersReducedMotion = useReducedMotion();
   const label = useContentValue("about.label", "Our Story");
   const titleLine1 = useContentValue("about.title_line1", "A heritage home on the");
   const titleLine2 = useContentValue("about.title_line2", "banks of the Yamuna");
@@ -24,10 +27,6 @@ const stats = [
   const imageCaptionLabel = useContentValue("about.image_caption_label", "Heritage Wing");
   const imageCaptionSub = useContentValue("about.image_caption_sub", "Hand-carved teak");
   const aboutStats = parseJsonArray(useContentValue("about.stats", "[]"), stats);
-  const aboutContent = { label, titleLine1, titleLine2, bodyP1, bodyP2, founderQuote, founderName, image, imageAlt, imageCaptionLabel, imageCaptionSub, aboutStats };
-export function About() {
-  const ref = useRef<HTMLDivElement>(null);
-  const prefersReducedMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "end start"],
