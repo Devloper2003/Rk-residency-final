@@ -303,7 +303,7 @@ export function Rooms({ onBookRoom }: { onBookRoom: (room: Room) => void }) {
           <div className="mt-12">
             <SectionDivider className="mb-6" />
             <p className="text-center font-display text-sm text-charcoal-soft">
-              All rates include daily satvik breakfast, complimentary Wi-Fi &amp; assistance with temple visits.
+              All rates exclude daily satvik breakfast &amp; assistance with temple visits.
               <br />
               <span className="text-marsala">
                 Festival surge pricing applies during Janmashtami, Holi &amp; Radhashtami.
