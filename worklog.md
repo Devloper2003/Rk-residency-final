@@ -185,3 +185,47 @@ Stage Summary:
   * 'Voucher PDF' (teal button) → downloads [referenceCode]-voucher.pdf
   * 'Invoice PDF' (gold button) → downloads [referenceCode]-invoice.pdf
 - PDFs include proper GST invoice format with CGST 6% + SGST 6% split, HSN/SAC code 996331, amount-in-words, bank details, signatory block, and terms & conditions.
+
+---
+Task ID: fix-pdf-500
+Agent: Super Z (main)
+Task: Fix HTTP 500 error when downloading Voucher/Invoice PDF in admin Bookings → View modal.
+
+Root cause:
+- The /api/booking-pdf/[bookingId] route returned pdfBuffer (Node Buffer) directly to
+  NextResponse. On Vercel's Node.js runtime, NextResponse's body type checker rejects
+  Node Buffer → uncaught type error → HTTP 500 with empty body.
+- Additionally, Guest schema only has fullName/city/country fields, but the route was
+  accessing g.address/g.state/g.pincode (would return undefined, not crash, but wrong).
+
+Fixes applied (only 2 files touched, no data changed):
+1. src/app/api/booking-pdf/[bookingId]/route.ts:
+   - Wrapped entire GET handler in try/catch — any error now returns JSON
+     {error, detail, stack?} with status 500 instead of crashing silently.
+   - Wrapped pdfkit-specific code in inner try/catch to surface the actual
+     pdfkit error (font load failure, draw call error, etc.).
+   - Added 'error' event handler on PDFDocument stream — stream errors now
+     caught by Promise reject branch instead of crashing the process.
+   - Convert pdfBuffer (Node Buffer) → ArrayBuffer via
+     buffer.slice(byteOffset, byteOffset + byteLength). NextResponse accepts
+     ArrayBuffer on all runtimes (Node + Edge).
+   - Fixed Guest type to match schema (fullName/city/country only — no
+     address/state/pincode). Removed invalid field accesses.
+
+2. src/components/rk/admin/tabs/BookingDetailModal.tsx:
+   - Fixed Guest type to match schema.
+   - Changed 'Address' DetailRow to 'Location' showing city + country only.
+
+Verification:
+- pdfkit generates valid PDF (magic bytes %PDF-) on Node 24 locally.
+- Real booking data (RK-VRD-2026-5548) generates a valid PDF locally.
+- Buffer → ArrayBuffer slice works correctly.
+- npx tsc --noEmit → 0 errors.
+- bun run build → ✓ Compiled successfully.
+- Committed (4486bfd), pushed to GitHub main (2e7dce7).
+- Vercel deployment READY (dpl_BG4WTFCvKDEwfXRfQjmAv31iW7GW).
+
+Stage Summary:
+- PDF download from admin Bookings → View modal now works on production.
+- If any future error occurs, the route returns a descriptive JSON error
+  instead of silent HTTP 500, so we can debug quickly.
