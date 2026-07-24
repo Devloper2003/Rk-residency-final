@@ -25,7 +25,7 @@ const EXPERIENCES: Experience[] = [
     timings: "Mangala 7:45 AM · Evening 7:00 PM",
     description:
       "The most beloved temple of Vrindavan, home to the original Banke Bihari idol discovered by Swami Haridas. The deity's eyes are covered with a curtain — pulled aside every few minutes because it is said that gazing too long would make Krishna irresistible. Our concierge arranges reserved darshan passes for the morning mangala aarti.",
-    image: "https://images.unsplash.com/photo-1604608672516-f1b9b1d37076?auto=format&fit=crop&w=1200&q=80",
+    image: "/uploads/a78f283997ee8a40.webp?auto=format&fit=crop&w=1200&q=80",
     accent: "from-marsala/85 to-marsala/30",
   },
   {
@@ -36,7 +36,7 @@ const EXPERIENCES: Experience[] = [
     timings: "Sandhya Aarti 7:00 PM · Kirtan till 8:30 PM",
     description:
       "Founded by Srila Prabhupada in 1975, ISKCON Vrindavan is the international heart of Gaudiya Vaishnavism. The evening sandhya aarti here is a transcendent experience — kartals, mridanga, and a kirtan that often runs past 8:30 PM. International devotees will find English-speaking guides and a full prasadam hall.",
-    image: "https://images.unsplash.com/photo-1567510297787-d5e2a5d63e0f?auto=format&fit=crop&w=1200&q=80",
+    image: "/uploads/d8278639f939d1d5.webp?auto=format&fit=crop&w=1200&q=80",
     accent: "from-teal/85 to-teal/30",
   },
   {
@@ -47,7 +47,7 @@ const EXPERIENCES: Experience[] = [
     timings: "Illumination 7:30 PM · Closes 9:00 PM",
     description:
       "A white-marble wonder built by Jagadguru Kripalu Maharaj in 2012. By day it is intricate carvings of Krishna's leelas; by night it transforms into a multi-coloured light spectacle that draws thousands. Our Prem Mandir View Rooms offer a private balcony vantage — the show is best watched without the crowds below.",
-    image: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1200&q=80",
+    image: "/uploads/d624900c0a75cde5.webp?auto=format&fit=crop&w=1200&q=80",
     accent: "from-gold/85 to-gold/30",
   },
   {
@@ -58,7 +58,7 @@ const EXPERIENCES: Experience[] = [
     timings: "Open till 6:00 PM · Closed after dusk",
     description:
       "The sacred grove where, it is believed, Krishna performs the Raas Leela every night with Radha and the gopis. No one — not even the resident priests — stays inside after sunset. A small Rang Mahal temple within the grove displays the bed prepared each night for Krishna and Radha, found disturbed by morning.",
-    image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80",
+    image: "/uploads/cd5954906d1083df.webp?auto=format&fit=crop&w=1200&q=80",
     accent: "from-marsala/85 to-teal/40",
   },
   {
@@ -69,7 +69,7 @@ const EXPERIENCES: Experience[] = [
     timings: "Sunset Aarti · Daily (varies by season)",
     description:
       "Each evening at sunset, priests at Keshi Ghat perform the Yamuna Aarti — large brass lamps, conch shells, and the ancient chant of Yami-Krishna stotram. Pilgrims float small leaf-boats with marigold and diya onto the river. We arrange private boat access for our guests so you can witness the aarti from the water itself.",
-    image: "/images/yamuna-aarti.webp",
+    image: "/uploads/63e4076580ba26bc.webp",
     accent: "from-teal-deep/85 to-marsala/40",
   },
 ];
@@ -116,10 +116,10 @@ export function Experiences() {
           </Reveal>
           <Reveal delay={0.1}>
             <p className="mx-auto mt-5 max-w-2xl font-display text-base leading-relaxed text-ivory/75 sm:text-lg">
-              Five sacred sites within a 25-minute walk. Our concierge arranges
-              reserved darshan, English-speaking guides, and private boat access
-              for the Yamuna aarti — so you can travel like a pilgrim without
-              the pilgrim's queues.
+              Nestled in the sacred heart of Vrindavan,
+              RK Residency offers effortless access to revered temples,
+              warm hospitality, and thoughtfully designed comforts—creating 
+              a stay that is both spiritually enriching and truly unforgettable.
             </p>
           </Reveal>
         </div>
@@ -215,9 +215,9 @@ export function Experiences() {
             <SectionDivider className="mb-6" />
             <div className="mx-auto max-w-2xl text-center">
               <p className="font-display text-sm text-ivory/75">
-                Our concierge can arrange a private, air-conditioned temple
-                circuit for ₹2,500 per day, or a guided walking yatra with a
-                resident Vrindavan scholar for ₹1,200 per session.
+                Our team is happy to assist with local temple information,
+                transportation guidance, and recommendations to help you enjoy 
+                a smooth and spiritually enriching visit to Vrindavan.
               </p>
             </div>
           </div>
