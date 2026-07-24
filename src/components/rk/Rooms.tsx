@@ -70,7 +70,7 @@ function TiltCard({
         className="card-tilt relative overflow-hidden rounded-3xl border border-charcoal/10 bg-white shadow-[0_8px_40px_-16px_rgba(35,31,28,0.18)] transition-shadow hover:shadow-[0_18px_60px_-16px_rgba(14,76,79,0.35)]"
       >
         {/* Image with arch mask on top */}
-        <div className="relative h-72 overflow-hidden">
+        <div className="relative h-60 overflow-hidden sm:h-72">
           <div
             className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
             style={{ backgroundImage: `url(${cover})` }}
@@ -90,14 +90,14 @@ function TiltCard({
           {/* Title overlay */}
           <button
             onClick={() => navigate("room-detail", room.slug)}
-            className="absolute inset-x-0 bottom-0 p-5 text-left text-ivory focus-ring"
+            className="absolute inset-x-0 bottom-0 p-4 text-left text-ivory focus-ring sm:p-5"
             aria-label={`View ${room.name} details`}
           >
-            <div className="font-display text-xs uppercase tracking-[0.28em] text-gold-soft">
+            <div className="font-display text-[10px] uppercase tracking-[0.28em] text-gold-soft sm:text-xs">
               {room.view}
             </div>
-            <h3 className="mt-1 font-serif text-2xl font-semibold group-hover:underline">{room.name}</h3>
-            <p className="mt-0.5 font-display text-sm text-ivory/80">{room.tagline}</p>
+            <h3 className="mt-1 line-clamp-2 font-serif text-xl font-semibold leading-tight group-hover:underline sm:text-2xl">{room.name}</h3>
+            <p className="mt-0.5 line-clamp-1 font-display text-xs text-ivory/80 sm:text-sm">{room.tagline}</p>
           </button>
         </div>
 
@@ -145,27 +145,27 @@ function TiltCard({
           </div>
 
           {/* Footer: price + CTA */}
-          <div className="flex items-end justify-between border-t border-charcoal/10 pt-4">
-            <div>
+          <div className="flex items-end justify-between gap-2 border-t border-charcoal/10 pt-4">
+            <div className="min-w-0">
               <div className="text-[10px] uppercase tracking-wider text-charcoal-soft">From</div>
-              <div className="font-serif text-2xl font-bold text-teal">
+              <div className="font-serif text-xl font-bold leading-tight text-teal sm:text-2xl">
                 ₹{room.basePrice.toLocaleString("en-IN")}
                 <span className="ml-1 font-sans text-xs font-normal text-charcoal-soft">
                   / night
                 </span>
               </div>
             </div>
-            <div className="flex gap-1.5">
+            <div className="flex shrink-0 gap-1.5">
               <button
                 onClick={() => navigate("room-detail", room.slug)}
-                className="rounded-full border border-charcoal/15 bg-white px-3 py-2 font-display text-xs font-semibold text-charcoal-soft transition-all hover:border-teal hover:bg-teal hover:text-ivory"
+                className="rounded-full border border-charcoal/15 bg-white px-2.5 py-2 font-display text-xs font-semibold text-charcoal-soft transition-all hover:border-teal hover:bg-teal hover:text-ivory sm:px-3"
                 aria-label={`View ${room.name} details`}
               >
                 Details
               </button>
               <Button
                 onClick={() => onBook(room)}
-                className="group/btn rounded-full bg-teal px-4 py-2 text-sm font-semibold text-ivory transition-all hover:bg-teal-deep"
+                className="group/btn rounded-full bg-teal px-3 py-2 text-sm font-semibold text-ivory transition-all hover:bg-teal-deep sm:px-4"
               >
                 Book Now
                 <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
