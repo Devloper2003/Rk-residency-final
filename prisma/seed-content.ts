@@ -258,6 +258,11 @@ const settings = [
   { key: "og_image_url", value: "/images/hero-vrindavan.webp", label: "Default Open Graph image", category: "seo" },
 
   // ===== ANALYTICS =====
+  { key: "email_provider", value: "resend", label: "Email Provider (resend)", category: "email" },
+  { key: "email_api_key", value: "", label: "Email API Key (Resend)", category: "email" },
+  { key: "email_from", value: "bookings@rkresidencyvrindavan.in", label: "From Email Address", category: "email" },
+  { key: "email_admin_notify", value: "true", label: "Send Admin Notification Email", category: "email" },
+
   { key: "ga_measurement_id", value: "", label: "Google Analytics 4 Measurement ID (e.g. G-XXXXXXXXXX)", category: "analytics" },
 ];
 

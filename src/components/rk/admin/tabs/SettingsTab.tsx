@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Check, Loader2, Phone, Mail, MapPin, Share2, Search, Settings, BarChart3, Upload } from "lucide-react";
+import { Check, Loader2, Phone, Mail, MapPin, Share2, Search, Settings, BarChart3, Upload, ShieldCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { adminApi, LoadingSpinner } from "./_shared";
@@ -12,11 +12,14 @@ const CATEGORY_META: Record<string, { label: string; icon: React.ComponentType<{
   general: { label: "General", icon: Settings, description: "Brand identity, timings, GSTIN" },
   contact: { label: "Contact Information", icon: Phone, description: "Phone, email, address, WhatsApp, map" },
   social: { label: "Social Media", icon: Share2, description: "Instagram, Facebook, YouTube, TripAdvisor" },
+  email: { label: "Email Integration", icon: Mail, description: "Booking confirmation emails (Resend API)" },
   seo: { label: "SEO & Metadata", icon: Search, description: "Meta title, description, canonical URL, OG image" },
   analytics: { label: "Analytics", icon: BarChart3, description: "Google Analytics, tracking" },
+  payment: { label: "Payment", icon: ShieldCheck, description: "Razorpay/Stripe keys" },
 };
 
 const IMAGE_SETTINGS = new Set(["logo_image_url", "og_image_url", "favicon_url"]);
+const SECRET_SETTINGS = new Set(["email_api_key", "razorpay_key_secret", "razorpay_webhook_secret", "stripe_secret_key", "stripe_webhook_secret"]);
 
 export function SettingsTab() {
   const [settings, setSettings] = useState<any[]>([]);
@@ -96,6 +99,7 @@ export function SettingsTab() {
       <div className="grid gap-3 sm:grid-cols-2">
         {visible.map((s) => {
           const isImage = IMAGE_SETTINGS.has(s.key);
+          const isSecret = SECRET_SETTINGS.has(s.key);
           return (
             <div key={s.id} className="rounded-2xl border border-charcoal/10 bg-white p-4 shadow-sm">
               <div className="mb-2 flex items-start justify-between gap-2">
@@ -104,6 +108,7 @@ export function SettingsTab() {
                   <div className="mt-0.5 font-mono text-[10px] text-charcoal-soft">{s.key}</div>
                 </div>
                 {isImage && <Upload className="h-3.5 w-3.5 text-gold-deep" />}
+                {isSecret && <ShieldCheck className="h-3.5 w-3.5 text-teal" />}
               </div>
 
               {isImage ? (
@@ -114,10 +119,11 @@ export function SettingsTab() {
                 />
               ) : (
                 <Input
+                  type={isSecret ? "password" : "text"}
                   value={editing[s.id] || ""}
                   onChange={(e) => setEditing((p) => ({ ...p, [s.id]: e.target.value }))}
-                  className="bg-ivory-deep/30 focus-visible:ring-teal/30"
-                  placeholder={s.key === "ga_measurement_id" ? "G-XXXXXXXXXX" : ""}
+                  className="bg-ivory-deep/30 font-mono text-xs focus-visible:ring-teal/30"
+                  placeholder={isSecret ? "••••••••••••" : s.key === "ga_measurement_id" ? "G-XXXXXXXXXX" : ""}
                 />
               )}
 

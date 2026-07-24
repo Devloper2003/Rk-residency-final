@@ -150,6 +150,13 @@ export async function POST(req: Request) {
       return { booking, room };
     });
 
+    // Send confirmation email (non-blocking — booking succeeds even if email fails)
+    fetch(`${new URL(req.url).origin}/api/booking-confirmation`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingId: result.booking.id }),
+    }).catch(() => {});
+
     return NextResponse.json({
       ok: true,
       referenceCode: result.booking.referenceCode,
