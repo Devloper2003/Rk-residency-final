@@ -80,8 +80,8 @@ export function About() {
               <div className="relative overflow-hidden rounded-t-[180px] rounded-b-3xl border-4 border-gold/30 shadow-2xl">
                 <div className="aspect-[4/5] w-full overflow-hidden">
                   <img
-                    src="/images/heritage-room.webp"
-                    alt="Heritage luxury room interior with hand-carved teak jharokha window at RK Residency"
+                    src="https://rk-residency-final-three.vercel.app/images/heritage-room.webp"
+                    alt="A Peaceful Retreat in the Heart of Vrindavan."
                     className="h-full w-full object-cover"
                     loading="lazy"
                   />
