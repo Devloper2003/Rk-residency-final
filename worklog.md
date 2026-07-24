@@ -332,3 +332,56 @@ Stage Summary:
   next to logo, document label on right).
 - All text now fits within column boundaries — no overflow.
 - Layout is more spacious and professional.
+
+---
+Task ID: pdf-structured-layout-fix
+Agent: Super Z (main)
+Task: User said PDF download karke dekha — voucher aur invoice dono structured nahi aa rahe. Khud download karke analyze karke fix karo.
+
+Approach:
+- Wrote a Node script to login as admin and download actual Voucher + Invoice PDFs from production.
+- Rendered both PDFs to PNG images using pypdfium2.
+- Used VLM (vision model) to analyze the images and identify specific layout issues.
+
+VLM Analysis findings:
+1. Both PDFs: Footer was overlapping the header at the TOP of the page.
+   Root cause: drawFooter() used y = MM(18) ≈ 51pt as the divider position.
+   In pdfkit, y=0 is the TOP and y increases downward, so y=51 is near the top,
+   right below the header band. Footer text used negative offsets (y-6, y-14, y-22)
+   which pushed text UP into the header → overlap.
+   Fix: Changed footer y to PAGE_H - MM(18) ≈ 791pt (near BOTTOM of A4).
+        Changed text offsets from negative to positive so text appears BELOW divider.
+        Added missing PAGE_H = 841.89 constant.
+
+2. Invoice only: In 'Billed From' section, the word 'Pradesh' was being clipped.
+   Root cause: Address 'Near Shani Dev Mandir, Kailash Nagar, Vrindavan, Uttar Pradesh 281121'
+   wraps to 2 lines in the narrow column, but text box only had height for 1 line.
+   Fix: Increased BILL_H from 90pt to 100pt.
+        Added height: 24 to address text (allows 2-line wrap).
+        Shifted Tel/Email/GSTIN rows down to accommodate.
+        Same fix applied to 'Billed To' section (gAddr also gets height: 24).
+
+Verification after fixes:
+- Re-downloaded both PDFs from production.
+- Re-rendered to PNG and analyzed with VLM.
+- Voucher: ✓ Header clean, ✓ Footer at bottom, ✓ Structured and professional.
+- Invoice: ✓ Billed From address fully visible (no clipping),
+           ✓ Footer at bottom with no overlap,
+           ✓ Header clean,
+           ✓ Professional and structured.
+
+Files changed (1 file only, no data touched):
+- src/app/api/booking-pdf/[bookingId]/route.ts
+
+Deployments:
+- dpl_DZZGZQFiicaLjxv2uwu9mFNPoQQB (footer fix) → READY
+- dpl_48p5KdTJpSo6JwDhfruBC9PZoc18 (address clipping fix) → READY
+- Final commit e07599f pushed to GitHub main.
+
+Stage Summary:
+- Voucher and Invoice PDFs now have proper structure:
+  * Header at top (with logo, brand, document label)
+  * Content sections in the middle (no overlap)
+  * Footer at the bottom (address, contact, GSTIN, page number)
+- All text fits within column boundaries — no clipping or overflow.
+- VLM (vision model) confirmed both PDFs are professional and well-structured.
