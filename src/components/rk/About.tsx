@@ -7,7 +7,7 @@ import { Lotus, PeacockFeather, CountUp, Reveal, SectionDivider } from "./Motifs
 import { useContentValue, parseJsonArray } from "@/lib/site-content";
 const stats = [
   { end: 3, suffix: "", label: "Years of Braj hospitality" },
-  { end: 35, suffix: "", label: "Rooms, suites & villas" },
+  { end: 35, suffix: "", label: "Rooms, suites " },
   { end: 48000, suffix: "+", label: "Devotee guests hosted" },
   { end: 4, suffix: "", label: "Temples within 1.5 km" },
 ];
@@ -64,9 +64,9 @@ export function About() {
           </Reveal>
           <Reveal delay={0.05}>
             <h2 className="font-serif text-3xl font-semibold leading-tight text-charcoal sm:text-5xl lg:text-6xl">
-              A heritage home on the
+              A divine  home on the
               <br />
-              <span className="text-teal italic">banks of the Yamuna</span>
+              <span className="text-teal italic">Braj bhoomi</span>
             </h2>
           </Reveal>
         </div>
@@ -91,10 +91,10 @@ export function About() {
                 {/* Bottom caption */}
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-charcoal/85 to-transparent px-6 pb-5 pt-12">
                   <div className="font-display text-xs uppercase tracking-[0.28em] text-gold-soft">
-                    Heritage Wing · Est. 2014
+                    Heart of Vrindavan · Since 2024
                   </div>
                   <div className="font-serif text-lg text-ivory">
-                    Hand-carved teak · Makrana marble
+                    A Peaceful Retreat in the Heart of Vrindavan.
                   </div>
                 </div>
               </div>
@@ -108,15 +108,15 @@ export function About() {
                 className="absolute -bottom-8 -right-4 w-44 rounded-2xl bg-teal p-5 text-ivory shadow-xl lg:-right-8"
               >
                 <div className="font-display text-[10px] uppercase tracking-[0.28em] text-gold-soft">
-                  Since 2014
+                  EST. 2024
                 </div>
                 <div className="mt-1 font-serif text-2xl font-semibold">
-                  Welcoming
+                  Trusted by
                   <br />
-                  devotees
+                   Thousands
                 </div>
                 <div className="mt-2 text-xs text-ivory/70">
-                  from 42 countries
+                  of happy guests
                 </div>
               </motion.div>
             </div>
@@ -127,9 +127,10 @@ export function About() {
             <Reveal>
               <p className="font-serif text-2xl leading-relaxed text-charcoal sm:text-3xl">
                 <span className="text-gold-deep">"</span>
-                RK Residency began as the family home of the Khandelwals —
-                a household that for three generations hosted every visiting
-                sadhu, kirtaniya and pilgrim family that knocked on its door.
+                Inspired by the supreme sacrifice of Late Shri Ravi Karan Singh 
+                and blessed by the divine grace of Shri Banke Bihari Ji, RK Residency 
+                was created to welcome every devotee with warmth, peace, 
+                and heartfelt hospitality in the sacred heart of Vrindavan.
                 <span className="text-gold-deep">"</span>
               </p>
             </Reveal>
@@ -137,20 +138,18 @@ export function About() {
             <Reveal delay={0.1}>
               <div className="mt-6 space-y-4 text-base leading-relaxed text-charcoal-soft">
                 <p>
-                  In 2014, the family opened the residence to its first paying
-                  guests — five rooms, no website, no signboard. Word spread
-                  through temple circles. By 2018 we had grown to thirty-five
-                  rooms across three wings, but the founding principle never
-                  changed: <em className="text-teal">a guest is a visiting deity</em>,
-                  and the home is theirs.
+                  Nestled in the holy city of Vrindavan, RK Residency 
+                  is more than a hotel—it is a sanctuary where faith, 
+                  comfort, and hospitality come together. Established in 
+                  2024, our purpose has always been to create meaningful 
+                  experiences for every pilgrim who walks through our doors.
                 </p>
                 <p>
-                  Every detail — the hand-carved teak jharokhas, the marigold
-                  garland delivered to your door each dawn, the satvik thali
-                  cooked without onion or garlic, the brass diya lit at
-                  turn-down — exists in service of one feeling. That you have
-                  not checked into a hotel, but arrived at a quiet, dignified
-                  home from which to do your Braj yatra.
+                From elegantly designed accommodations to attentive 
+                  service inspired by the spirit of Atithi Devo Bhava,
+                  every detail reflects our dedication to making your 
+                  stay peaceful, memorable, and worthy of the divine 
+                  blessings of Shri Banke Bihari Ji.
                 </p>
               </div>
             </Reveal>
