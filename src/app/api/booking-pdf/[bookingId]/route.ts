@@ -386,9 +386,9 @@ function buildInvoice(doc: PDFKit.PDFDocument, b: BookingRow, cfg: Cfg, logoBuff
   }
   y += META_H + 6;
 
-  // 2. Billed From / Billed To — taller box (90pt) with all rows
+  // 2. Billed From / Billed To — taller box to fit wrapping address
   const billW = (CONTENT_W - 6) / 2;
-  const BILL_H = 90;
+  const BILL_H = 100;
   doc.rect(LEFT, y, CONTENT_W, BILL_H).fill(WHITE).strokeColor(GOLD).lineWidth(0.5).rect(LEFT, y, CONTENT_W, BILL_H).stroke();
   doc.moveTo(LEFT + billW, y).lineTo(LEFT + billW, y + BILL_H).strokeColor("#D9C8A0").lineWidth(0.3).stroke();
 
@@ -396,10 +396,11 @@ function buildInvoice(doc: PDFKit.PDFDocument, b: BookingRow, cfg: Cfg, logoBuff
   doc.fillColor(CHARCOAL_SOFT).font("Helvetica-Bold").fontSize(7).text("BILLED FROM", LEFT + 10, y + 8, { width: billW - 20 });
   doc.fillColor(TEAL).font("Helvetica-Bold").fontSize(11).text(cfg.brand_name || "RK Residency", LEFT + 10, y + 22, { width: billW - 20 });
   doc.fillColor(CHARCOAL).font("Helvetica").fontSize(8.5);
-  doc.text(cfg.address_full || "", LEFT + 10, y + 38, { width: billW - 20 });
-  doc.text(`Tel: ${cfg.phone_primary || ""}`, LEFT + 10, y + 52, { width: billW - 20 });
-  doc.text(`Email: ${cfg.email_primary || ""}`, LEFT + 10, y + 66, { width: billW - 20 });
-  doc.text(`GSTIN: ${cfg.gstin || "—"}`, LEFT + 10, y + 80, { width: billW - 20 });
+  // Address may wrap to 2 lines — give it room (height = 24pt)
+  doc.text(cfg.address_full || "", LEFT + 10, y + 38, { width: billW - 20, height: 24 });
+  doc.text(`Tel: ${cfg.phone_primary || ""}`, LEFT + 10, y + 64, { width: billW - 20 });
+  doc.text(`Email: ${cfg.email_primary || ""}`, LEFT + 10, y + 78, { width: billW - 20 });
+  doc.text(`GSTIN: ${cfg.gstin || "—"}`, LEFT + 10, y + 92, { width: billW - 20 });
 
   // Billed To (right)
   const rightX = LEFT + billW + 10;
@@ -408,9 +409,9 @@ function buildInvoice(doc: PDFKit.PDFDocument, b: BookingRow, cfg: Cfg, logoBuff
   const g = b.guest;
   const gAddr = g && (g.city || g.country) ? [g.city, g.country].filter(Boolean).join(", ") : "";
   doc.fillColor(CHARCOAL).font("Helvetica").fontSize(8.5);
-  if (gAddr) doc.text(gAddr, rightX, y + 38, { width: billW - 20 });
-  doc.text(`Tel: ${b.guestPhone}`, rightX, y + 52, { width: billW - 20 });
-  doc.text(`Email: ${b.guestEmail}`, rightX, y + 66, { width: billW - 20 });
+  if (gAddr) doc.text(gAddr, rightX, y + 38, { width: billW - 20, height: 24 });
+  doc.text(`Tel: ${b.guestPhone}`, rightX, y + 64, { width: billW - 20 });
+  doc.text(`Email: ${b.guestEmail}`, rightX, y + 78, { width: billW - 20 });
   y += BILL_H + 6;
 
   // 3. Stay summary (multi-line friendly)
