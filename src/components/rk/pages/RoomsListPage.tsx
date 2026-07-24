@@ -18,7 +18,7 @@ const FILTERS = [
   { id: "all", label: "All" },
   { id: "suite", label: "Suites" },
   { id: "deluxe", label: "Deluxe" },
-  { id: "villa", label: "Villa" },
+  { id: "family", label: "Fammily" },
   { id: "view", label: "View Rooms" },
 ];
 
@@ -26,7 +26,7 @@ function matchFilter(room: Room, filter: string) {
   if (filter === "all") return true;
   if (filter === "suite") return /suite/i.test(room.name);
   if (filter === "deluxe") return /deluxe/i.test(room.name);
-  if (filter === "villa") return /villa/i.test(room.name);
+  if (filter === "family") return /family/i.test(room.name);
   if (filter === "view") return room.badge === "View" || room.badge === "Signature";
   return true;
 }
@@ -51,8 +51,8 @@ export function RoomsListPage() {
 
   return (
     <PageShell
-      title="Rooms, suites & a private villa"
-      subtitle="Each room is individually designed with hand-carved teak, Makrana marble and Braj-region textiles. Tap any room for a full photo gallery, amenities list and direct booking."
+      title="Rooms & suites "
+      subtitle="Every room at RK Residency is thoughtfully curated to provide comfort, elegance, and a peaceful escape in the sacred city of Vrindavan. Explore each room category to view detailed amenities, photo galleries, and seamless booking options."
       accent="teal"
     >
       {/* Filters */}
@@ -164,7 +164,7 @@ export function RoomsListPage() {
       <div className="mt-12 flex items-center justify-center">
         <Lotus size={18} className="text-gold" />
         <span className="mx-3 font-display text-xs text-charcoal-soft">
-          All rates include daily satvik breakfast, Wi-Fi &amp; temple-visit assistance
+          All rates exclude daily satvik breakfast.
         </span>
         <Lotus size={18} className="text-gold" />
       </div>
