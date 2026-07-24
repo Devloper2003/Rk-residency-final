@@ -281,3 +281,54 @@ Stage Summary:
   Voucher/Invoice PDF download from admin Bookings → View modal now works
   on production. The pdfkit fonts are bundled as in-memory JavaScript
   strings, so no filesystem reads happen at runtime — fully Vercel-safe.
+
+---
+Task ID: pdf-logo-and-layout-fix
+Agent: Super Z (main)
+Task: Fix text overflow in Voucher/Invoice PDF + add RK Residency logo.
+
+User feedback:
+- "text sahi aa rha ahin bhar ja rhe hain" (text is overflowing / going out of bounds)
+- "logo rk residency ka jo diya wo aan chiye pdf pr dono ke yeha fix karo"
+  (the RK Residency logo should appear on PDFs, both voucher and invoice)
+
+Issues fixed (text overflow):
+1. Invoice meta strip: 4 equal 25% columns too narrow for GSTIN (15 chars).
+   Rebalanced to 28% / 22% / 24% / 26%.
+2. Booking reference 'RK-VRD-2026-2860' (13pt font) overflowed 119pt column.
+   Now: 40% reference column (~205pt) at 12pt font.
+3. Stay summary line too long — now 8.5pt font with proper line wrap.
+4. Bank details heading wrapped awkwardly. Split into 'BANK DETAILS' + sub-line.
+5. Line items table: rebalanced to 4% / 42% / 12% / 10% / 16% / 16%.
+6. Guest + Stay blocks: switched to labelled rows (NAME / EMAIL / PHONE / LOCATION)
+   with 7pt label + 9.5pt value, more vertical space.
+7. Billed From / Billed To: height 78pt → 90pt so all 5 rows fit without overlap.
+
+Logo added:
+- Header now embeds the actual RK Residency logo from DB (MediaAsset via
+  logo_image_url setting) instead of plain text brand name.
+- Logo loaded from PostgreSQL, converted WebP → PNG via sharp (pdfkit doesn't
+  support WebP), with teal background fill to match header band.
+- Logo fits in 38x38pt box on the left of the header in both Voucher and Invoice.
+- Graceful fallback: if logo fails to load (DB error, missing asset), header
+  shows text-only brand name — no crash.
+
+Files changed (1 file only, no data touched):
+- src/app/api/booking-pdf/[bookingId]/route.ts: complete rewrite of
+  buildVoucher, buildInvoice, drawHeader, drawFooter + new getLogoBuffer
+  helper. Imports sharp for WebP→PNG conversion.
+
+Verified locally:
+- Logo embeds successfully (150KB WebP → 36KB PNG via sharp).
+- PDF generates cleanly with logo + brand text + all sections.
+- npx tsc --noEmit → 0 errors
+- bun run build → ✓ Compiled successfully
+- Committed (1b37aec → 2599a41 after rebase), pushed to GitHub main.
+- Vercel deployment READY (dpl_2q7CKeTY2Rk6gnKw9y173HSnvHtu).
+
+Stage Summary:
+- Voucher and Invoice PDFs now show the RK Residency logo in the header
+  (teal background band, gold underline, logo on left, brand name + tagline
+  next to logo, document label on right).
+- All text now fits within column boundaries — no overflow.
+- Layout is more spacious and professional.
