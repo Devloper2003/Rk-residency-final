@@ -68,7 +68,7 @@ export function DiningPage() {
       {/* Hero image */}
       <div className="relative mb-12 aspect-[16/9] overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
         <img
-          src="/uploads/f32211d164477b35.webp"
+          src="/uploads/7233f537e89c11fd.webp"
           alt="Satvik thali on a heritage crockrey plate at RK Residency"
           className="h-full w-full object-cover"
         />
