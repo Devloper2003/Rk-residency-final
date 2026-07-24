@@ -192,8 +192,8 @@ export function Offers({ onBookClick }: { onBookClick: () => void }) {
           <div className="mt-12">
             <SectionDivider className="mb-6" />
             <p className="text-center font-display text-sm text-charcoal-soft">
-              All packages include daily satvik breakfast, complimentary Wi-Fi &amp;
-              concierge assistance. Rates are per room, inclusive of 12% GST.
+              Thoughtfully designed for your comfort, every stay includes complimentary Wi-Fi, 
+              free parking, and attentive hospitality. Room rates are inclusive of applicable GST.
             </p>
           </div>
         </Reveal>
