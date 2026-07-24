@@ -173,7 +173,7 @@ export function Dining() {
                 Signature dishes
               </h3>
               <p className="font-display text-xs uppercase tracking-wider text-ivory/70">
-                Available daily · In-room or rooftop
+                Available daily · In-room 
               </p>
             </div>
             <div className="grid grid-cols-1 divide-y divide-charcoal/10 sm:grid-cols-2 sm:divide-y-0 sm:divide-x">
