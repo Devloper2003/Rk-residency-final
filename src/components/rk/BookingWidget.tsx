@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Calendar, Users, Check, Loader2, ChevronRight, ChevronLeft,
+  X, Calendar, Users, Check, Loader2, ChevronRight, ChevronLeft, FileText,
   ShieldCheck, Sparkles, Mail, Phone, User, MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
   const [paymentMethod, setPaymentMethod] = useState<"RAZORPAY" | "STRIPE" | "PAY_AT_HOTEL">("RAZORPAY");
   const [submitting, setSubmitting] = useState(false);
   const [confirmedRef, setConfirmedRef] = useState<string | null>(null);
+  const [confirmedBookingId, setConfirmedBookingId] = useState<string | null>(null);
 
   // Load rooms
   useEffect(() => {
@@ -123,6 +124,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Booking failed");
       setConfirmedRef(data.referenceCode);
+      setConfirmedBookingId(data.bookingId);
       setStep(3);
       toast.success("Booking confirmed!", {
         description: `Reference ${data.referenceCode}`,
@@ -541,6 +543,35 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
                       </div>
                     )}
                   </motion.div>
+
+                  {/* PDF Download buttons */}
+                  {confirmedBookingId && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.6 }}
+                      className="mt-4 flex flex-wrap justify-center gap-2"
+                    >
+                      <a
+                        href={`/booking-doc/${confirmedBookingId}?type=voucher`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-teal/30 bg-teal/5 px-4 py-2 font-display text-xs font-semibold text-teal transition-all hover:bg-teal hover:text-ivory"
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        Download Voucher
+                      </a>
+                      <a
+                        href={`/booking-doc/${confirmedBookingId}?type=invoice`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/5 px-4 py-2 font-display text-xs font-semibold text-gold-deep transition-all hover:bg-gold hover:text-charcoal"
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        Download Invoice
+                      </a>
+                    </motion.div>
+                  )}
                 </div>
               )}
             </div>
