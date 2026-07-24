@@ -16,7 +16,7 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
     offset: ["start start", "end start"],
   });
 
-  const bgImage = useContentValue("hero.background_image", "/images/hero-vrindavan.webp");
+  const bgImage = useContentValue("hero.background_image", "//uploads/1b353f97f07cb823.webp");
   const locationBadge = useContentValue("hero.location_badge", "Vrindavan · On the banks of the Yamuna");
   const headlineLine1 = useContentValue("hero.headline_line1", "Where the spirit of Braj");
   const headlineLine2 = useContentValue("hero.headline_line2", "finds its rest");
@@ -231,7 +231,7 @@ export function TrustBadges() {
   const badges = [
     { label: "Best Price Guarantee", sub: "Direct booking, no OTA commission" },
     { label: "Free Cancellation", sub: "Up to 72 hours before check-in" },
-    { label: "Late Check-out", sub: "Complimentary till 2 PM on request" },
+    { label: "Late Check-out", sub: "Complimentary till 1 PM on request" },
     { label: "Satvik Breakfast", sub: "Pure vegetarian, daily included" },
   ];
   return (
