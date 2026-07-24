@@ -39,7 +39,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = { 
 export function AboutPage() {
   const titleLine1 = useContentValue("about.title_line1", "A divine home on the");
   const titleLine2 = useContentValue("about.title_line2", "Braj bhoomi");
-  const image = useContentValue("about.image", "/uploads/dd88570b240cc0ef.webp");
+  const image = useContentValue("about.image", "/uploads/5b87a4725175feac.webp");
   const imageAlt = useContentValue("about.image_alt", "A Peaceful Retreat in the Heart of Vrindavan");
   const imageCaptionLabel = useContentValue("about.image_caption_label", "{imageCaptionLabel}");
   const imageCaptionSub = useContentValue("about.image_caption_sub", "{imageCaptionSub}");
