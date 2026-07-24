@@ -16,7 +16,7 @@ export function About() {
   const ref = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion();
   const label = useContentValue("about.label", "Our Story");
-  const titleLine1 = useContentValue("about.title_line1", "A  home ondivine the");
+  const titleLine1 = useContentValue("about.title_line1", "A divine on the");
   const titleLine2 = useContentValue("about.title_line2", "Braj bhoomi");
   const bodyP1 = useContentValue("about.body_p1", "");
   const bodyP2 = useContentValue("about.body_p2", "");
