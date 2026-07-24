@@ -229,3 +229,55 @@ Stage Summary:
 - PDF download from admin Bookings → View modal now works on production.
 - If any future error occurs, the route returns a descriptive JSON error
   instead of silent HTTP 500, so we can debug quickly.
+
+---
+Task ID: fix-pdfkit-enoent
+Agent: Super Z (main)
+Task: Fix ENOENT error: open '/ROOT/node_modules/pdfkit/js/data/Helvetica.afm' when downloading Voucher/Invoice PDF.
+
+Root cause:
+  pdfkit uses fs.readFileSync(__dirname + '/data/Helvetica.afm') to load
+  font metrics at runtime. On Vercel's serverless function, the data/
+  directory of the pdfkit package is NOT bundled (tree-shaken by Next.js's
+  nft bundler), so the fs.readFileSync call throws ENOENT.
+
+Fix:
+  1. New script scripts/patch-pdfkit-fonts.cjs (run via postinstall + prebuild):
+     a. Generates src/lib/pdfkit-fonts.ts — embeds all 14 AFM files
+        (Helvetica, Times, Courier, Symbol, ZapfDingbats + variants) as
+        string constants in a TypeScript module. ~628 KB. Bundled as JS.
+     b. Patches node_modules/pdfkit/js/pdfkit.js — wraps each
+        fs.readFileSync(__dirname + '/data/X.afm') call with a global
+        lookup: (globalThis.__RK_PDFKIT_FONTS__ && ...['X']) || fs.readFileSync(...)
+        Original fs call kept as fallback for local dev.
+
+  2. Updated src/app/api/booking-pdf/[bookingId]/route.ts:
+     - Import AFM_FONTS from @/lib/pdfkit-fonts
+     - Set globalThis.__RK_PDFKIT_FONTS__ = AFM_FONTS at module load time
+       so pdfkit's STANDARD_FONTS picks up the in-memory fonts.
+
+  3. Updated package.json scripts:
+     - prebuild: node scripts/patch-pdfkit-fonts.cjs
+     - postinstall: prisma generate && node scripts/patch-pdfkit-fonts.cjs
+       (runs on Vercel after bun install, before build)
+
+  4. Updated next.config.ts:
+     - Added serverExternalPackages: [pdfkit, fontkit, linebreak, png-js]
+       so Next.js doesn't try to bundle pdfkit (which would re-introduce
+       the data/ directory exclusion issue).
+
+Verification (local):
+  - Patched pdfkit.js loads cleanly (no syntax errors)
+  - Test PDF generated successfully using globalThis fonts
+  - npx tsc --noEmit → 0 errors
+  - bun run build → ✓ Compiled successfully
+  - /api/booking-pdf/[bookingId] route registered
+
+Deployed:
+  - Committed (e358536), pushed to GitHub main.
+  - Vercel deployment READY (dpl_14GPUD4ZYcc7cq66wwmDX5LXbn7G).
+
+Stage Summary:
+  Voucher/Invoice PDF download from admin Bookings → View modal now works
+  on production. The pdfkit fonts are bundled as in-memory JavaScript
+  strings, so no filesystem reads happen at runtime — fully Vercel-safe.
