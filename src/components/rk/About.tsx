@@ -24,8 +24,8 @@ export function About() {
   const founderName = useContentValue("about.founder_name", "");
   const image = useContentValue("about.image", "/uploads/5b87a4725175feac.webp");
   const imageAlt = useContentValue("about.image_alt", "Heritage room");
-  const imageCaptionLabel = useContentValue("about.image_caption_label", "Heritage Wing");
-  const imageCaptionSub = useContentValue("about.image_caption_sub", "Hand-carved teak");
+  const imageCaptionLabel = useContentValue("about.image_caption_label", "Heart of Vrindavan");
+  const imageCaptionSub = useContentValue("about.image_caption_sub", "Heart of Vrindavan");
   const aboutStats = parseJsonArray(useContentValue("about.stats", "[]"), stats);
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -164,10 +164,10 @@ export function About() {
                   }}
                   className="rounded-full border border-teal/40 px-5 py-2 text-sm font-semibold text-teal transition-all hover:bg-teal hover:text-ivory focus-ring"
                 >
-                  Discover the Braj region
+                  Discover Vrindavan
                 </a>
                 <span className="font-display text-xs uppercase tracking-wider text-charcoal-soft">
-                  — Shyam Khandelwal, Founder
+                  — Shailedra Singh, Founder & Managing Director
                 </span>
               </div>
             </Reveal>
