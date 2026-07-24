@@ -25,7 +25,8 @@ const WHITE = "#FFFFFF";
 
 // A4 page geometry (in PDF points, 1 pt = 1/72 inch)
 const MM = (mm: number) => mm * 2.83465;
-const PAGE_W = 595.28;
+const PAGE_W = 595.28;  // A4 width in PDF points
+const PAGE_H = 841.89;  // A4 height in PDF points
 const LEFT = MM(15);
 const RIGHT = PAGE_W - MM(15);
 const CONTENT_W = RIGHT - LEFT;
@@ -159,20 +160,23 @@ function drawHeader(doc: PDFKit.PDFDocument, cfg: Cfg, label: string, y: number,
 }
 
 function drawFooter(doc: PDFKit.PDFDocument, cfg: Cfg, pageNum: number) {
-  const y = MM(18);
+  // Position the footer near the bottom of the A4 page (842pt tall).
+  // pdfkit y-axis: 0 at top, increases downward. So footer y should be ~791.
+  const y = PAGE_H - MM(18); // 842 - 51 = 791pt
   doc.lineWidth(0.6).strokeColor(GOLD).moveTo(LEFT, y).lineTo(RIGHT, y).stroke();
 
+  // Footer text BELOW the divider line (so use y + offset, not y - offset).
   doc.fillColor(CHARCOAL_SOFT).fontSize(7.5).font("Helvetica");
   const addr = cfg.address_full || "Krishna Janambhoomi Road, Vrindavan, Mathura, Uttar Pradesh 281121";
-  doc.text(`${cfg.brand_name || "RK Residency"}  ·  ${addr}`, LEFT, y - 6, { width: CONTENT_W * 0.7 });
-  doc.text(`Tel: ${cfg.phone_primary || ""}  ·  Email: ${cfg.email_primary || ""}  ·  Web: ${cfg.website_url || ""}`, LEFT, y - 14, { width: CONTENT_W * 0.7 });
+  doc.text(`${cfg.brand_name || "RK Residency"}  ·  ${addr}`, LEFT, y + 6, { width: CONTENT_W * 0.7 });
+  doc.text(`Tel: ${cfg.phone_primary || ""}  ·  Email: ${cfg.email_primary || ""}  ·  Web: ${cfg.website_url || ""}`, LEFT, y + 14, { width: CONTENT_W * 0.7 });
 
   doc.fillColor(TEAL).font("Helvetica-Bold").fontSize(7.5);
-  if (cfg.gstin) doc.text(`GSTIN: ${cfg.gstin}`, RIGHT - 110, y - 6, { width: 110, align: "right" });
-  doc.fillColor(CHARCOAL_SOFT).font("Helvetica").text(`Page ${pageNum}`, RIGHT - 110, y - 14, { width: 110, align: "right" });
+  if (cfg.gstin) doc.text(`GSTIN: ${cfg.gstin}`, RIGHT - 110, y + 6, { width: 110, align: "right" });
+  doc.fillColor(CHARCOAL_SOFT).font("Helvetica").text(`Page ${pageNum}`, RIGHT - 110, y + 14, { width: 110, align: "right" });
 
   doc.fillColor("#A39A8C").font("Helvetica-Oblique").fontSize(6.5);
-  doc.text("This is a computer-generated document — no signature required.", LEFT, y - 22, { width: CONTENT_W, align: "center" });
+  doc.text("This is a computer-generated document — no signature required.", LEFT, y + 24, { width: CONTENT_W, align: "center" });
 }
 
 function drawSectionHeader(doc: PDFKit.PDFDocument, text: string, color: string, x: number, y: number, w: number): number {
