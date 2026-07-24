@@ -141,6 +141,29 @@ export async function GET(req: Request) {
         return NextResponse.json({ bookings, total });
       }
 
+      case "booking_detail": {
+        // Returns full booking detail for admin BookingDetailModal.
+        // Includes: booking + room (full) + guest + all financial fields.
+        const id = url.searchParams.get("id") || "";
+        if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+        const booking = await db.booking.findUnique({
+          where: { id },
+          include: {
+            room: { select: { id: true, name: true, slug: true, view: true, bedType: true, maxGuests: true, sizeSqft: true, basePrice: true, imageUrls: true } },
+            guest: true,
+          },
+        });
+        if (!booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
+        // Pull relevant site settings (brand, contact, gstin) for PDF rendering.
+        const settings = await db.siteSetting.findMany({
+          where: { key: { in: ["brand_name", "brand_tagline", "phone_primary", "phone_primary_tel", "email_primary", "address_full", "gstin", "website_url"] } },
+          select: { key: true, value: true },
+        });
+        const cfg: Record<string, string> = {};
+        settings.forEach((s) => { cfg[s.key] = s.value; });
+        return NextResponse.json({ booking, settings: cfg });
+      }
+
       case "rooms": {
         const rooms = await db.room.findMany({ orderBy: [{ sortOrder: "asc" }] });
         return NextResponse.json({ rooms });

@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   Search, ArrowDownToLine, ArrowUpFromLine, IndianRupee, X,
-  RefreshCw, Inbox, Clock, Users, Filter, ChevronLeft, ChevronRight,
+  RefreshCw, Inbox, Clock, Users, Filter, ChevronLeft, ChevronRight, Eye,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { adminApi, LoadingSpinner, ErrorState } from "./_shared";
 import { refreshSiteContent } from "@/lib/site-content";
 import { ActionBtn } from "./_shared";
+import { BookingDetailModal } from "./BookingDetailModal";
 import { toast } from "sonner";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -36,6 +37,7 @@ export function BookingsTab() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [page, setPage] = useState(0);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const PAGE_SIZE = 20;
 
   const reload = useCallback(async (silent = false) => {
@@ -207,6 +209,7 @@ export function BookingsTab() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
+                        <ActionBtn label="View" icon={Eye} onClick={() => setDetailId(b.id)} />
                         {b.status === "CONFIRMED" && <ActionBtn label="Check-in" icon={ArrowDownToLine} onClick={() => action(b.id, "CHECK_IN")} />}
                         {b.status === "CHECKED_IN" && <ActionBtn label="Check-out" icon={ArrowUpFromLine} onClick={() => action(b.id, "CHECK_OUT")} />}
                         {b.paymentStatus === "PENDING" && <ActionBtn label="Mark paid" icon={IndianRupee} onClick={() => action(b.id, "MARK_PAID")} />}
@@ -238,6 +241,13 @@ export function BookingsTab() {
           </div>
         </div>
       )}
+
+      {/* Booking detail modal — opens on "View" click */}
+      <BookingDetailModal
+        bookingId={detailId}
+        onClose={() => setDetailId(null)}
+        onStatusChange={() => reload(true)}
+      />
     </div>
   );
 }
