@@ -91,3 +91,27 @@ devotee families and cultural travellers.
 8. Add multi-language (Hindi/English) content.
 9. Add Review JSON-LD to testimonials section.
 10. Add a "Book a Temple Tour" confirmation email.
+
+---
+Task ID: restore-upload-route
+Agent: Super Z (main)
+Task: Restore accidentally-deleted /api/admin/upload route that was causing "load retry again" error in admin Media Library and other tabs using ImageUploader.
+
+Work Log:
+- Diagnosed: `src/app/api/admin/upload/route.ts` was deleted in commit e6c43f3 (Redesign room detail page) — 134 lines removed but not noticed because the commit was about RoomDetailPage.
+- Impact: MediaTab GET → 404 → "Could not load media. Try again." error.
+  Also affected: HeroTab, RoomsTab, BlogTab, OffersTab, ExperiencesTab, DiningTab,
+  GalleryTab, ContentTab, SettingsTab — all use ImageUploader which POSTs to /api/admin/upload.
+- Restored the file exactly from commit ee4cc51 (no content changes).
+- Verified: `npx tsc --noEmit` → 0 errors.
+- Committed as c03c085, pushed to GitHub main.
+- Triggered Vercel production redeploy (dpl_4vvxt5E3bjvtzWKa1K6qgHZTZRta) → READY.
+- Verified production endpoints:
+  - https://rk-residency-final-three.vercel.app/api/admin/upload → HTTP 401 (correct, requires auth)
+  - https://rk-residency-final-three.vercel.app/ → HTTP 200
+  - https://rk-residency-final-three.vercel.app/admin → HTTP 200
+
+Stage Summary:
+- Bug fixed: admin Media Library and all image-upload flows now work again on production.
+- No data, content, settings, or other code files were modified.
+- The only file touched is `src/app/api/admin/upload/route.ts` (restored from git history).
