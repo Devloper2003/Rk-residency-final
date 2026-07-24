@@ -6,7 +6,7 @@ import { Lotus, PeacockFeather, CountUp, Reveal, SectionDivider } from "./Motifs
 
 import { useContentValue, parseJsonArray } from "@/lib/site-content";
 const stats = [
-  { end: 12, suffix: "", label: "Years of Braj hospitality" },
+  { end: 3, suffix: "", label: "Years of Braj hospitality" },
   { end: 35, suffix: "", label: "Rooms, suites & villas" },
   { end: 48000, suffix: "+", label: "Devotee guests hosted" },
   { end: 4, suffix: "", label: "Temples within 1.5 km" },
@@ -16,13 +16,13 @@ export function About() {
   const ref = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion();
   const label = useContentValue("about.label", "Our Story");
-  const titleLine1 = useContentValue("about.title_line1", "A heritage home on the");
-  const titleLine2 = useContentValue("about.title_line2", "banks of the Yamuna");
+  const titleLine1 = useContentValue("about.title_line1", "A  home ondivine the");
+  const titleLine2 = useContentValue("about.title_line2", "Braj bhoomi");
   const bodyP1 = useContentValue("about.body_p1", "");
   const bodyP2 = useContentValue("about.body_p2", "");
   const founderQuote = useContentValue("about.founder_quote", "");
   const founderName = useContentValue("about.founder_name", "");
-  const image = useContentValue("about.image", "/images/heritage-room.webp");
+  const image = useContentValue("about.image", "/uploads/5b87a4725175feac.webp");
   const imageAlt = useContentValue("about.image_alt", "Heritage room");
   const imageCaptionLabel = useContentValue("about.image_caption_label", "Heritage Wing");
   const imageCaptionSub = useContentValue("about.image_caption_sub", "Hand-carved teak");
