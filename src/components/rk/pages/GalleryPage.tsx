@@ -15,21 +15,21 @@ type GalleryItem = {
 };
 
 const GALLERY: GalleryItem[] = [
-  { src: "/images/hero-vrindavan.webp", alt: "Sunrise over Vrindavan temple skyline", caption: "Sunrise over the temple skyline", category: "Temples" },
-  { src: "/images/heritage-room.webp", alt: "Heritage luxury room with jharokha window", caption: "Yamuna Suite — jharokha window", category: "Rooms" },
-  { src: "/images/yamuna-aarti.webp", alt: "Yamuna aarti at dusk", caption: "Yamuna aarti at Keshi Ghat", category: "Rituals" },
-  { src: "/images/satvik-dining.webp", alt: "Satvik thali on brass plate", caption: "Braj Thali — rooftop dining", category: "Dining" },
-  { src: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80", alt: "Temple architecture detail", caption: "Prem Mandir marble detail", category: "Temples" },
-  { src: "https://images.unsplash.com/photo-1604608672516-f1b9b1d37076?auto=format&fit=crop&w=1200&q=80", alt: "Marigold and diya offerings", caption: "Marigold & diya — daily offerings", category: "Rituals" },
-  { src: "https://images.unsplash.com/photo-1567510297787-d5e2a5d63e0f?auto=format&fit=crop&w=1200&q=80", alt: "ISKCON kirtan", caption: "ISKCON evening kirtan", category: "Temples" },
-  { src: "https://images.unsplash.com/photo-1583077874344-53b0e8a7b9ee?auto=format&fit=crop&w=1200&q=80", alt: "Holi festival colours", caption: "Holi at the Braj courtyard", category: "Festivals" },
-  { src: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80", alt: "Modern hotel room", caption: "Prem Mandir View Room — balcony", category: "Rooms" },
-  { src: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=1200&q=80", alt: "Suite interior", caption: "Radha Rani Junior Suite", category: "Rooms" },
-  { src: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80", alt: "Banke Bihari Deluxe room", caption: "Banke Bihari Deluxe — courtyard view", category: "Rooms" },
-  { src: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80", alt: "Family suite", caption: "Gokul Royal Villa courtyard", category: "Rooms" },
-  { src: "https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=1200&q=80", alt: "Hotel room desk", caption: "Heritage writing desk", category: "Rooms" },
-  { src: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1200&q=80", alt: "Temple at night", caption: "Prem Mandir night illumination", category: "Temples" },
-  { src: "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80", alt: "Hotel room interior", caption: "Bansuri Heritage Room — jharokha seat", category: "Rooms" },
+  { src: "/uploads/77c2e9079bcad2e4.webp", alt: "Sunrise over Vrindavan temple skyline", caption: "Sunrise over the temple skyline", category: "Temples" },
+  { src: "/uploads/5b87a4725175feac.webp", alt: "RK residency vrindavan", caption: "RK Residency ", category: "Rooms" },
+  { src: "/uploads/63e4076580ba26bc.webp", alt: "Yamuna aarti at dusk", caption: "Yamuna aarti at Keshi Ghat", category: "Rituals" },
+  { src: "/uploads/7ff0f47ff2a66e6b.webp", alt: "Satvik thali on brass plate", caption: "Braj Thali — rooftop dining", category: "Dining" },
+  { src: "/uploads/602dc906088e4031.webp?auto=format&fit=crop&w=1200&q=80", alt: "Temple architecture detail", caption: "Prem Mandir marble detail", category: "Temples" },
+  { src: "/uploads/e120b636d3572317.webp?auto=format&fit=crop&w=1200&q=80", alt: "Marigold and diya offerings", caption: "Marigold & diya — daily offerings", category: "Rituals" },
+  { src: "/uploads/59eababd45bb5dda.webp?auto=format&fit=crop&w=1200&q=80", alt: "ISKCON kirtan", caption: "ISKCON evening kirtan", category: "Temples" },
+  { src: "/uploads/430045b2d369a607.webp?auto=format&fit=crop&w=1200&q=80", alt: "Holi festival colours", caption: "Holi at the Braj courtyard", category: "Festivals" },
+  { src: "/uploads/af2e8feb184ff8c2.webp?auto=format&fit=crop&w=1200&q=80", alt: "Boat Festival", caption: "Boat Festival Iskon Temple", category: "Festivals" },
+  { src: "/uploads/e38ce58bc7bd3dbb.webp?auto=format&fit=crop&w=1200&q=80", alt: "Yamuna view", caption: "Yamuna view - flying birds", category: "Temples" },
+  { src: "/uploads/3c15d4a30a5b3073.webp?auto=format&fit=crop&w=1200&q=80", alt: "Banke Bihari Mandi", caption: "Banke Bihari Mandir — Gate view", category: "Temples" },
+  { src: "/uploads/d8278639f939d1d5.webp?auto=format&fit=crop&w=1200&q=80", alt: "Iskon Temple", caption: "Iskon temple vrindavan", category: "Temples" },
+  { src: "/uploads/430045b2d369a607.webp?auto=format&fit=crop&w=1200&q=80", alt: "Braj Holi", caption: "Vrindavan - Braj Holi ", category: "Festivals" },
+  { src: "/uploads/ce4bce1d00cb8882.webp?auto=format&fit=crop&w=1200&q=80", alt: "Temple at night", caption: "Prem Mandir night illumination", category: "Temples" },
+  { src: "/uploads/4eb433665c6fa58f.webp?auto=format&fit=crop&w=1200&q=80", alt: "Shree Ladli Ji Sarkar", caption: "Radha Rani Temple Barsana ", category: "Temples" },
 ];
 
 const CATEGORIES = ["All", "Temples", "Rooms", "Rituals", "Dining", "Festivals"];
@@ -49,8 +49,8 @@ export function GalleryPage() {
 
   return (
     <PageShell
-      title="A glimpse of Braj"
-      subtitle="Step inside RK Residency — heritage interiors, the Yamuna ghats, temple rituals and the changing colours of Vrindavan through the year."
+      title="The Timeless Beauty of Braj"
+      subtitle="Every photograph tells a story of comfort, devotion, and heartfelt hospitality in the sacred city of Vrindavan."
       accent="gold"
     >
       {/* Filter pills */}
