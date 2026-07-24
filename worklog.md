@@ -115,3 +115,50 @@ Stage Summary:
 - Bug fixed: admin Media Library and all image-upload flows now work again on production.
 - No data, content, settings, or other code files were modified.
 - The only file touched is `src/app/api/admin/upload/route.ts` (restored from git history).
+
+---
+Task ID: voucher-invoice-pdfs
+Agent: Super Z (main)
+Task: Generate actual PDF templates for Voucher and Invoice (user requested PDF format, not just HTML).
+
+Work Log:
+- Loaded the `pdf` skill, routed to `briefs/report.md` (invoice/receipt = ReportLab table-heavy pattern).
+- Created `/home/z/my-project/scripts/generate-voucher-invoice-pdfs.py` using ReportLab.
+- Used Liberation Serif (Tinos files in /usr/share/fonts/truetype/english/ are corrupted HTML).
+- Used Carlito for sans-serif. Brand palette: teal (#0E4C4F) + gold (#C9A24A) on ivory.
+- Built two PDFs with sample RK Residency booking data:
+  1. RK-Residency-Booking-Voucher-Template.pdf (1 page, 113 KB)
+     - Teal/gold header band with brand name + tagline
+     - Reference code + voucher date + booking date strip
+     - Payment status banner (teal-deep)
+     - Guest details + Stay details side-by-side
+     - Room specifications table (4 columns)
+     - Charges summary table (per night × nights = amount)
+     - Inclusions note
+     - Special requests block (gold)
+     - Cancellation policy block (marsala)
+     - Personalised thank-you note with check-in instructions
+  2. RK-Residency-Tax-Invoice-Template.pdf (1 page, 113 KB)
+     - Same header band, "TAX INVOICE" label
+     - Invoice meta strip (Invoice No, Date, Booking Ref, GSTIN)
+     - Billed From / Billed To side-by-side
+     - Stay summary line
+     - Full GST line-item table with HSN/SAC code (996331 for hotel accommodation),
+       CGST 6% + SGST 6% breakdown, grand total in teal-deep band
+     - Amount-in-words block
+     - Payment status block (Paid / Balance Due / Total)
+     - Bank details (HDFC, A/C, IFSC, UPI) + Authorised signatory block
+     - 5-point Terms & Conditions
+- Generated PNG previews for quick visual review.
+- Both PDFs are 1 page each (verified with pypdf).
+
+Stage Summary:
+- 4 files produced in /home/z/my-project/download/:
+  - RK-Residency-Booking-Voucher-Template.pdf
+  - RK-Residency-Booking-Voucher-Template-preview.png
+  - RK-Residency-Tax-Invoice-Template.pdf
+  - RK-Residency-Tax-Invoice-Template-preview.png
+- These are SAMPLE/TEMPLATE PDFs using representative booking data so the client
+  can see what the final voucher and invoice will look like.
+- Script is saved at scripts/generate-voucher-invoice-pdfs.py — re-runnable for
+  template changes (edit SAMPLE dict at top of script).
