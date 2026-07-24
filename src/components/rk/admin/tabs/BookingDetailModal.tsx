@@ -20,9 +20,12 @@ type Room = {
   maxGuests?: number | null; sizeSqft?: number | null; basePrice?: number | null;
 };
 type Guest = {
-  name: string; email: string; phone: string;
-  address?: string | null; city?: string | null; state?: string | null;
-  pincode?: string | null; country?: string | null;
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  country?: string | null;
+  city?: string | null;
 };
 type Booking = {
   id: string;
@@ -197,12 +200,10 @@ export function BookingDetailModal({ bookingId, onClose, onStatusChange }: Props
                     <DetailRow icon={User} label="Name" value={booking.guestName} />
                     <DetailRow icon={Mail} label="Email" value={booking.guestEmail} />
                     <DetailRow icon={Phone} label="Phone" value={booking.guestPhone} />
-                    {booking.guest?.address && (
-                      <DetailRow icon={MapPin} label="Address" value={[
-                        booking.guest.address,
-                        booking.guest.city,
-                        booking.guest.state,
-                        booking.guest.pincode,
+                    {(booking.guest?.city || booking.guest?.country) && (
+                      <DetailRow icon={MapPin} label="Location" value={[
+                        booking.guest?.city,
+                        booking.guest?.country,
                       ].filter(Boolean).join(", ")} />
                     )}
                   </dl>

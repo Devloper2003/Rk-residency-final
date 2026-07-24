@@ -95,7 +95,7 @@ interface BookingRow {
   paymentRef: string | null;
   createdAt: Date;
   room?: { name: string; slug: string; view?: string | null; bedType?: string | null; maxGuests?: number | null; sizeSqft?: number | null; basePrice?: number | null; imageUrls?: string | null } | null;
-  guest?: { id: string; name: string; email: string; phone: string; address?: string | null; city?: string | null; state?: string | null; pincode?: string | null; country?: string | null } | null;
+  guest?: { id: string; fullName: string; email: string; phone: string; country?: string | null; city?: string | null } | null;
 }
 
 // ─── PDF drawing helpers ─────────────────────────────────────────────
@@ -188,8 +188,8 @@ function buildVoucher(doc: PDFKit.PDFDocument, b: BookingRow, cfg: Cfg) {
   doc.text(b.guestPhone, guestX + 8, guestY, { width: blockW - 16 });
   guestY += 12;
   const g = b.guest;
-  if (g && (g.address || g.city)) {
-    const addr = [g.address, g.city, g.state, g.pincode].filter(Boolean).join(", ");
+  if (g && (g.city || g.country)) {
+    const addr = [g.city, g.country].filter(Boolean).join(", ");
     doc.fillColor(CHARCOAL_SOFT).fontSize(8.5).text(addr, guestX + 8, guestY, { width: blockW - 16 });
   }
   // Outline guest block
@@ -359,7 +359,7 @@ function buildInvoice(doc: PDFKit.PDFDocument, b: BookingRow, cfg: Cfg) {
   doc.fillColor(CHARCOAL_SOFT).font("Helvetica-Bold").fontSize(8).text("BILLED TO", rightX, y + 6, { width: billW - 20 });
   doc.fillColor(TEAL).font("Helvetica-Bold").fontSize(11).text(b.guestName, rightX, y + 18, { width: billW - 20 });
   const g = b.guest;
-  const gAddr = g && (g.address || g.city) ? [g.address, g.city, g.state, g.pincode].filter(Boolean).join(", ") : "";
+  const gAddr = g && (g.city || g.country) ? [g.city, g.country].filter(Boolean).join(", ") : "";
   doc.fillColor(CHARCOAL).font("Helvetica").fontSize(9);
   if (gAddr) doc.text(gAddr, rightX, y + 32, { width: billW - 20 });
   doc.text(`Tel: ${b.guestPhone}`, rightX, y + 44, { width: billW - 20 });
@@ -527,74 +527,101 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ bookingId: string }> }
 ) {
-  const { bookingId } = await params;
-  const url = new URL(req.url);
-  const type = (url.searchParams.get("type") || "voucher").toLowerCase();
-  if (type !== "voucher" && type !== "invoice") {
-    return NextResponse.json({ error: "Invalid type. Use ?type=voucher or ?type=invoice" }, { status: 400 });
+  try {
+    const { bookingId } = await params;
+    const url = new URL(req.url);
+    const type = (url.searchParams.get("type") || "voucher").toLowerCase();
+    if (type !== "voucher" && type !== "invoice") {
+      return NextResponse.json({ error: "Invalid type. Use ?type=voucher or ?type=invoice" }, { status: 400 });
+    }
+
+    // Admin auth required — guests use /booking-doc/[id] print route
+    const admin = await verifyAdmin(req);
+    if (!admin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const booking = (await db.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        room: { select: { id: true, name: true, slug: true, view: true, bedType: true, maxGuests: true, sizeSqft: true, basePrice: true, imageUrls: true } },
+        guest: true,
+      },
+    })) as BookingRow | null;
+
+    if (!booking) {
+      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+    }
+
+    // Load site settings for branding
+    const settings = await db.siteSetting.findMany({
+      where: { key: { in: ["brand_name", "brand_tagline", "phone_primary", "phone_primary_tel", "email_primary", "address_full", "gstin", "website_url"] } },
+      select: { key: true, value: true },
+    });
+    const cfg: Cfg = {};
+    settings.forEach((s) => { cfg[s.key] = s.value; });
+    // Apply sensible defaults if settings are missing
+    cfg.brand_name = cfg.brand_name || "RK Residency";
+    cfg.brand_tagline = cfg.brand_tagline || "Heritage Luxury in Vrindavan";
+    cfg.phone_primary = cfg.phone_primary || "+91 565 234 5678";
+    cfg.email_primary = cfg.email_primary || "reservations@rkresidencyvrindavan.in";
+    cfg.address_full = cfg.address_full || "Krishna Janambhoomi Road, Vrindavan, Mathura, Uttar Pradesh 281121";
+    cfg.website_url = cfg.website_url || "www.rkresidencyvrindavan.in";
+    cfg.gstin = cfg.gstin || "—";
+
+    // Build PDF — wrapped in try/catch to surface the actual error
+    let pdfBuffer: Buffer;
+    try {
+      const doc = new PDFDocument({ size: "A4", margin: 0, info: {
+        Title: `${cfg.brand_name} — ${type === "invoice" ? "Tax Invoice" : "Booking Voucher"} — ${booking.referenceCode}`,
+        Author: cfg.brand_name,
+        Subject: type === "invoice" ? "Tax Invoice (GST)" : "Booking Confirmation Voucher",
+        Creator: "RK Residency Booking System",
+      } });
+
+      // Collect PDF into a Buffer using Promise that rejects on error
+      pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
+        const chunks: Buffer[] = [];
+        doc.on("data", (c: Buffer) => chunks.push(c));
+        doc.on("end", () => resolve(Buffer.concat(chunks)));
+        doc.on("error", (e: Error) => reject(e));
+        try {
+          if (type === "invoice") buildInvoice(doc, booking, cfg);
+          else buildVoucher(doc, booking, cfg);
+          doc.end();
+        } catch (e) {
+          reject(e instanceof Error ? e : new Error(String(e)));
+        }
+      });
+    } catch (pdfErr) {
+      console.error("[booking-pdf] PDF generation failed:", pdfErr);
+      return NextResponse.json({
+        error: "PDF generation failed",
+        detail: pdfErr instanceof Error ? pdfErr.message : String(pdfErr),
+        stack: process.env.NODE_ENV === "development" && pdfErr instanceof Error ? pdfErr.stack : undefined,
+      }, { status: 500 });
+    }
+
+    const filename = `${cfg.brand_name || "RK-Residency"}-${type === "invoice" ? "Tax-Invoice" : "Booking-Voucher"}-${booking.referenceCode}.pdf`.replace(/\s+/g, "-");
+
+    // Use Response with ArrayBuffer body — most compatible across Vercel runtimes.
+    // NextResponse body type is strict; ArrayBuffer is universally accepted.
+    const arrayBuf = pdfBuffer.buffer.slice(pdfBuffer.byteOffset, pdfBuffer.byteOffset + pdfBuffer.byteLength) as ArrayBuffer;
+
+    return new NextResponse(arrayBuf, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Length": String(pdfBuffer.length),
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  } catch (e) {
+    console.error("[booking-pdf] route error:", e);
+    return NextResponse.json({
+      error: "Server error",
+      detail: e instanceof Error ? e.message : String(e),
+    }, { status: 500 });
   }
-
-  // Admin auth required — guests use /booking-doc/[id] print route
-  const admin = await verifyAdmin(req);
-  if (!admin) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const booking = (await db.booking.findUnique({
-    where: { id: bookingId },
-    include: {
-      room: { select: { id: true, name: true, slug: true, view: true, bedType: true, maxGuests: true, sizeSqft: true, basePrice: true, imageUrls: true } },
-      guest: true,
-    },
-  })) as BookingRow | null;
-
-  if (!booking) {
-    return NextResponse.json({ error: "Booking not found" }, { status: 404 });
-  }
-
-  // Load site settings for branding
-  const settings = await db.siteSetting.findMany({
-    where: { key: { in: ["brand_name", "brand_tagline", "phone_primary", "phone_primary_tel", "email_primary", "address_full", "gstin", "website_url"] } },
-    select: { key: true, value: true },
-  });
-  const cfg: Cfg = {};
-  settings.forEach((s) => { cfg[s.key] = s.value; });
-  // Apply sensible defaults if settings are missing
-  cfg.brand_name = cfg.brand_name || "RK Residency";
-  cfg.brand_tagline = cfg.brand_tagline || "Heritage Luxury in Vrindavan";
-  cfg.phone_primary = cfg.phone_primary || "+91 565 234 5678";
-  cfg.email_primary = cfg.email_primary || "reservations@rkresidencyvrindavan.in";
-  cfg.address_full = cfg.address_full || "Krishna Janambhoomi Road, Vrindavan, Mathura, Uttar Pradesh 281121";
-  cfg.website_url = cfg.website_url || "www.rkresidencyvrindavan.in";
-  cfg.gstin = cfg.gstin || "—";
-
-  // Build PDF
-  const doc = new PDFDocument({ size: "A4", margin: 0, info: {
-    Title: `${cfg.brand_name} — ${type === "invoice" ? "Tax Invoice" : "Booking Voucher"} — ${booking.referenceCode}`,
-    Author: cfg.brand_name,
-    Subject: type === "invoice" ? "Tax Invoice (GST)" : "Booking Confirmation Voucher",
-    Creator: "RK Residency Booking System",
-  } });
-
-  // Collect PDF into a Buffer
-  const chunks: Buffer[] = [];
-  doc.on("data", (c: Buffer) => chunks.push(c));
-  const pdfBuffer: Buffer = await new Promise((resolve) => {
-    doc.on("end", () => resolve(Buffer.concat(chunks)));
-    if (type === "invoice") buildInvoice(doc, booking, cfg);
-    else buildVoucher(doc, booking, cfg);
-    doc.end();
-  });
-
-  const filename = `${cfg.brand_name || "RK-Residency"}-${type === "invoice" ? "Tax-Invoice" : "Booking-Voucher"}-${booking.referenceCode}.pdf`.replace(/\s+/g, "-");
-
-  return new NextResponse(pdfBuffer as any, {
-    status: 200,
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Length": String(pdfBuffer.length),
-      "Content-Disposition": `attachment; filename="${filename}"`,
-      "Cache-Control": "no-store",
-    },
-  });
 }
