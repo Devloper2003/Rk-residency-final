@@ -182,7 +182,7 @@ const FILTERS = [
   { id: "all", label: "All Rooms" },
   { id: "suite", label: "Suites" },
   { id: "deluxe", label: "Deluxe" },
-  { id: "villa", label: "Villa" },
+  { id: "villa", label: "family" },
   { id: "view", label: "View Rooms" },
 ];
 
@@ -190,14 +190,14 @@ function matchFilter(room: Room, filter: string): boolean {
   if (filter === "all") return true;
   if (filter === "suite") return /suite/i.test(room.name);
   if (filter === "deluxe") return /deluxe/i.test(room.name);
-  if (filter === "villa") return /villa/i.test(room.name);
+  if (filter === "family") return /villa/i.test(room.name);
   if (filter === "view") return room.badge === "View" || room.badge === "Signature";
   return true;
 }
 
 export function Rooms({ onBookRoom }: { onBookRoom: (room: Room) => void }) {
   const rLabel = useContentValue("rooms.label", "Accommodation");
-  const rTitle = useContentValue("rooms.title", "Rooms, suites & a private villa");
+  const rTitle = useContentValue("rooms.title", "Rooms, suites & family ");
   const rSubtitle = useContentValue("rooms.subtitle", "");
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
@@ -235,14 +235,14 @@ export function Rooms({ onBookRoom }: { onBookRoom: (room: Room) => void }) {
           </Reveal>
           <Reveal delay={0.05}>
             <h2 className="font-serif text-3xl font-semibold leading-tight text-charcoal sm:text-5xl lg:text-6xl">
-              Rooms, suites &amp; a private villa
+              Rooms & suites 
             </h2>
           </Reveal>
           <Reveal delay={0.1}>
             <p className="mx-auto mt-5 max-w-2xl font-display text-base leading-relaxed text-charcoal-soft sm:text-lg">
-              Each room is individually designed with hand-carved teak, Makrana marble
-              and Braj-region textiles. Every category has its own dedicated landing page
-              with full amenities — these are the highlights.
+              Every stay at RK Residency reflects our commitment to comfort, 
+              elegance, and heartfelt hospitality—offering a peaceful sanctuary 
+              where guests can experience the timeless charm and spiritual essence of Vrindavan.
             </p>
           </Reveal>
         </div>
