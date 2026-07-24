@@ -2,10 +2,27 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verifyAdmin } from "@/lib/admin-auth";
 import PDFDocument from "pdfkit";
+import { AFM_FONTS } from "@/lib/pdfkit-fonts";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 30;
+
+/**
+ * Make AFM font data available to pdfkit at runtime.
+ *
+ * pdfkit's STANDARD_FONTS object calls `fs.readFileSync(__dirname + '/data/X.afm')`
+ * to load font metrics. On Vercel's serverless function, the `data/` directory
+ * is NOT bundled (tree-shaken) → ENOENT error.
+ *
+ * The patch (scripts/patch-pdfkit-fonts.cjs) modifies pdfkit's STANDARD_FONTS
+ * to first check `globalThis.__RK_PDFKIT_FONTS__` (an in-memory map of AFM
+ * strings, bundled as a TS module) before falling back to fs.readFileSync.
+ *
+ * We populate that global at module load time so any PDFDocument created
+ * in this route uses the in-memory fonts instead of hitting the filesystem.
+ */
+(globalThis as any).__RK_PDFKIT_FONTS__ = AFM_FONTS;
 
 /**
  * GET /api/booking-pdf/[bookingId]?type=voucher|invoice
