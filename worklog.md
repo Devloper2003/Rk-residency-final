@@ -162,3 +162,26 @@ Stage Summary:
   can see what the final voucher and invoice will look like.
 - Script is saved at scripts/generate-voucher-invoice-pdfs.py — re-runnable for
   template changes (edit SAMPLE dict at top of script).
+
+---
+Task ID: admin-booking-detail-modal
+Agent: Super Z (main)
+Task: Add Booking Detail modal in Admin → Bookings tab with full guest info and downloadable Voucher + Invoice PDFs.
+
+Work Log:
+- Added `booking_detail` case to /api/admin/all — returns full booking + room + guest + site settings.
+- Created /api/booking-pdf/[bookingId]?type=voucher|invoice — generates real PDF via pdfkit (Node.js). Admin-auth required. Returns binary PDF stream with Content-Disposition: attachment.
+- Created src/components/rk/admin/tabs/BookingDetailModal.tsx — modal showing guest details, stay details, charges breakdown, special requests, and two download buttons (Voucher PDF teal, Invoice PDF gold).
+- Modified BookingsTab.tsx — added 'View' button (Eye icon) on each booking row. Wired to open BookingDetailModal via detailId state.
+- Installed @types/pdfkit for TypeScript types.
+- TypeScript: 0 errors. Build: ✓ Compiled successfully. New route /api/booking-pdf/[bookingId] registered.
+- Pushed to GitHub main (0f4efbf), Vercel deployment READY (dpl_AbaXqvKjZX6TR8QwWadQfstFe9u6).
+- Verified live: /api/booking-pdf/test → 401 (correct, requires auth). /admin → 200. / → 200.
+
+Stage Summary:
+- Admin → Bookings tab now has 'View' button on each row.
+- Click 'View' → opens modal showing full guest info (name, email, phone, address), full stay details (room, view, bed, size, check-in/out, nights, guests), full charges breakdown (tariff, GST, service fee, grand total, payment status), and special requests.
+- Two download buttons at bottom generate real branded PDFs:
+  * 'Voucher PDF' (teal button) → downloads [referenceCode]-voucher.pdf
+  * 'Invoice PDF' (gold button) → downloads [referenceCode]-invoice.pdf
+- PDFs include proper GST invoice format with CGST 6% + SGST 6% split, HSN/SAC code 996331, amount-in-words, bank details, signatory block, and terms & conditions.
