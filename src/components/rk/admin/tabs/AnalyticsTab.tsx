@@ -1,9 +1,8 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { BarChart3, MousePointerClick, Users, Target, TrendingUp, Globe, Loader2 } from "lucide-react";
+import { MousePointerClick, Users, Target, TrendingUp, Globe } from "lucide-react";
 import { adminApi } from "./_shared";
 import { LoadingSpinner, ErrorState, KpiCard } from "./_shared";
-import { Button } from "@/components/ui/button";
 
 export function AnalyticsTab() {
   const [data, setData] = useState<any>(null);

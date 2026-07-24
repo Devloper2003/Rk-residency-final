@@ -126,8 +126,6 @@ function BlogEditor({ post, onClose, onSave }: { post: any; onClose: () => void;
   const [saving, setSaving] = useState(false);
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
 
-  const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-
   const handleSave = async () => {
     setSaving(true);
     try { await onSave(form); } finally { setSaving(false); }

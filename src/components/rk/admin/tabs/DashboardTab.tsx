@@ -1,8 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Percent, IndianRupee, CalendarDays, Users, TrendingUp, ShieldCheck, Loader2 } from "lucide-react";
+import { Percent, IndianRupee, CalendarDays, Users, TrendingUp } from "lucide-react";
 import { adminApi } from "./_shared";
-import { Button } from "@/components/ui/button";
 import { LoadingSpinner, ErrorState, KpiCard } from "./_shared";
 
 export function DashboardTab() {

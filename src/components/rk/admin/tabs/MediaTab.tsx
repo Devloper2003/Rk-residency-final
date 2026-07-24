@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { RefreshCw, Trash2, Copy, Upload, ImageIcon, Check } from "lucide-react";
+import { RefreshCw, Trash2, Copy, ImageIcon, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { adminFetch, LoadingSpinner, ErrorState } from "./_shared";
 import { refreshSiteContent } from "@/lib/site-content";

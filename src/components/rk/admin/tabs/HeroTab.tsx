@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Check, Loader2, Image as ImageIcon, Sliders } from "lucide-react";
+import { Check, Loader2, Sliders } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { adminApi, LoadingSpinner, Field } from "./_shared";
@@ -63,7 +63,7 @@ export function HeroTab() {
     }
   };
 
-  const save = async (id: string, key: string) => {
+  const save = async (id: string) => {
     setSaving((s) => ({ ...s, [id]: true }));
     try {
       const res = await adminApi.patch("content", { id, value: editing[id] });
@@ -120,7 +120,7 @@ export function HeroTab() {
                 )}
                 <div className="mt-2 flex justify-end">
                   <Button
-                    onClick={() => save(item.id, pk.key)}
+                    onClick={() => save(item.id)}
                     disabled={saving[item.id] || editing[item.id] === item.value}
                     className="rounded-full bg-teal px-4 py-1.5 text-xs text-ivory disabled:opacity-40 hover:bg-teal-deep"
                   >
@@ -151,7 +151,7 @@ export function HeroTab() {
                 />
                 <div className="mt-2 flex justify-end">
                   <Button
-                    onClick={() => save(item.id, "hero.background_image")}
+                    onClick={() => save(item.id)}
                     disabled={saving[item.id] || editing[item.id] === item.value}
                     className="rounded-full bg-teal px-4 py-1.5 text-xs text-ivory disabled:opacity-40 hover:bg-teal-deep"
                   >
@@ -189,7 +189,7 @@ export function HeroTab() {
                 <p className="mt-1 font-display text-[10px] text-charcoal-soft">⚠️ JSON field — edit carefully. Each slide needs an "image" URL. Text fields are optional (fall back to global hero text).</p>
                 <div className="mt-2 flex justify-end">
                   <Button
-                    onClick={() => save(item.id, "hero.slides")}
+                    onClick={() => save(item.id)}
                     disabled={saving[item.id] || editing[item.id] === item.value}
                     className="rounded-full bg-teal px-4 py-1.5 text-xs text-ivory disabled:opacity-40 hover:bg-teal-deep"
                   >
@@ -239,7 +239,7 @@ export function HeroTab() {
                 )}
                 <div className="mt-2 flex justify-end">
                   <Button
-                    onClick={() => save(item.id, pk.key)}
+                    onClick={() => save(item.id)}
                     disabled={saving[item.id] || editing[item.id] === item.value}
                     className="rounded-full bg-teal px-4 py-1.5 text-xs text-ivory disabled:opacity-40 hover:bg-teal-deep"
                   >

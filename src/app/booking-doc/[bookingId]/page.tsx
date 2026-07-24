@@ -30,7 +30,7 @@ export default async function BookingDocPage({
   }
 
   const settings = await db.siteSetting.findMany({
-    where: { key: { in: ["brand_name", "phone_primary", "email_primary", "address_full", "gstin"] } },
+    where: { key: { in: ["brand_name", "brand_tagline", "phone_primary", "email_primary", "address_full", "gstin"] } },
     select: { key: true, value: true },
   });
   const cfg: Record<string, string> = {};

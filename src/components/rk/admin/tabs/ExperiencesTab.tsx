@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Edit, Trash2, X, Save, MapPin } from "lucide-react";
+import { Plus, Trash2, X, Save, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { adminApi, LoadingSpinner, Field } from "./_shared";
 import { ImageUploader } from "../ImageUploader";

@@ -45,8 +45,11 @@ export function RoomDetailPage({ slug }: { slug: string }) {
   const navigate = useRouter((s) => s.navigate);
   const openBooking = useRouter((s) => s.openBooking);
   const info = useContactInfo();
-  const checkinTime = useContentValue("checkin_time", "12:00 PM");
-  const checkoutTime = useContentValue("checkout_time", "11:00 AM");
+  // Use check-in/out times from site settings (via useContactInfo) — same source
+  // as every other component. Previous code used useContentValue which reads from
+  // a different API and had a different default ("12:00 PM" vs "2:00 PM").
+  const checkinTime = info.checkinTime;
+  const checkoutTime = info.checkoutTime;
   const [room, setRoom] = useState<Room | null>(null);
   const [related, setRelated] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);

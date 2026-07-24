@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Check, Loader2, Phone, Mail, MapPin, Share2, Search, Settings, BarChart3, Upload, ShieldCheck } from "lucide-react";
+import { Check, Loader2, Phone, Mail, Share2, Search, Settings, BarChart3, Upload, ShieldCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { adminApi, LoadingSpinner } from "./_shared";

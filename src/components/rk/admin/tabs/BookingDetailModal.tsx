@@ -12,7 +12,6 @@ import { toast } from "sonner";
 type Props = {
   bookingId: string | null;
   onClose: () => void;
-  onStatusChange?: () => void;
 };
 
 type Room = {
@@ -76,7 +75,7 @@ function inr(n: number) {
   return "\u20B9 " + n.toLocaleString("en-IN");
 }
 
-export function BookingDetailModal({ bookingId, onClose, onStatusChange }: Props) {
+export function BookingDetailModal({ bookingId, onClose }: Props) {
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState<string | null>(null);

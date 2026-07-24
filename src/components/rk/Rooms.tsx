@@ -6,6 +6,7 @@ import { Users, Maximize, BedDouble, Eye, ArrowRight, Sparkles } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { useRouter } from "@/lib/router";
+import { safeJsonArray } from "@/lib/utils";
 
 type Room = {
   id: string;
@@ -50,8 +51,8 @@ function TiltCard({
 
   const handleLeave = () => setTransform("perspective(1000px) rotateX(0) rotateY(0)");
 
-  const images: string[] = JSON.parse(room.imageUrls || "[]");
-  const amenities: string[] = JSON.parse(room.amenities || "[]");
+  const images: string[] = safeJsonArray(room.imageUrls);
+  const amenities: string[] = safeJsonArray(room.amenities);
   const cover = images[0] || "/images/heritage-room.webp";
 
   return (
@@ -182,7 +183,7 @@ const FILTERS = [
   { id: "all", label: "All Rooms" },
   { id: "suite", label: "Suites" },
   { id: "deluxe", label: "Deluxe" },
-  { id: "villa", label: "family" },
+  { id: "villa", label: "Villa" },
   { id: "view", label: "View Rooms" },
 ];
 
@@ -190,7 +191,7 @@ function matchFilter(room: Room, filter: string): boolean {
   if (filter === "all") return true;
   if (filter === "suite") return /suite/i.test(room.name);
   if (filter === "deluxe") return /deluxe/i.test(room.name);
-  if (filter === "family") return /villa/i.test(room.name);
+  if (filter === "villa") return /villa/i.test(room.name);
   if (filter === "view") return room.badge === "View" || room.badge === "Signature";
   return true;
 }

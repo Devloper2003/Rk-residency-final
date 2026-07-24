@@ -210,13 +210,13 @@ export function Gallery() {
               onClick={(e) => e.stopPropagation()}
             >
               <img
-                src={GALLERY[lightboxIndex].src}
-                alt={GALLERY[lightboxIndex].alt}
+                src={gallery[lightboxIndex]?.src || GALLERY[0].src}
+                alt={gallery[lightboxIndex]?.alt || GALLERY[0].alt}
                 className="max-h-[78vh] w-full object-contain"
               />
               <div className="bg-gradient-to-t from-charcoal/90 to-transparent px-6 py-4">
                 <div className="font-serif text-lg text-ivory">
-                  {GALLERY[lightboxIndex].caption}
+                  {gallery[lightboxIndex]?.caption || GALLERY[0].caption}
                 </div>
                 <div className="mt-1 font-display text-xs uppercase tracking-wider text-gold-soft">
                   {lightboxIndex + 1} / {gallery.length}

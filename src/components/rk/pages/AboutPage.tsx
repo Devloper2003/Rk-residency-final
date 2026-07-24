@@ -41,10 +41,10 @@ export function AboutPage() {
   const titleLine2 = useContentValue("about.title_line2", "Braj bhoomi");
   const image = useContentValue("about.image", "/uploads/5b87a4725175feac.webp");
   const imageAlt = useContentValue("about.image_alt", "A Peaceful Retreat in the Heart of Vrindavan");
-  const imageCaptionLabel = useContentValue("about.image_caption_label", "{imageCaptionLabel}");
-  const imageCaptionSub = useContentValue("about.image_caption_sub", "{imageCaptionSub}");
+  const imageCaptionLabel = useContentValue("about.image_caption_label", "Heart of Vrindavan");
+  const imageCaptionSub = useContentValue("about.image_caption_sub", "A peaceful retreat on Parikrama Marg");
   const closingQuote = useContentValue("about.closing_quote", "Krishna sends them. We serve them. That is the arrangement.");
-  const closingAttribution = useContentValue("about.closing_attribution", "{closingAttribution}");
+  const closingAttribution = useContentValue("about.closing_attribution", "— Shailedra Singh, Founder");
   const story = parseJsonArray<string>(useContentValue("about.story", "[]"), ["In 1986, Shyam Khandelwal's grandparents built a modest four-room house on Parikrama Marg.", "For twenty-eight years, the house was simply the Khandelwal home.", "In 2014, the family opened the residence to paying guests.", "Today, RK Residency has 35 rooms and the founding principle remains unchanged."]);
   const values = parseJsonArray<{ icon: string; title: string; body: string }>(useContentValue("about.values", "[]"), VALUES.map(v => ({ icon: v.icon.name, title: v.title, body: v.body })));
   const timeline = parseJsonArray<{ year: string; title: string; body: string }>(useContentValue("about.timeline", "[]"), TIMELINE);

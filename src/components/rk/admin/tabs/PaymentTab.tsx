@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Check, Loader2, CreditCard, Shield, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -76,8 +76,13 @@ export function PaymentTab() {
   };
 
   const getValue = (key: string): string => {
+    // New (unsaved) settings are stored in `editing` keyed by setting key name,
+    // not by setting id. Check both branches so the UI reflects what the admin
+    // typed even before the setting row exists in the DB.
+    if (editing[key] !== undefined) return editing[key];
     const s = settings.find((s: any) => s.key === key);
     if (s && editing[s.id] !== undefined) return editing[s.id];
+    if (s) return s.value;
     return DEFAULTS[key] || "";
   };
 
