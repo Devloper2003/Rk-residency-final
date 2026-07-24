@@ -62,7 +62,13 @@ interface BookingRow {
 // ─── Helpers ─────────────────────────────────────────────────────────
 
 function formatINR(n: number): string {
-  return "\u20B9 " + n.toLocaleString("en-IN");
+  // IMPORTANT: Use "Rs." prefix instead of ₹ (U+20B9) symbol.
+  // Standard PDF fonts (Helvetica, Times, Courier) do NOT contain the ₹ glyph
+  // (U+20B9 was added to Unicode in 2010, but Adobe's AFM metrics only cover
+  // the original 149 Latin-1 characters). pdfkit falls back to rendering a
+  // superscript-1 (¹) or empty box, which looks broken and breaks column
+  // alignment in right-aligned amount cells.
+  return "Rs. " + n.toLocaleString("en-IN");
 }
 
 function fmtDate(d: Date): string {
@@ -524,7 +530,7 @@ function buildInvoice(doc: PDFKit.PDFDocument, b: BookingRow, cfg: Cfg, logoBuff
 
   // 7. Bank details + signature
   const halfW = (CONTENT_W - 6) / 2;
-  const BANK_H = 76;
+  const BANK_H = 88;
   doc.rect(LEFT, y, CONTENT_W, BANK_H).fill(WHITE).strokeColor(GOLD).lineWidth(0.5).rect(LEFT, y, CONTENT_W, BANK_H).stroke();
   doc.moveTo(LEFT + halfW, y).lineTo(LEFT + halfW, y + BANK_H).strokeColor("#D9C8A0").lineWidth(0.3).stroke();
 
@@ -535,14 +541,15 @@ function buildInvoice(doc: PDFKit.PDFDocument, b: BookingRow, cfg: Cfg, logoBuff
   doc.text(`Beneficiary: ${cfg.brand_name || "RK Residency"} Pvt. Ltd.`, LEFT + 10, y + 34, { width: halfW - 20 });
   doc.text("Bank: HDFC Bank, Vrindavan Branch", LEFT + 10, y + 47, { width: halfW - 20 });
   doc.text("A/C No: 50200012345678", LEFT + 10, y + 60, { width: halfW - 20 });
-  doc.text("IFSC: HDFC0001234  ·  UPI: rkresidency@hdfcbank", LEFT + 10, y + 73, { width: halfW - 20 });
+  doc.text("IFSC: HDFC0001234", LEFT + 10, y + 73, { width: halfW - 20 });
+  doc.text("UPI: rkresidency@hdfcbank", LEFT + 10, y + 84, { width: halfW - 20 });
 
   // Signatory (right)
   const sigX = LEFT + halfW + 10;
   doc.fillColor(TEAL).font("Helvetica-Bold").fontSize(9).text("AUTHORISED SIGNATORY", sigX, y + 8, { width: halfW - 20 });
-  doc.fillColor(CHARCOAL_SOFT).font("Helvetica-Oblique").fontSize(8.5).text(`For ${cfg.brand_name || "RK Residency"}`, sigX, y + 50, { width: halfW - 20 });
-  doc.fillColor(CHARCOAL).font("Helvetica-Bold").fontSize(8.5).text("_________________________", sigX, y + 60, { width: halfW - 20 });
-  doc.text("Front Office Manager", sigX, y + 70, { width: halfW - 20 });
+  doc.fillColor(CHARCOAL_SOFT).font("Helvetica-Oblique").fontSize(8.5).text(`For ${cfg.brand_name || "RK Residency"}`, sigX, y + 56, { width: halfW - 20 });
+  doc.fillColor(CHARCOAL).font("Helvetica-Bold").fontSize(8.5).text("_________________________", sigX, y + 68, { width: halfW - 20 });
+  doc.text("Front Office Manager", sigX, y + 80, { width: halfW - 20 });
   y += BANK_H + 6;
 
   // 8. Terms & conditions
