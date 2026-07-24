@@ -49,7 +49,7 @@ const SIGNATURE_DISHES = [
   {
     name: "Braj Thali",
     desc: "Seven seasonal preparations on a heritage brass plate — chapati, rice, two sabzis, dal, kadhi, sweet.",
-    price: "₹650",
+    price: "₹150",
     veg: true,
   },
   {
@@ -107,10 +107,10 @@ export function Dining() {
           </Reveal>
           <Reveal delay={0.1}>
             <p className="mx-auto mt-5 max-w-2xl font-display text-base leading-relaxed text-charcoal-soft sm:text-lg">
-              Our kitchen follows the strict satvik tradition of Braj — no onion,
-              no garlic, no eggs. Every meal is prepared after a kitchen aarti
-              and served as prasadam. The rooftop dining pavilion overlooks the
-              Yamuna and serves dinner under candlelight.
+              Our kitchen proudly serves freshly prepared satvik 
+              and vegetarian cuisine, crafted with purity, quality,
+              and care to offer guests a wholesome dining experience
+              inspired by the timeless traditions of Braj.
             </p>
           </Reveal>
         </div>
@@ -121,7 +121,7 @@ export function Dining() {
           <Reveal>
             <div className="relative h-full min-h-[420px] overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
               <img
-                src="/images/satvik-dining.webp"
+                src="/uploads/7ff0f47ff2a66e6b.webp"
                 alt="Satvik thali on a heritage brass plate at RK Residency"
                 className="h-full w-full object-cover"
                 loading="lazy"
@@ -129,10 +129,10 @@ export function Dining() {
               <div className="absolute inset-0 bg-gradient-to-t from-charcoal/70 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-6 text-ivory">
                 <div className="font-display text-xs uppercase tracking-[0.28em] text-gold-soft">
-                  Rooftop Yamuna Pavilion
+                  Freshly Prepared. Thoughtfully Served.
                 </div>
                 <div className="mt-1 font-serif text-2xl">
-                  Dinner under candlelight, 7 PM – 10 PM
+                  Experience the Flavors of Braj · 7:00 PM – 10:30 PM
                 </div>
               </div>
             </div>
