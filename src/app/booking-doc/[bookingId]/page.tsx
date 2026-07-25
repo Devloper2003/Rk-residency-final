@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { PrintButton } from "../PrintButton";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,9 @@ export const dynamic = "force-dynamic";
  * Renders a professional printable HTML page that the user can
  * save as PDF via browser's "Print → Save as PDF" (Ctrl+P / Cmd+P).
  * Works on ALL platforms including Vercel — no PDF library needed.
+ *
+ * NOTE: This is a Server Component (async DB calls). The PrintButton is
+ * a separate Client Component because it uses onClick + window.print().
  */
 export default async function BookingDocPage({
   params,
@@ -91,7 +95,7 @@ export default async function BookingDocPage({
         ` }} />
       </head>
       <body>
-        <button className="print-btn" onClick={() => window.print()}>🖨️ Print / Save as PDF</button>
+        <PrintButton />
         <div className="doc">
           <div className="header">
             <div>
