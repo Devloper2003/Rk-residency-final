@@ -84,6 +84,7 @@ model Booking {
   paymentRef    String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  downloadToken String   @unique @default(cuid()) 
 }
 
 model Review {
