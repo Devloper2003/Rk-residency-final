@@ -84,7 +84,7 @@ model Booking {
   paymentRef    String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  downloadToken String   @unique @default(cuid()) 
+  downloadToken String?  @unique  // Optional — NULL for legacy rows, set for new bookings
 }
 
 model Review {

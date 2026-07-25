@@ -588,7 +588,15 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-  if (!booking) {
+    const booking = (await db.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        room: { select: { id: true, name: true, slug: true, view: true, bedType: true, maxGuests: true, sizeSqft: true, basePrice: true, imageUrls: true } },
+        guest: true,
+      },
+    })) as BookingRow | null;
+
+    if (!booking) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
