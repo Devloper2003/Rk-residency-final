@@ -583,22 +583,64 @@ export async function GET(
       return NextResponse.json({ error: "Invalid type. Use ?type=voucher or ?type=invoice" }, { status: 400 });
     }
 
-    const admin = await verifyAdmin(req);
-    if (!admin) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+ // Verify Admin Authentication
+const admin = await verifyAdmin(req);
 
-    const booking = (await db.booking.findUnique({
-      where: { id: bookingId },
-      include: {
-        room: { select: { id: true, name: true, slug: true, view: true, bedType: true, maxGuests: true, sizeSqft: true, basePrice: true, imageUrls: true } },
-        guest: true,
+if (!admin) {
+  return NextResponse.json(
+    {
+      success: false,
+      error: "Unauthorized Access",
+      message: "Please login as an administrator to access this resource.",
+    },
+    { status: 401 }
+  );
+}
+
+// Optional: Check Admin Role
+if (admin.role !== "SUPER_ADMIN" && admin.role !== "ADMIN") {
+  return NextResponse.json(
+    {
+      success: false,
+      error: "Forbidden",
+      message: "You don't have permission to access this resource.",
+    },
+    { status: 403 }
+  );
+}
+
+const booking = await db.booking.findUnique({
+  where: {
+    id: bookingId,
+  },
+  include: {
+    room: {
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        view: true,
+        bedType: true,
+        maxGuests: true,
+        sizeSqft: true,
+        basePrice: true,
+        imageUrls: true,
       },
-    })) as BookingRow | null;
+    },
+    guest: true,
+  },
+});
 
-    if (!booking) {
-      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
-    }
+if (!booking) {
+  return NextResponse.json(
+    {
+      success: false,
+      error: "Booking Not Found",
+      message: `No booking exists with ID: ${bookingId}`,
+    },
+    { status: 404 }
+  );
+}
 
     // Load site settings (including logo_image_url)
     const settings = await db.siteSetting.findMany({
