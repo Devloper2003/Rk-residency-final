@@ -26,7 +26,7 @@ export const EXPERIENCES: Experience[] = [
   {
     slug: "banke-bihari-mandir",
     name: "Banke Bihari Mandir",
-    distance: "1.2 km",
+    distance: "2.6 km",
     walkTime: "40 min walk",
     bestTime: "dawn",
     timings: "Mangala 7:45 AM · Evening 7:00 PM",
@@ -52,8 +52,8 @@ export const EXPERIENCES: Experience[] = [
   {
     slug: "iskcon-krishna-balaram",
     name: "ISKCON Sri Krishna Balaram Mandir",
-    distance: "2.4 km",
-    walkTime: "1.5 hrs walk",
+    distance: "2 km",
+    walkTime: "30 min walk",
     bestTime: "evening",
     timings: "Sandhya Aarti 7:00 PM · Kirtan till 8:30 PM",
     description:
@@ -79,8 +79,8 @@ export const EXPERIENCES: Experience[] = [
   {
     slug: "prem-mandir",
     name: "Prem Mandir",
-    distance: "2 km",
-    walkTime: "60 min walk",
+    distance: "2.3 km",
+    walkTime: "32 min walk",
     bestTime: "evening",
     timings: "Illumination 7:30 PM · Closes 9:00 PM",
     description:
@@ -106,8 +106,8 @@ export const EXPERIENCES: Experience[] = [
   {
     slug: "nidhivan",
     name: "Nidhivan",
-    distance: "1.9 km",
-    walkTime: "1 hrs walk",
+    distance: "2.8 km",
+    walkTime: "40 min walk",
     bestTime: "day",
     timings: "Open till 6:00 PM · Closed after dusk",
     description:
@@ -133,8 +133,8 @@ export const EXPERIENCES: Experience[] = [
   {
     slug: "yamuna-aarti-keshi-ghat",
     name: "Yamuna Aarti at Keshi Ghat",
-    distance: "2.5 km",
-    walkTime: "2 hrs walk",
+    distance: "3.1 km",
+    walkTime: "40 min walk",
     bestTime: "evening",
     timings: "Sunset Aarti · Daily (varies by season)",
     description:
