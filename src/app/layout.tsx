@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Playfair_Display, Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
@@ -101,6 +102,11 @@ export default function RootLayout({
         <VisitorTracker />
         <GoogleAnalytics />
         <SonnerToaster position="bottom-right" richColors closeButton />
+        {/* Razorpay Checkout.js — loaded lazily, only used when user pays */}
+        <Script
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="lazyOnload"
+        />
       </body>
     </html>
   );
