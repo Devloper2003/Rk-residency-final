@@ -19,8 +19,8 @@ type Experience = {
 const EXPERIENCES: Experience[] = [
   {
     name: "Banke Bihari Mandir",
-    distance: "0.6 km",
-    walkTime: "8 min walk",
+    distance: "2.6 km",
+    walkTime: "40 min walk",
     bestTime: "dawn",
     timings: "Mangala 7:45 AM · Evening 7:00 PM",
     description:
@@ -30,8 +30,8 @@ const EXPERIENCES: Experience[] = [
   },
   {
     name: "ISKCON Sri Krishna Balaram Mandir",
-    distance: "1.4 km",
-    walkTime: "18 min walk",
+    distance: "2 km",
+    walkTime: "30 min walk",
     bestTime: "evening",
     timings: "Sandhya Aarti 7:00 PM · Kirtan till 8:30 PM",
     description:
@@ -41,8 +41,8 @@ const EXPERIENCES: Experience[] = [
   },
   {
     name: "Prem Mandir",
-    distance: "2.1 km",
-    walkTime: "25 min walk",
+    distance: "2.3 km",
+    walkTime: "30 min walk",
     bestTime: "evening",
     timings: "Illumination 7:30 PM · Closes 9:00 PM",
     description:
@@ -52,8 +52,8 @@ const EXPERIENCES: Experience[] = [
   },
   {
     name: "Nidhivan",
-    distance: "0.9 km",
-    walkTime: "12 min walk",
+    distance: "2.8 km",
+    walkTime: "40 min walk",
     bestTime: "day",
     timings: "Open till 6:00 PM · Closed after dusk",
     description:
@@ -63,8 +63,8 @@ const EXPERIENCES: Experience[] = [
   },
   {
     name: "Yamuna Aarti at Keshi Ghat",
-    distance: "1.1 km",
-    walkTime: "15 min walk",
+    distance: "3.1 km",
+    walkTime: "40 min walk",
     bestTime: "evening",
     timings: "Sunset Aarti · Daily (varies by season)",
     description:
