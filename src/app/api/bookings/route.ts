@@ -139,10 +139,9 @@ export async function POST(req: Request) {
           serviceFee,
           totalAmount,
           status: "CONFIRMED",
-          // PAY_AT_HOTEL stays PENDING until check-in; prepaid methods are
-          // marked PAID (assumes gateway confirmation received — wire up the
-          // payment webhook to flip from PENDING to PAID for real gateways).
-          paymentStatus: paymentMethod === "PAY_AT_HOTEL" ? "PENDING" : "PAID",
+          // Always PENDING for prepaid methods.
+          // Razorpay/Stripe verification or webhook will flip this to PAID.
+          paymentStatus: "PENDING",
           paymentMethod,
         },
       });
