@@ -20,7 +20,7 @@ const FULL_MENU = [
   {
     section: "Breakfast (7:00 – 10:30 AM)",
     items: [
-      { name: "Satvik Puri-Sabzi", desc: "Puffed whole-wheat puris with slow-cooked potato-tomato sabzi. The Banke Bihari breakfast.", price: "₹140", veg: true },
+      { name: "Satvik Puri-Sabzi", desc: "Puffed whole-wheat puris with slow-cooked potato-tomato sabzi. The Banke Bihari breakfast.", price: "₹180", veg: true },
       { name: "Makhan Mishri Prasadam", desc: "Fresh-churned white butter with crystal sugar — Krishna's favourite, served at sunrise.", price: "₹240", veg: true },
       { name: "Aloo Paratha with Curd", desc: "Two stuffed parathas with fresh curd, pickle and a small portion of fruit.", price: "₹120", veg: true },
       { name: "Seasonal Fruit Thali", desc: "Five seasonal fruits with honey, soaked almonds and tulsi tea.", price: "₹150", veg: true },
