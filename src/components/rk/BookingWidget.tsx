@@ -124,6 +124,90 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Booking failed");
+
+       // ── STEP B: If RAZORPAY → open checkout modal ──
+      if (paymentMethod === "RAZORPAY") {
+        // 1. Create Razorpay order on server
+        const orderRes = await fetch("/api/razorpay/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bookingId: data.bookingId }),
+        });
+        const orderData = await orderRes.json();
+        if (!orderRes.ok) throw new Error(orderData.error || "Failed to create payment order");
+
+        // 2. Open Razorpay checkout modal
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rzp = new (window as any).Razorpay({
+          key: orderData.keyId,
+          amount: orderData.amount,
+          currency: orderData.currency,
+          order_id: orderData.orderId,
+          name: "RK Residency",
+          description: `${orderData.roomName} · ${orderData.referenceCode}`,
+          image: "/logo.svg",
+          prefill: {
+            name: orderData.guestName,
+            email: orderData.guestEmail,
+            contact: orderData.guestPhone,
+          },
+          theme: {
+            color: "#0E4C4F", // teal brand color
+          },
+          modal: {
+            ondismiss: () => {
+              // User closed the modal without paying
+              toast.error("Payment cancelled", {
+                description: "Your booking is saved. You can pay later at the hotel.",
+              });
+              setSubmitting(false);
+            },
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          handler: async (response: any) => {
+            // 3. Verify payment signature on server
+            try {
+              const verifyRes = await fetch("/api/razorpay/verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  bookingId: data.bookingId,
+                }),
+              });
+              const verifyData = await verifyRes.json();
+
+              if (!verifyRes.ok) {
+                throw new Error(verifyData.error || "Payment verification failed");
+              }
+
+              // 4. Success → show confirmation
+              setConfirmedRef(data.referenceCode);
+              setConfirmedBookingId(data.bookingId);
+              setStep(3);
+              toast.success("Payment successful!", {
+                description: `Reference ${data.referenceCode} · Paid via Razorpay`,
+              });
+            } catch (verifyErr: unknown) {
+              const msg = verifyErr instanceof Error ? verifyErr.message : "Verification failed";
+              toast.error("Payment verification failed", { description: msg });
+              // Still show confirmation since payment was captured
+              // The webhook will handle the status update
+              setConfirmedRef(data.referenceCode);
+              setConfirmedBookingId(data.bookingId);
+              setStep(3);
+            }
+          },
+        });
+
+        rzp.open();
+        // Don't set submitting=false here — handler will do it
+        return;
+      }
+
+      // ── STEP C: If PAY_AT_HOTEL or STRIPE → direct confirm (no gateway) ──
       setConfirmedRef(data.referenceCode);
       setConfirmedBookingId(data.bookingId);
       setStep(3);
@@ -134,7 +218,10 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
       const msg = e instanceof Error ? e.message : "Please try again";
       toast.error("Booking failed", { description: msg });
     } finally {
-      setSubmitting(false);
+    // Only reset submitting if we're not waiting for Razorpay modal
+      if (paymentMethod !== "RAZORPAY") {
+        setSubmitting(false);
+      }
     }
   };
 
