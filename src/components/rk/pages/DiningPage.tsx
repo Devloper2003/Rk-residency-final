@@ -29,25 +29,24 @@ const FULL_MENU = [
   {
     section: "Lunch (12:30 – 3:00 PM)",
     items: [
-      { name: "Braj Thali", desc: "Seven seasonal preparations on a heritage brass plate — chapati, rice, two sabzis, dal, kadhi, sweet.", price: "₹650", veg: true },
-      { name: "Satvik Thali (Light)", desc: "Five preparations — phulka, rice, one sabzi, dal, sweet. For devotees observing a lighter fast.", price: "₹480", veg: true },
-      { name: "Paneer Makhanwala", desc: "Cottage cheese in a mild tomato-cashew gravy with butter. Served with phulka and rice.", price: "₹520", veg: true },
-      { name: "Bharwan Baingan", desc: "Baby eggplants stuffed with spiced peanut-coconut masala. A Braj specialty.", price: "₹420", veg: true },
+      { name: "Braj Thali", desc: "Seven seasonal preparations on a heritage brass plate — chapati, rice, two sabzis, dal, kadhi, sweet.", price: "₹140", veg: true },
+      { name: "Satvik Thali (Light)", desc: "Five preparations — phulka, rice, one sabzi, dal, sweet. For devotees observing a lighter fast.", price: "₹250", veg: true },
+      { name: "Kaju Paneer", desc: "Soft cottage cheese cooked in a rich and creamy cashew-based gravy, delicately flavored with aromatic Indian spices. Served with phulka and rice.", price: "₹300", veg: true },
+      { name: "Bharwan Baingan", desc: "Baby eggplants stuffed with spiced peanut-coconut masala. A Braj specialty.", price: "₹150", veg: true },
     ],
   },
   {
     section: "Dinner (7:00 – 10:00 PM · Rooftop)",
     items: [
       { name: "Rabri-Jalebi", desc: "Thickened milk rabri from a Braj halwai paired with hot, crisp jalebis. Evening only.", price: "₹320", veg: true },
-      { name: "Khichdi-Sabzi (Evening Satvik)", desc: "Moong dal khichdi with ghee-tadka, served with curd and papad. For Ekadashi observers.", price: "₹360", veg: true },
-      { name: "Malai Kofta", desc: "Paneer-potato dumplings in a creamy gravy. Served with phulka and jeera rice.", price: "₹480", veg: true },
-      { name: "Dal Braj", desc: "Five-lentil dal slow-cooked for four hours with whole spices. A RK Residency signature.", price: "₹380", veg: true },
+      { name: "Malai Kofta", desc: "Paneer-potato dumplings in a creamy gravy. Served with phulka and jeera rice.", price: "₹280", veg: true },
+      { name: "Dal Braj", desc: "Five-lentil dal slow-cooked for four hours with whole spices. A RK Residency signature.", price: "₹140", veg: true },
     ],
   },
   {
     section: "Beverages",
     items: [
-      { name: "Tulsi Tea", desc: "Tulsi leaves from our garden with ginger and raw honey. Devotional and immunity-boosting.", price: "₹90", veg: true },
+      { name: "Tulsi Tea", desc: "Tulsi leaves from our garden with ginger and raw honey. Devotional and immunity-boosting.", price: "₹50", veg: true },
       { name: "Thandai (Seasonal)", desc: "Milk with almonds, fennel, cardamom and rose petals. Holi specialty.", price: "₹180", veg: true },
       { name: "Aam Panna (Summer)", desc: "Raw mango cooler with mint and black salt. Made fresh daily.", price: "₹140", veg: true },
       { name: "Lassi (Sweet/Salted)", desc: "Thick yoghurt drink from our Gaushala milk. Sweetened with mishri or salted with cumin.", price: "₹120", veg: true },
