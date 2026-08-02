@@ -27,7 +27,7 @@ type Props = {
 const STEPS = ["Dates & Room", "Guests", "Payment", "Confirmation"] as const;
 type Step = (typeof STEPS)[number];
 
-const GST_RATE = 0.12; // 12% GST on hotels < ₹7,500
+const GST_RATE = 0.12; // 5% GST on hotels < ₹7,500
 const SERVICE_FEE_FLAT = 250;
 
 export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
@@ -401,7 +401,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
                       </div>
                       <div className="space-y-1.5 font-display text-sm text-charcoal-soft">
                         <Row label={`₹${pricing.perNight.toLocaleString("en-IN")} × ${nights}`} value={`₹${pricing.subtotal.toLocaleString("en-IN")}`} />
-                        <Row label="GST (12%)" value={`₹${pricing.taxes.toLocaleString("en-IN")}`} />
+                        <Row label="GST (5%)" value={`₹${pricing.taxes.toLocaleString("en-IN")}`} />
                         <Row label="Service fee" value={`₹${pricing.serviceFee.toLocaleString("en-IN")}`} />
                         <div className="mt-2 flex items-center justify-between border-t border-charcoal/10 pt-2">
                           <span className="font-serif text-base font-semibold text-charcoal">Total</span>
@@ -533,7 +533,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
                       </div>
                       <div className="space-y-1.5 font-display text-sm text-charcoal-soft">
                         <Row label="Room subtotal" value={`₹${pricing.subtotal.toLocaleString("en-IN")}`} />
-                        <Row label="GST (12%)" value={`₹${pricing.taxes.toLocaleString("en-IN")}`} />
+                        <Row label="GST (5%)" value={`₹${pricing.taxes.toLocaleString("en-IN")}`} />
                         <Row label="Service fee" value={`₹${pricing.serviceFee.toLocaleString("en-IN")}`} />
                         <div className="mt-2 flex items-center justify-between border-t border-charcoal/10 pt-2">
                           <span className="font-serif text-base font-semibold text-charcoal">Total payable</span>
