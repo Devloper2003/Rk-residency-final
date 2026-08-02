@@ -721,11 +721,11 @@ def build_invoice(out_path):
     # 8. Bank details + signature side by side
     bank_para = Paragraph(
         f'<font name="{SANS_B}" size="9" color="#0E4C4F">BANK DETAILS (for balance payment)</font><br/>'
-        f'<font name="{SANS}" size="9" color="#231F1C">Beneficiary: <b>RK Residency Pvt. Ltd.</b></font><br/>'
-        f'<font name="{SANS}" size="9" color="#231F1C">Bank: HDFC Bank, Vrindavan Branch</font><br/>'
-        f'<font name="{SANS}" size="9" color="#231F1C">A/C No: 50200012345678</font><br/>'
-        f'<font name="{SANS}" size="9" color="#231F1C">IFSC: HDFC0001234</font><br/>'
-        f'<font name="{SANS}" size="9" color="#231F1C">UPI: rkresidency@hdfcbank</font>',
+        f'<font name="{SANS}" size="9" color="#231F1C">Beneficiary: <b>Shaheed RK Residency</b></font><br/>'
+        f'<font name="{SANS}" size="9" color="#231F1C">Bank: Punjab National Bank, Vrindavan Branch</font><br/>'
+        f'<font name="{SANS}" size="9" color="#231F1C">A/C No: 0378102100000965</font><br/>'
+        f'<font name="{SANS}" size="9" color="#231F1C">IFSC: PUNB0037810</font><br/>'
+        f'<font name="{SANS}" size="9" color="#231F1C">UPI: 8954289824m@pnb</font>',
         ParagraphStyle('Bank', fontName=SANS, fontSize=9, leading=14, alignment=TA_LEFT)
     )
     sig_para = Paragraph(
