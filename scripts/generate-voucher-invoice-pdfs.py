@@ -371,7 +371,7 @@ def build_voucher(out_path):
          Paragraph(format_inr(SAMPLE['rate_per_night']), TABLE_CELL_R),
          Paragraph(str(SAMPLE['nights']), TABLE_CELL_R),
          Paragraph(format_inr(SAMPLE['room_total']), TABLE_CELL_R)],
-        [Paragraph('GST (12% on room tariff)', TABLE_CELL),
+        [Paragraph('GST (5% on room tariff)', TABLE_CELL),
          Paragraph('—', TABLE_CELL_R),
          Paragraph('—', TABLE_CELL_R),
          Paragraph(format_inr(SAMPLE['taxes_gst']), TABLE_CELL_R)],
