@@ -108,7 +108,7 @@ SAMPLE = {
     'rate_per_night': 12500,
     'room_total': 37500,
     'breakfast': 'Complimentary Satvik Breakfast included',
-    'taxes_gst': 5625,         # 12% GST on room
+    'taxes_gst': 5625,         # 5% GST on room
     'service_charge': 0,
     'grand_total': 43125,
 
@@ -400,7 +400,7 @@ def build_voucher(out_path):
 
     # 7. Includes note
     story.append(Paragraph(
-        f'<b>Inclusions:</b> {SAMPLE["breakfast"]}. Complimentary Wi-Fi, '
+        f'<b>Inclusions:</b> . Complimentary Wi-Fi, '
         'daily housekeeping, assistance with temple visits, and all applicable taxes.',
         BODY
     ))
@@ -583,19 +583,19 @@ def build_invoice(out_path):
         Paragraph('', TABLE_CELL),
         Paragraph(format_inr(SAMPLE['room_total']), TABLE_CELL_BR),
     ]
-    # CGST row (6%)
+    # CGST row (5%)
     cgst_row = [
         Paragraph('', TABLE_CELL),
-        Paragraph('CGST @ 6%', TABLE_CELL),
+        Paragraph('CGST @ 5%', TABLE_CELL),
         Paragraph('', TABLE_CELL),
         Paragraph('', TABLE_CELL),
         Paragraph('', TABLE_CELL),
         Paragraph(format_inr(SAMPLE['taxes_gst'] // 2), TABLE_CELL_R),
     ]
-    # SGST row (6%)
+    # SGST row (5%)
     sgst_row = [
         Paragraph('', TABLE_CELL),
-        Paragraph('SGST @ 6%', TABLE_CELL),
+        Paragraph('SGST @ 5%', TABLE_CELL),
         Paragraph('', TABLE_CELL),
         Paragraph('', TABLE_CELL),
         Paragraph('', TABLE_CELL),
