@@ -235,7 +235,7 @@ export function BookingDetailModal({ bookingId, onClose }: Props) {
                 </div>
                 <div className="space-y-1.5 font-display text-xs">
                   <ChargeRow label={`Room tariff (${booking.nights} × ${inr(booking.pricePerNight)})`} value={inr(booking.subtotal)} />
-                  <ChargeRow label="GST (12% on room tariff)" value={inr(booking.taxesGst)} />
+                  <ChargeRow label="GST (5% on room tariff)" value={inr(booking.taxesGst)} />
                   {booking.serviceFee > 0 && <ChargeRow label="Service fee" value={inr(booking.serviceFee)} />}
                   <div className="my-2 border-t border-charcoal/10" />
                   <div className="flex items-center justify-between pt-1">
