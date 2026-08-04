@@ -313,7 +313,7 @@ function buildVoucher(doc: PDFKit.PDFDocument, b: BookingRow, cfg: Cfg, logoBuff
     rowY += 18;
   };
   drawChargeRow(`Room Tariff — ${roomName}`, formatINR(b.pricePerNight), String(b.nights), formatINR(b.subtotal), WHITE);
-  drawChargeRow("GST (12% on room tariff)", "—", "—", formatINR(b.taxesGst), WHITE);
+  drawChargeRow("GST (5% on room tariff)", "—", "—", formatINR(b.taxesGst), WHITE);
   if (b.serviceFee > 0) drawChargeRow("Service Fee", "—", "—", formatINR(b.serviceFee), WHITE);
 
   // Grand total row
@@ -327,7 +327,7 @@ function buildVoucher(doc: PDFKit.PDFDocument, b: BookingRow, cfg: Cfg, logoBuff
   // 5. Inclusions
   doc.fillColor(CHARCOAL).font("Helvetica").fontSize(9);
   doc.text(
-    "Inclusions: Complimentary Satvik Breakfast, Wi-Fi, daily housekeeping, assistance with temple visits, and all applicable taxes.",
+    "Inclusions: Wi-Fi, daily housekeeping, assistance with temple visits, and all applicable taxes.",
     LEFT, y, { width: CONTENT_W }
   );
   y += 24;
@@ -538,11 +538,11 @@ function buildInvoice(doc: PDFKit.PDFDocument, b: BookingRow, cfg: Cfg, logoBuff
   doc.fillColor(TEAL).font("Helvetica-Bold").fontSize(9).text("BANK DETAILS", LEFT + 10, y + 8, { width: halfW - 20 });
   doc.fillColor(CHARCOAL_SOFT).font("Helvetica").fontSize(7).text("(for balance payment)", LEFT + 10, y + 21, { width: halfW - 20 });
   doc.fillColor(CHARCOAL).font("Helvetica").fontSize(8.5);
-  doc.text(`Beneficiary: ${cfg.brand_name || "RK Residency"} Pvt. Ltd.`, LEFT + 10, y + 34, { width: halfW - 20 });
-  doc.text("Bank: HDFC Bank, Vrindavan Branch", LEFT + 10, y + 47, { width: halfW - 20 });
-  doc.text("A/C No: 50200012345678", LEFT + 10, y + 60, { width: halfW - 20 });
-  doc.text("IFSC: HDFC0001234", LEFT + 10, y + 73, { width: halfW - 20 });
-  doc.text("UPI: rkresidency@hdfcbank", LEFT + 10, y + 84, { width: halfW - 20 });
+  doc.text(`Beneficiary: ${cfg.brand_name || "Shaheed RK Residency"} `, LEFT + 10, y + 34, { width: halfW - 20 });
+  doc.text("Bank: Punjab National Bank, Rajpur-Vrindavan (Mathura), U.P.", LEFT + 10, y + 47, { width: halfW - 20 });
+  doc.text("A/C No: 0378102100000965", LEFT + 10, y + 60, { width: halfW - 20 });
+  doc.text("IFSC: PUNB0037810", LEFT + 10, y + 73, { width: halfW - 20 });
+  doc.text("UPI: 8954289824m@pnb", LEFT + 10, y + 84, { width: halfW - 20 });
 
   // Signatory (right)
   const sigX = LEFT + halfW + 10;
@@ -608,10 +608,10 @@ export async function GET(
     const cfg: Cfg = {};
     settings.forEach((s) => { cfg[s.key] = s.value; });
     cfg.brand_name = cfg.brand_name || "RK Residency";
-    cfg.brand_tagline = cfg.brand_tagline || "Heritage Luxury in Vrindavan";
-    cfg.phone_primary = cfg.phone_primary || "+91 565 234 5678";
-    cfg.email_primary = cfg.email_primary || "reservations@rkresidencyvrindavan.in";
-    cfg.address_full = cfg.address_full || "Krishna Janambhoomi Road, Vrindavan, Mathura, Uttar Pradesh 281121";
+    cfg.brand_tagline = cfg.brand_tagline || "Where the spirit of Braj finds its rest";
+    cfg.phone_primary = cfg.phone_primary || "+91 9760814931";
+    cfg.email_primary = cfg.email_primary || "rkresidency121@gmail.com";
+    cfg.address_full = cfg.address_full || "Near Shani Dev Mandir, Kailash Nagar, Vrindavan, Uttar Pradesh 281121";
     cfg.website_url = cfg.website_url || "www.rkresidencyvrindavan.in";
     cfg.gstin = cfg.gstin || "—";
 
