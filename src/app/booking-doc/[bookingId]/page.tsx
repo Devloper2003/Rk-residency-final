@@ -181,7 +181,7 @@ function VoucherLayout({ booking, cfg, logoDataUrl, fmt }: {
             <div className="section-title">STAY DETAILS</div>
             <div style={{ fontSize: 12, lineHeight: 1.9 }}>
               <div><span style={{ color: "#6B6560" }}>Room:</span> <strong>{booking.room.name}</strong></div>
-              <div><span style={{ color: "#6B6560" }}>Check-in:</span> {fmt(booking.checkIn)} (after 2 PM)</div>
+              <div><span style={{ color: "#6B6560" }}>Check-in:</span> {fmt(booking.checkIn)} (after 12 PM)</div>
               <div><span style={{ color: "#6B6560" }}>Check-out:</span> {fmt(booking.checkOut)} (before 11 AM)</div>
               <div><span style={{ color: "#6B6560" }}>Duration:</span> {booking.nights} night(s) · {booking.adults} Adult(s){booking.children > 0 ? `, ${booking.children} Child(ren)` : ""}</div>
             </div>
