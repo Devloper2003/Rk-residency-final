@@ -93,7 +93,7 @@ export async function POST(req: Request) {
       const pricePerNight = surge ? surge.pricePerNight : room.basePrice;
 
       const subtotal = pricePerNight * nights;
-      const taxesGst = Math.round(subtotal * 0.12);
+      const taxesGst = Math.round(subtotal * 0.05);
       const serviceFee = 250 * nights;
       const totalAmount = subtotal + taxesGst + serviceFee;
 
