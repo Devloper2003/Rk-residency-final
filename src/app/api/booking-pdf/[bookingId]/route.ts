@@ -558,7 +558,7 @@ function buildInvoice(doc: PDFKit.PDFDocument, b: BookingRow, cfg: Cfg, logoBuff
   doc.fillColor(CHARCOAL_SOFT).font("Helvetica").fontSize(7.5);
   const tcLines = [
     "1. Computer-generated tax invoice — valid without signature.    2. GST shown as per applicable rates; any change in tax law will be levied extra.",
-    "3. Cancellation charges apply as per the booking voucher policy.    4. Check-in: 2:00 PM onwards  ·  Check-out: before 11:00 AM.",
+    "3. Cancellation charges apply as per the booking voucher policy.    4. Check-in: 12:00 PM onwards  ·  Check-out: before 11:00 AM.",
     "5. All disputes are subject to Vrindavan / Mathura jurisdiction only.",
   ];
   for (const line of tcLines) {
