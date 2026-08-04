@@ -200,7 +200,7 @@ function VoucherLayout({ booking, cfg, logoDataUrl, fmt }: {
             </thead>
             <tbody>
               <tr><td style={{ padding: "8px 12px", borderBottom: "1px solid #f0ede8" }}>Room Tariff ({booking.nights} × Rs. {booking.pricePerNight.toLocaleString("en-IN")})</td><td style={{ padding: "8px 12px", textAlign: "right", borderBottom: "1px solid #f0ede8", fontWeight: 600 }}>Rs. {booking.subtotal.toLocaleString("en-IN")}</td></tr>
-              <tr style={{ background: "#FAF8F5" }}><td style={{ padding: "8px 12px", borderBottom: "1px solid #f0ede8" }}>GST (12%)</td><td style={{ padding: "8px 12px", textAlign: "right", borderBottom: "1px solid #f0ede8", fontWeight: 600 }}>Rs. {booking.taxesGst.toLocaleString("en-IN")}</td></tr>
+              <tr style={{ background: "#FAF8F5" }}><td style={{ padding: "8px 12px", borderBottom: "1px solid #f0ede8" }}>GST (5%)</td><td style={{ padding: "8px 12px", textAlign: "right", borderBottom: "1px solid #f0ede8", fontWeight: 600 }}>Rs. {booking.taxesGst.toLocaleString("en-IN")}</td></tr>
               <tr><td style={{ padding: "8px 12px", borderBottom: "1px solid #f0ede8" }}>Service Fee</td><td style={{ padding: "8px 12px", textAlign: "right", borderBottom: "1px solid #f0ede8", fontWeight: 600 }}>Rs. {booking.serviceFee.toLocaleString("en-IN")}</td></tr>
               <tr style={{ background: "#D4A056" }}><td style={{ padding: "10px 12px", fontSize: 14, fontWeight: "bold" }}>GRAND TOTAL</td><td style={{ padding: "10px 12px", textAlign: "right", fontSize: 14, fontWeight: "bold" }}>Rs. {booking.totalAmount.toLocaleString("en-IN")}</td></tr>
             </tbody>
@@ -215,7 +215,7 @@ function VoucherLayout({ booking, cfg, logoDataUrl, fmt }: {
         <div style={{ background: "#FAF8F5", borderRadius: 8, padding: 14, marginBottom: 24, border: "1px solid #D4A056" }}>
           <div style={{ color: "#0E4C4F", fontSize: 11, fontWeight: "bold", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>Inclusions</div>
           <div style={{ fontSize: 11, color: "#231F1C", lineHeight: 1.6 }}>
-            Complimentary Satvik Breakfast, Wi-Fi, daily housekeeping, assistance with temple visits, and all applicable taxes.
+             Wi-Fi, daily housekeeping, assistance with temple visits, and all applicable taxes.
           </div>
         </div>
 
@@ -358,11 +358,11 @@ function InvoiceLayout({ booking, cfg, logoDataUrl, fmt }: {
                 <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600, color: "#0E4C4F" }}>Rs. {booking.subtotal.toLocaleString("en-IN")}</td>
               </tr>
               <tr>
-                <td colSpan={5} style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #f0ede8" }}>CGST @ 6%</td>
+                <td colSpan={5} style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #f0ede8" }}>CGST @ 2.5%</td>
                 <td style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #f0ede8" }}>Rs. {cgst.toLocaleString("en-IN")}</td>
               </tr>
               <tr>
-                <td colSpan={5} style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #f0ede8" }}>SGST @ 6%</td>
+                <td colSpan={5} style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #f0ede8" }}>SGST @ 2.5%</td>
                 <td style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #f0ede8" }}>Rs. {sgst.toLocaleString("en-IN")}</td>
               </tr>
               <tr>
@@ -411,11 +411,11 @@ function InvoiceLayout({ booking, cfg, logoDataUrl, fmt }: {
           <div style={{ flex: 1, background: "#fff", borderRadius: 8, padding: 14, border: "1px solid #E5E0D8" }}>
             <div className="label" style={{ marginBottom: 8, color: "#0E4C4F" }}>Bank Details (for balance payment)</div>
             <div style={{ fontSize: 11, color: "#231F1C", lineHeight: 1.8 }}>
-              Beneficiary: {cfg.brand_name} Pvt. Ltd.<br />
-              Bank: HDFC Bank, Vrindavan Branch<br />
-              A/C No: 50200012345678<br />
-              IFSC: HDFC0001234<br />
-              UPI: rkresidency@hdfcbank
+              Beneficiary: {cfg.brand_name} <br />
+              Bank: Punjab National Bank, Rajpur-Vrindavan (Mathura), U.P.<br />
+              A/C No: 0378102100000965<br />
+              IFSC:  PUNB0037810<br />
+              UPI: 8954289824m@pnb
             </div>
           </div>
           <div style={{ flex: 1, background: "#fff", borderRadius: 8, padding: 14, border: "1px solid #E5E0D8" }}>
