@@ -27,7 +27,7 @@ type Props = {
 const STEPS = ["Dates & Room", "Guests", "Payment", "Confirmation"] as const;
 type Step = (typeof STEPS)[number];
 
-const GST_RATE = 0.12; // 5% GST on hotels < ₹7,500
+const GST_RATE = 0.05; // 5% GST on hotels < ₹7,500
 const SERVICE_FEE_FLAT = 250;
 
 export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
