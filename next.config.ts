@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
   // tree-shakes the .afm files out of the serverless bundle → ENOENT error
   // on Vercel. Marking it as a server external package forces the whole
   // pdfkit package (including js/data/*.afm) to be bundled verbatim.
-    serverExternalPackages: ["pdfkit", "fontkit", "linebreak", "png-js", "razorpay"],
+    serverExternalPackages: ["pdfkit", "fontkit", "linebreak", "png-js", "razorpay", "sharp"],
 };
 
 export default nextConfig;
