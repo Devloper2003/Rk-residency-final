@@ -171,7 +171,10 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
           specialRequests: contact.requests,
           paymentMethod,
           discountCode: discountInfo?.code || undefined,
-       });
+        }),          // ← ye JSON.stringify ko close karta hai
+      });            // ← ye fetch() ko close karta hai
+
+      const data = await res.json();
        
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Booking failed");
@@ -453,6 +456,11 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
                       <div className="space-y-1.5 font-display text-sm text-charcoal-soft">
                         <Row label={`₹${pricing.perNight.toLocaleString("en-IN")} × ${nights}`} value={`₹${pricing.subtotal.toLocaleString("en-IN")}`} />
                         <Row label="GST (5%)" value={`₹${pricing.taxes.toLocaleString("en-IN")}`} />
+                                                  <Row label={`₹${pricing.perNight.toLocaleString("en-IN")} × ${nights}`} value={`₹${pricing.subtotal.toLocaleString("en-IN")}`} />
+                        {pricing.discountAmt > 0 && (
+                          <Row label={`Discount (${pricing.discountPct}%)`} value={`-₹${pricing.discountAmt.toLocaleString("en-IN")}`} />
+                        )}
+                        <Row label="GST (5%)" value={`₹${pricing.taxes.toLocaleString("en-IN")}`} />
                         <Row label="Service fee" value={`₹${pricing.serviceFee.toLocaleString("en-IN")}`} />
                         <div className="mt-2 flex items-center justify-between border-t border-charcoal/10 pt-2">
                           <span className="font-serif text-base font-semibold text-charcoal">Total</span>
@@ -621,10 +629,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
                       </div>
                       <div className="space-y-1.5 font-display text-sm text-charcoal-soft">
                         <Row label="Room subtotal" value={`₹${pricing.subtotal.toLocaleString("en-IN")}`} />
-{pricing.discountAmt > 0 && (
-  <Row label={`Discount (${pricing.discountPct}%)`} value={`-₹${pricing.discountAmt.toLocaleString("en-IN")}`} />
-)}
-<Row label="GST (5%)" value={`₹${pricing.taxes.toLocaleString("en-IN")}`} />
+                        <Row label="GST (5%)" value={`₹${pricing.taxes.toLocaleString("en-IN")}`} />
                         <Row label="Service fee" value={`₹${pricing.serviceFee.toLocaleString("en-IN")}`} />
                         <div className="mt-2 flex items-center justify-between border-t border-charcoal/10 pt-2">
                           <span className="font-serif text-base font-semibold text-charcoal">Total payable</span>
