@@ -171,9 +171,8 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
           specialRequests: contact.requests,
           paymentMethod,
           discountCode: discountInfo?.code || undefined,
-        }),
-        }),
-      });
+       
+       
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Booking failed");
 
