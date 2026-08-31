@@ -3,8 +3,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Calendar, Users, Check, Loader2, ChevronRight, ChevronLeft, FileText,
-  ShieldCheck, Sparkles, Mail, Phone, User, MessageSquare,
+    X, Calendar, Users, Check, Loader2, ChevronRight, ChevronLeft, FileText,
+  ShieldCheck, Sparkles, Mail, Phone, User, MessageSquare, Tag, XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +38,11 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
   const [guests, setGuests] = useState({ adults: 2, children: 0 });
   const [contact, setContact] = useState({ name: "", email: "", phone: "", requests: "" });
   const [paymentMethod, setPaymentMethod] = useState<"RAZORPAY" | "STRIPE" | "PAY_AT_HOTEL">("RAZORPAY");
-  const [submitting, setSubmitting] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+  const [discountCode, setDiscountCode] = useState("");
+  const [discountInfo, setDiscountInfo] = useState<{ code: string; pct: number } | null>(null);
+  const [discountLoading, setDiscountLoading] = useState(false);
+  const [discountError, setDiscountError] = useState("");
   const [confirmedRef, setConfirmedRef] = useState<string | null>(null);
   const [confirmedBookingId, setConfirmedBookingId] = useState<string | null>(null);
 
@@ -67,6 +71,9 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
         setSelectedRoomId("");
         setGuests({ adults: 2, children: 0 });
         setContact({ name: "", email: "", phone: "", requests: "" });
+        setDiscountCode("");
+        setDiscountInfo(null);
+        setDiscountError("");
         setConfirmedRef(null);
       }, 300);
       return () => clearTimeout(t);
@@ -86,14 +93,57 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
     );
   }, [dateRange]);
 
+    // Validate discount code
+  const validateDiscount = async (code: string) => {
+    if (!code.trim()) { setDiscountInfo(null); setDiscountError(""); return; }
+    if (!contact.email || !/^\S+@\S+\.\S+$/.test(contact.email)) {
+      setDiscountError("Enter your email first to apply a coupon");
+      setDiscountInfo(null);
+      return;
+    }
+    setDiscountLoading(true);
+    setDiscountError("");
+    try {
+      const res = await fetch("/api/discount/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, email: contact.email }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setDiscountInfo({ code: data.code, pct: data.discountPct });
+        setDiscountError("");
+        toast.success(`${data.discountPct}% discount applied!`);
+      } else {
+        setDiscountInfo(null);
+        setDiscountError(data.error || "Invalid coupon code");
+      }
+    } catch {
+      setDiscountError("Failed to validate coupon");
+    }
+    setDiscountLoading(false);
+  };
+
+  const clearDiscount = () => {
+    setDiscountCode("");
+    setDiscountInfo(null);
+    setDiscountError("");
+  };
+
   const pricing = useMemo(() => {
     if (!selectedRoom || nights === 0) return null;
     const subtotal = selectedRoom.basePrice * nights;
-    const taxes = Math.round(subtotal * GST_RATE);
+    const discountAmt = discountInfo ? Math.round(subtotal * (discountInfo.pct / 100)) : 0;
+    const subtotalAfterDiscount = subtotal - discountAmt;
+    const taxes = Math.round(subtotalAfterDiscount * GST_RATE);
     const serviceFee = SERVICE_FEE_FLAT * nights;
-    const total = subtotal + taxes + serviceFee;
-    return { subtotal, taxes, serviceFee, total, perNight: selectedRoom.basePrice };
-  }, [selectedRoom, nights]);
+    const total = subtotalAfterDiscount + taxes + serviceFee;
+    return {
+      subtotal, discountAmt, subtotalAfterDiscount, taxes, serviceFee, total,
+      perNight: selectedRoom.basePrice,
+      discountPct: discountInfo?.pct || 0,
+    };
+  }, [selectedRoom, nights, discountInfo]);
 
   const canProceedDates = !!dateRange.from && !!dateRange.to && !!selectedRoomId && nights > 0;
   const canProceedGuests =
@@ -120,6 +170,8 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
           guestPhone: contact.phone,
           specialRequests: contact.requests,
           paymentMethod,
+          discountCode: discountInfo?.code || undefined,
+        }),
         }),
       });
       const data = await res.json();
@@ -502,6 +554,43 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
                     </div>
                   </div>
 
+                                    {/* Coupon code input */}
+                  <div>
+                    <Label className="mb-1.5 flex items-center gap-1.5 font-display text-xs uppercase tracking-wider text-charcoal-soft">
+                      <Tag className="h-3.5 w-3.5" /> Coupon code
+                    </Label>
+                    {discountInfo ? (
+                      <div className="flex items-center justify-between rounded-xl border border-green-300 bg-green-50 p-3">
+                        <div>
+                          <div className="font-mono text-sm font-bold text-teal">{discountInfo.code}</div>
+                          <div className="font-display text-xs text-green-700">{discountInfo.pct}% discount applied</div>
+                        </div>
+                        <button onClick={clearDiscount} className="grid h-7 w-7 place-items-center rounded-full text-charcoal-soft transition-colors hover:bg-red-100 hover:text-red-600 focus-ring" aria-label="Remove coupon">
+                          <XCircle className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="e.g. RK5OFF-A3X9"
+                          value={discountCode}
+                          onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                          className="bg-white font-mono"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={discountLoading || !discountCode.trim()}
+                          onClick={() => validateDiscount(discountCode)}
+                          className="shrink-0 rounded-xl border-teal/30 text-teal hover:bg-teal hover:text-ivory"
+                        >
+                          {discountLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
+                        </Button>
+                      </div>
+                    )}
+                    {discountError && <p className="mt-1.5 text-xs text-red-500">{discountError}</p>}
+                  </div>
+                  
                   {/* Final price summary */}
                   {pricing && selectedRoom && dateRange.from && dateRange.to && (
                     <div className="rounded-2xl border border-teal/30 bg-white p-4">
@@ -533,7 +622,10 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
                       </div>
                       <div className="space-y-1.5 font-display text-sm text-charcoal-soft">
                         <Row label="Room subtotal" value={`₹${pricing.subtotal.toLocaleString("en-IN")}`} />
-                        <Row label="GST (5%)" value={`₹${pricing.taxes.toLocaleString("en-IN")}`} />
+{pricing.discountAmt > 0 && (
+  <Row label={`Discount (${pricing.discountPct}%)`} value={`-₹${pricing.discountAmt.toLocaleString("en-IN")}`} />
+)}
+<Row label="GST (5%)" value={`₹${pricing.taxes.toLocaleString("en-IN")}`} />
                         <Row label="Service fee" value={`₹${pricing.serviceFee.toLocaleString("en-IN")}`} />
                         <div className="mt-2 flex items-center justify-between border-t border-charcoal/10 pt-2">
                           <span className="font-serif text-base font-semibold text-charcoal">Total payable</span>
