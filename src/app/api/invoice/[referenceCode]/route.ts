@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { c, PW, PH, MX, drawHeader, drawFooter, hline, fmtDate, rs } from "@/lib/pdf-utils";
+import PDFDocument from "pdfkit";
+import { C, PW, PH, MX, drawHeader, drawFooter, hline, fmtDate, rs } from "@/lib/pdf-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ refe
     });
     if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
 
-    /* ── Fetch bank settings ── */
+    /* Fetch bank settings */
     const bankRows = await db.siteSetting.findMany({
       where: { key: { in: ["bank_account_name", "bank_account_number", "bank_ifsc", "bank_upi_id"] } },
       select: { key: true, value: true },
@@ -23,116 +23,129 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ refe
     const bank: Record<string, string> = {};
     bankRows.forEach((s) => { bank[s.key] = s.value; });
 
-    /* ── Build PDF ── */
-    const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([PW, PH]);
-    const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    const reg  = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    /* Build PDF */
+    return new Promise<Response>((resolve) => {
+      const chunks: Buffer[] = [];
+      const doc = new PDFDocument({ size: "A4" });
+      doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+      doc.on("end", () => {
+        resolve(new Response(Buffer.concat(chunks), {
+          headers: {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": `inline; filename="RK_Residency_Invoice_${booking.referenceCode}.pdf"`,
+          },
+        }));
+      });
 
-    let y = PH - 90;
+      drawHeader(doc);
+      let y = 110;
 
-    /* Header */
-    drawHeader(page, bold, reg);
+      /* Title */
+      doc.font("Helvetica-Bold").fontSize(22).fillColor(C.dark)
+        .text("INVOICE", MX, y);
 
-    /* Title */
-    y -= 30;
-    page.drawText("INVOICE", { x: MX, y, size: 22, font: bold, color: c.dark });
+      /* Right side: date & ref */
+      const dateStr = fmtDate(new Date());
+      doc.font("Helvetica").fontSize(9).fillColor(C.gray);
+      doc.text(`Date: ${dateStr}`, 340, y + 2, { width: 205, align: "right" });
+      doc.text(`Ref: ${booking.referenceCode}`, 340, y + 14, { width: 205, align: "right" });
 
-    /* Right-side: date & ref */
-    const dateStr = fmtDate(new Date());
-    page.drawText(`Date: ${dateStr}`, {
-      x: PW - MX - reg.widthOfTextAtSize(`Date: ${dateStr}`, 9), y: y + 4, size: 9, font: reg, color: c.gray,
-    });
-    page.drawText(`Ref: ${booking.referenceCode}`, {
-      x: PW - MX - reg.widthOfTextAtSize(`Ref: ${booking.referenceCode}`, 9), y: y - 10, size: 9, font: reg, color: c.gray,
-    });
+      /* Bill To */
+      y += 42;
+      doc.font("Helvetica-Bold").fontSize(10).fillColor(C.gray).text("Bill To:", MX, y);
+      y += 16;
+      doc.font("Helvetica-Bold").fontSize(13).fillColor(C.dark).text(booking.guestName, MX, y);
+      y += 16;
+      doc.font("Helvetica").fontSize(10).fillColor(C.dark).text(booking.guestEmail, MX, y);
+      y += 15;
+      doc.text(booking.guestPhone, MX, y);
 
-    /* Bill To */
-    y -= 40;
-    page.drawText("Bill To:", { x: MX, y, size: 10, font: bold, color: c.gray });
-    y -= 16;
-    page.drawText(booking.guestName, { x: MX, y, size: 13, font: bold, color: c.dark });
-    y -= 15;
-    page.drawText(booking.guestEmail, { x: MX, y, size: 10, font: reg, color: c.dark });
-    y -= 14;
-    page.drawText(booking.guestPhone, { x: MX, y, size: 10, font: reg, color: c.dark });
+      /* Separator */
+      y += 22;
+      hline(doc, y);
 
-    /* Separator */
-    y -= 20;
-    hline(page, y);
+      /* Table header */
+      y += 16;
+      doc.font("Helvetica-Bold").fontSize(9).fillColor(C.gray);
+      doc.text("Description", MX, y);
+      doc.text("Nights", 320, y);
+      doc.text("Rate/Night", 395, y);
+      doc.text("Amount", 460, y, { width: 80, align: "right" });
+      y += 14;
+      hline(doc, y);
 
-    /* Table header */
-    y -= 20;
-    page.drawText("Description", { x: MX, y, size: 9, font: bold, color: c.gray });
-    page.drawText("Nights", { x: 330, y, size: 9, font: bold, color: c.gray });
-    page.drawText("Rate/Night", { x: 400, y, size: 9, font: bold, color: c.gray });
-    page.drawText("Amount", { x: 480, y, size: 9, font: bold, color: c.gray });
-    y -= 5;
-    hline(page, y);
+      /* Table row */
+      y += 10;
+      const nights = booking.nights || 1;
+      const subtotal = booking.subtotal || booking.totalAmount;
+      const ratePerNight = Math.round(subtotal / nights);
 
-    /* Table row */
-    y -= 18;
-    const nights = booking.nights || 1;
-    const subtotal = booking.subtotal || booking.totalAmount;
-    const ratePerNight = Math.round(subtotal / nights);
+      doc.font("Helvetica").fontSize(10).fillColor(C.dark);
+      doc.text(booking.room.name, MX, y, { width: 280 });
+      doc.text(String(nights), 340, y);
+      doc.text(rs(ratePerNight), 395, y);
+      doc.text(rs(subtotal), 460, y, { width: 80, align: "right" });
+      y += 14;
+      hline(doc, y);
 
-    page.drawText(booking.room.name, { x: MX, y, size: 10, font: reg, color: c.dark });
-    page.drawText(String(nights), { x: 345, y, size: 10, font: reg, color: c.dark });
-    page.drawText(rs(ratePerNight), { x: 400, y, size: 10, font: reg, color: c.dark });
-    page.drawText(rs(subtotal), { x: 480, y, size: 10, font: reg, color: c.dark });
-    y -= 5;
-    hline(page, y);
+      /* Totals */
+      y += 18;
+      const gstAmount = booking.totalAmount - subtotal;
 
-    /* Totals */
-    y -= 22;
-    const gstAmount = booking.totalAmount - subtotal;
+      doc.font("Helvetica").fontSize(10);
+      doc.fillColor(C.gray).text("Subtotal", 380, y);
+      doc.fillColor(C.dark).text(rs(subtotal), 460, y, { width: 80, align: "right" });
+      y += 16;
+      doc.fillColor(C.gray).text("GST (18%)", 380, y);
+      doc.fillColor(C.dark).text(rs(gstAmount), 460, y, { width: 80, align: "right" });
+      y += 6;
+      hline(doc, y);
+      y += 18;
+      doc.font("Helvetica-Bold").fontSize(13).fillColor(C.dark).text("TOTAL", 380, y);
+      doc.fillColor(C.teal).text(rs(booking.totalAmount), 460, y, { width: 80, align: "right" });
 
-    page.drawText("Subtotal", { x: 380, y, size: 10, font: reg, color: c.gray });
-    page.drawText(rs(subtotal), { x: 480, y, size: 10, font: reg, color: c.dark });
-    y -= 18;
-    page.drawText("GST (18%)", { x: 380, y, size: 10, font: reg, color: c.gray });
-    page.drawText(rs(gstAmount), { x: 480, y, size: 10, font: reg, color: c.dark });
-    y -= 5;
-    hline(page, y);
-    y -= 22;
-    page.drawText("TOTAL", { x: 380, y, size: 13, font: bold, color: c.dark });
-    page.drawText(rs(booking.totalAmount), { x: 480, y, size: 13, font: bold, color: c.teal });
+      /* Payment status */
+      y += 28;
+      doc.font("Helvetica-Bold").fontSize(10)
+        .fillColor(booking.paymentStatus === "PAID" ? C.green : C.gold)
+        .text(`Payment: ${booking.paymentStatus}`, MX, y, { continued: true })
+        .font("Helvetica").fillColor(C.gray)
+        .text(`    Method: ${booking.paymentMethod || "N/A"}`);
 
-    /* Payment */
-    y -= 30;
-    page.drawText(`Payment: ${booking.paymentStatus}`, { x: MX, y, size: 10, font: bold, color: booking.paymentStatus === "PAID" ? c.green : c.gold });
-    page.drawText(`Method: ${booking.paymentMethod || "N/A"}`, { x: 220, y, size: 10, font: reg, color: c.gray });
+      /* Bank Details */
+      y += 32;
+      hline(doc, y);
+      y += 18;
+      doc.font("Helvetica-Bold").fontSize(10).fillColor(C.gold)
+        .text("Bank Details (for offline payment)", MX, y);
 
-    /* Bank Details */
-    y -= 35;
-    hline(page, y);
-    y -= 20;
-    page.drawText("Bank Details (for offline payment)", { x: MX, y, size: 10, font: bold, color: c.gold });
+      const bankLines = [
+        bank.bank_account_name && `Account Name: ${bank.bank_account_name}`,
+        bank.bank_account_number && `Account No: ${bank.bank_account_number}`,
+        bank.bank_ifsc && `IFSC: ${bank.bank_ifsc}`,
+        bank.bank_upi_id && `UPI: ${bank.bank_upi_id}`,
+      ].filter(Boolean) as string[];
 
-    const bankLines = [
-      bank.bank_account_name && `Account Name: ${bank.bank_account_name}`,
-      bank.bank_account_number && `Account No: ${bank.bank_account_number}`,
-      bank.bank_ifsc && `IFSC: ${bank.bank_ifsc}`,
-      bank.bank_upi_id && `UPI: ${bank.bank_upi_id}`,
-    ].filter(Boolean) as string[];
+      for (const line of bankLines) {
+        y += 16;
+        doc.font("Helvetica").fontSize(9).fillColor(C.dark).text(line, MX + 10, y);
+      }
+      if (!bankLines.length) {
+        y += 16;
+        doc.font("Helvetica").fontSize(9).fillColor(C.gray)
+          .text("Bank details not configured. Contact +91 9760814931.", MX + 10, y);
+      }
 
-    for (const line of bankLines) { y -= 16; page.drawText(line, { x: MX + 10, y, size: 9, font: reg, color: c.dark }); }
-    if (!bankLines.length) { y -= 16; page.drawText("Bank details not configured. Contact +91 9760814931.", { x: MX + 10, y, size: 9, font: reg, color: c.gray }); }
+      /* Thank you */
+      y += 35;
+      doc.font("Helvetica-Bold").fontSize(11).fillColor(C.teal)
+        .text("Thank you for choosing RK Residency!", MX, y);
+      y += 16;
+      doc.font("Helvetica").fontSize(10).fillColor(C.gray)
+        .text("Atithi Devo Bhava.", MX, y);
 
-    /* Thank you */
-    y -= 35;
-    page.drawText("Thank you for choosing RK Residency!", { x: MX, y, size: 11, font: bold, color: c.teal });
-    y -= 16;
-    page.drawText("Atithi Devo Bhava.", { x: MX, y, size: 10, font: reg, color: c.gray });
-
-    drawFooter(page, reg);
-
-    const bytes = await pdfDoc.save();
-    return new NextResponse(bytes, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="RK_Residency_Invoice_${booking.referenceCode}.pdf"`,
-      },
+      drawFooter(doc);
+      doc.end();
     });
   } catch (e) {
     console.error("[invoice] Error:", e);
