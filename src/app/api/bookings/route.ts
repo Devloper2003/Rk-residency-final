@@ -16,6 +16,7 @@ const schema = z.object({
   guestPhone: z.string().min(6).max(30),
   specialRequests: z.string().max(2000).optional().or(z.literal("")),
   paymentMethod: z.enum(["RAZORPAY", "STRIPE", "PAY_AT_HOTEL"]).default("PAY_AT_HOTEL"),
+    discountCode: z.string().max(30).optional().or(z.literal("")),
 });
 
 function generateReference(): string {
