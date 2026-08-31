@@ -85,6 +85,7 @@ model Booking {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   downloadToken String?  @unique  // Optional — NULL for legacy rows, set for new bookings
+  discountCode DiscountCode[] @relation("DiscountCreatedBy")
 }
 
 model Review {
@@ -260,3 +261,18 @@ model MediaAsset {
 }
 
 
+// Discount codes — generated on booking confirmation, valid for repeat guests
+model DiscountCode {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  discountPct   Int
+  createdByBooking String
+  createdByBookingRel Booking @relation("DiscountCreatedBy", fields: [createdByBooking], references: [id])
+  createdByGuest  String
+  usedByBooking   String?
+  usedAt        DateTime?
+  validFrom     DateTime @default(now())
+  validUntil    DateTime
+  isActive       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+}
