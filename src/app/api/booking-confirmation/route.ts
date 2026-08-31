@@ -227,6 +227,12 @@ export async function POST(req: Request) {
       <div style="font-size:11px;color:#8D6E3F;">Apply at checkout on your next booking</div>
     </div>` : ""}
 
+        <!-- ── DOWNLOAD LINKS ── -->
+    <div style="display:flex;gap:12px;justify-content:center;margin:24px 0 8px;">
+      <a href="https://rkresidencyvrindavan.in/api/invoice/${booking.referenceCode}" style="display:inline-flex;align-items:center;gap:6px;background:#0E4C4F;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;">&#128196; Download Invoice</a>
+      <a href="https://rkresidencyvrindavan.in/api/voucher/${booking.referenceCode}" style="display:inline-flex;align-items:center;gap:6px;background:#D4A056;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;">&#127942; Download Voucher</a>
+    </div>
+    <p style="text-align:center;font-size:11px;color:#999;margin:0 0 16px;">Click to view & save PDF</p>
     <!-- Footer -->
     <p style="color:#6B6560;font-size:13px;line-height:1.6;margin-top:24px;">For any queries, contact us at <strong>+91 9760814931</strong> or reply to this email.</p>
     <p style="color:#6B6560;font-size:13px;font-style:italic;">Atithi Devo Bhava.</p>
