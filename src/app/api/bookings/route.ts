@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     const {
       roomId, checkIn: checkInISO, checkOut: checkOutISO, nights,
       adults, children, guestName, guestEmail, guestPhone,
-      specialRequests, paymentMethod,
+            specialRequests, paymentMethod, discountCode: rawDiscountCode,
     } = parsed.data;
 
     const checkIn = new Date(checkInISO);
@@ -93,10 +93,33 @@ export async function POST(req: Request) {
         : null;
       const pricePerNight = surge ? surge.pricePerNight : room.basePrice;
 
+            // Validate discount code if provided
+      let discountPct = 0;
+      let discountRecordId: string | undefined;
+      if (rawDiscountCode && rawDiscountCode.trim()) {
+        const now = new Date();
+        const coupon = await tx.discountCode.findUnique({
+          where: { code: rawDiscountCode.toUpperCase().trim() },
+        });
+        if (
+          coupon &&
+          coupon.isActive &&
+          !coupon.usedAt &&
+          now >= coupon.validFrom &&
+          now <= coupon.validUntil &&
+          coupon.createdByGuest.toLowerCase() === guestEmail.toLowerCase()
+        ) {
+          discountPct = coupon.discountPct;
+          discountRecordId = coupon.id;
+        }
+      }
+
       const subtotal = pricePerNight * nights;
-      const taxesGst = Math.round(subtotal * 0.05);
+      const discountAmount = Math.round(subtotal * (discountPct / 100));
+      const subtotalAfterDiscount = subtotal - discountAmount;
+      const taxesGst = Math.round(subtotalAfterDiscount * 0.05);
       const serviceFee = 250 * nights;
-      const totalAmount = subtotal + taxesGst + serviceFee;
+      const totalAmount = subtotalAfterDiscount + taxesGst + serviceFee;
 
       // 4. Upsert guest
       const guest = await tx.guest.upsert({
@@ -135,7 +158,7 @@ export async function POST(req: Request) {
           guestPhone,
           specialRequests: specialRequests || null,
           pricePerNight,
-          subtotal,
+          subtotal: subtotalAfterDiscount,
           taxesGst,
           serviceFee,
           totalAmount,
@@ -147,7 +170,15 @@ export async function POST(req: Request) {
         },
       });
 
-      return { booking, room };
+           // Mark coupon as used
+      if (discountRecordId) {
+        await tx.discountCode.update({
+          where: { id: discountRecordId },
+          data: { usedByBooking: booking.id, usedAt: new Date() },
+        });
+      }
+
+      return { booking, room, discountPct, discountAmount };
     });
 
     // Send confirmation email (non-blocking — booking succeeds even if email fails)
