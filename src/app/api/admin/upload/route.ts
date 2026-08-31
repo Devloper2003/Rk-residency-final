@@ -88,7 +88,7 @@ export async function POST(req: Request) {
           data: {
             filename,
             mimeType: "image/webp",
-            data: processed,
+            data: new Uint8Array(processed),
             size: processed.length,
           },
         });
