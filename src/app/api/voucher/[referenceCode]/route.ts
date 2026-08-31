@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { c, PW, PH, MX, drawHeader, drawFooter, hline, fmtDate, rs } from "@/lib/pdf-utils";
+import PDFDocument from "pdfkit";
+import { C, PW, PH, MX, drawHeader, drawFooter, hline, fmtDate, rs } from "@/lib/pdf-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -15,110 +15,111 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ refe
     });
     if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
 
-    /* Fetch coupon for this booking */
+    /* Fetch coupon */
     const coupon = await db.discountCode.findFirst({
       where: { createdByBooking: booking.id },
     });
 
-    /* ── Build PDF ── */
-    const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([PW, PH]);
-    const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    const reg  = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-    let y = PH - 90;
-    drawHeader(page, bold, reg);
-
-    /* Title */
-    y -= 35;
-    const title = "BOOKING VOUCHER";
-    page.drawText(title, { x: (PW - bold.widthOfTextAtSize(title, 22)) / 2, y, size: 22, font: bold, color: c.dark });
-
-    /* Reference code box */
-    y -= 50;
-    const boxW = 230, boxH = 48;
-    const boxX = (PW - boxW) / 2;
-    page.drawRoundedRectangle({ x: boxX, y: y - boxH + 18, width: boxW, height: boxH, radius: 8, borderColor: c.teal, borderWidth: 2 });
-    page.drawText(booking.referenceCode, {
-      x: (PW - bold.widthOfTextAtSize(booking.referenceCode, 24)) / 2, y: y - 8, size: 24, font: bold, color: c.teal,
-    });
-    const refLabel = "Reference Number";
-    page.drawText(refLabel, {
-      x: (PW - reg.widthOfTextAtSize(refLabel, 8)) / 2, y: y - 26, size: 8, font: reg, color: c.gray,
-    });
-
-    /* Booking details */
-    y -= 65;
-    hline(page, y);
-    y -= 25;
-
-    const rows: [string, string][] = [
-      ["Guest", booking.guestName],
-      ["Email", booking.guestEmail],
-      ["Phone", booking.guestPhone],
-      ["Room", booking.room.name],
-      ["Check-in", fmtDate(new Date(booking.checkIn))],
-      ["Check-out", fmtDate(new Date(booking.checkOut))],
-      ["Guests", `${booking.adults} Adults${booking.children > 0 ? `, ${booking.children} Children` : ""}`],
-      ["Nights", String(booking.nights || 1)],
-    ];
-    for (const [label, value] of rows) {
-      page.drawText(label, { x: MX, y, size: 10, font: bold, color: c.gray });
-      page.drawText(value, { x: 160, y, size: 10, font: reg, color: c.dark });
-      y -= 18;
-    }
-
-    /* Amount */
-    y -= 5;
-    hline(page, y);
-    y -= 25;
-    page.drawText("Total Amount", { x: MX, y, size: 12, font: bold, color: c.dark });
-    page.drawText(rs(booking.totalAmount), { x: 200, y, size: 16, font: bold, color: c.teal });
-    y -= 18;
-    page.drawText(booking.paymentStatus, { x: 200, y, size: 10, font: bold, color: booking.paymentStatus === "PAID" ? c.green : c.gold });
-
-    /* ── Coupon card ── */
-    if (coupon && coupon.isActive) {
-      y -= 40;
-      hline(page, y);
-      y -= 22;
-      page.drawText("Your Exclusive 5% Discount Coupon", { x: MX, y, size: 11, font: bold, color: c.gold });
-
-      y -= 28;
-      const cpW = 260, cpH = 55;
-      const cpX = (PW - cpW) / 2;
-      /* Gold dashed border effect (solid for PDF) */
-      page.drawRoundedRectangle({ x: cpX, y: y - cpH + 18, width: cpW, height: cpH, radius: 8, borderColor: c.gold, borderWidth: 2, color: c.lightGoldBg });
-
-      page.drawText(coupon.code, {
-        x: (PW - bold.widthOfTextAtSize(coupon.code, 20)) / 2, y: y - 4, size: 20, font: bold, color: c.teal,
+    /* Build PDF */
+    return new Promise<Response>((resolve) => {
+      const chunks: Buffer[] = [];
+      const doc = new PDFDocument({ size: "A4" });
+      doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+      doc.on("end", () => {
+        resolve(new Response(Buffer.concat(chunks), {
+          headers: {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": `inline; filename="RK_Residency_Voucher_${booking.referenceCode}.pdf"`,
+          },
+        }));
       });
-      const cpInfo = "Valid for 90 days  \u00B7  One-time use  \u00B7  Non-transferable";
-      page.drawText(cpInfo, {
-        x: (PW - reg.widthOfTextAtSize(cpInfo, 7.5)) / 2, y: y - 22, size: 7.5, font: reg, color: c.gray,
-      });
-    }
 
-    /* Terms */
-    y -= 60;
-    page.drawText("Present this voucher at check-in.", { x: MX, y, size: 9, font: reg, color: c.gray });
-    y -= 14;
-    page.drawText("This voucher is non-transferable and valid only for the booked dates.", { x: MX, y, size: 9, font: reg, color: c.gray });
+      drawHeader(doc);
+      let y = 115;
 
-    /* Thank you */
-    y -= 30;
-    page.drawText("We look forward to welcoming you!", { x: MX, y, size: 11, font: bold, color: c.teal });
-    y -= 14;
-    page.drawText("Atithi Devo Bhava.", { x: MX, y, size: 10, font: reg, color: c.gray });
+      /* Title */
+      doc.font("Helvetica-Bold").fontSize(22).fillColor(C.dark)
+        .text("BOOKING VOUCHER", 0, y, { align: "center", width: PW });
 
-    drawFooter(page, reg);
+      /* Reference code box */
+      y += 40;
+      const boxW = 230, boxH = 50, boxX = (PW - boxW) / 2;
+      doc.roundedRect(boxX, y, boxW, boxH, 8)
+        .strokeColor(C.teal).lineWidth(2).stroke();
+      const refLabel = "Reference Number";
+      doc.font("Helvetica").fontSize(8).fillColor(C.gray)
+        .text(refLabel, 0, y + 8, { align: "center", width: PW });
+      doc.font("Helvetica-Bold").fontSize(22).fillColor(C.teal)
+        .text(booking.referenceCode, 0, y + 20, { align: "center", width: PW });
 
-    const bytes = await pdfDoc.save();
-    return new NextResponse(bytes, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="RK_Residency_Voucher_${booking.referenceCode}.pdf"`,
-      },
+      /* Booking details */
+      y += 70;
+      hline(doc, y);
+      y += 22;
+
+      const rows: [string, string][] = [
+        ["Guest", booking.guestName],
+        ["Email", booking.guestEmail],
+        ["Phone", booking.guestPhone],
+        ["Room", booking.room.name],
+        ["Check-in", fmtDate(new Date(booking.checkIn))],
+        ["Check-out", fmtDate(new Date(booking.checkOut))],
+        ["Guests", `${booking.adults} Adults${booking.children > 0 ? `, ${booking.children} Children` : ""}`],
+        ["Nights", String(booking.nights || 1)],
+      ];
+      for (const [label, value] of rows) {
+        doc.font("Helvetica-Bold").fontSize(10).fillColor(C.gray).text(label, MX, y, { width: 100 });
+        doc.font("Helvetica").fontSize(10).fillColor(C.dark).text(value, 160, y, { width: PW - 160 - MX });
+        y += 18;
+      }
+
+      /* Amount */
+      y += 6;
+      hline(doc, y);
+      y += 22;
+      doc.font("Helvetica-Bold").fontSize(12).fillColor(C.dark).text("Total Amount", MX, y);
+      doc.font("Helvetica-Bold").fontSize(16).fillColor(C.teal)
+        .text(rs(booking.totalAmount), 200, y - 2);
+      y += 20;
+      doc.font("Helvetica-Bold").fontSize(10)
+        .fillColor(booking.paymentStatus === "PAID" ? C.green : C.gold)
+        .text(booking.paymentStatus, 200, y);
+
+      /* Coupon card */
+      if (coupon && coupon.isActive) {
+        y += 40;
+        hline(doc, y);
+        y += 18;
+        doc.font("Helvetica-Bold").fontSize(11).fillColor(C.gold)
+          .text("Your Exclusive 5% Discount Coupon", MX, y);
+
+        y += 28;
+        const cpW = 260, cpH = 55, cpX = (PW - cpW) / 2;
+        doc.roundedRect(cpX, y, cpW, cpH, 8)
+          .fillAndStroke(C.lightGold, C.gold);
+        doc.font("Helvetica-Bold").fontSize(20).fillColor(C.teal)
+          .text(coupon.code, 0, y + 10, { align: "center", width: PW });
+        doc.font("Helvetica").fontSize(7.5).fillColor(C.gray)
+          .text("Valid for 90 days  \u00B7  One-time use  \u00B7  Non-transferable", 0, y + 36, { align: "center", width: PW });
+      }
+
+      /* Terms */
+      y += 70;
+      doc.font("Helvetica").fontSize(9).fillColor(C.gray)
+        .text("Present this voucher at check-in.", MX, y);
+      y += 14;
+      doc.text("This voucher is non-transferable and valid only for the booked dates.", MX, y);
+
+      /* Thank you */
+      y += 30;
+      doc.font("Helvetica-Bold").fontSize(11).fillColor(C.teal)
+        .text("We look forward to welcoming you!", MX, y);
+      y += 16;
+      doc.font("Helvetica").fontSize(10).fillColor(C.gray)
+        .text("Atithi Devo Bhava.", MX, y);
+
+      drawFooter(doc);
+      doc.end();
     });
   } catch (e) {
     console.error("[voucher] Error:", e);
