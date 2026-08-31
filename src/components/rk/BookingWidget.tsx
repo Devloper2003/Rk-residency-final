@@ -174,8 +174,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
         }),          // ← ye JSON.stringify ko close karta hai
       });            // ← ye fetch() ko close karta hai
 
-      const data = await res.json();
-       
+    
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Booking failed");
 
