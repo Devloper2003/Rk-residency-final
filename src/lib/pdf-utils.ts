@@ -1,4 +1,5 @@
 import PDFDocument from "pdfkit";
+type Doc = InstanceType<typeof PDFDocument>;
 
 /* ── A4 dimensions (points) ── */
 export const PW = 595.28;
@@ -18,7 +19,7 @@ export const C = {
 };
 
 /* ── Draw teal header bar ── */
-export function drawHeader(doc: PDFDocument) {
+export function drawHeader(doc: Doc) {
   doc.rect(0, 0, PW, 90).fill(C.teal);
   doc.font("Helvetica-Bold").fontSize(26).fillColor(C.gold)
     .text("RK Residency", 0, 35, { align: "center", width: PW });
@@ -27,7 +28,7 @@ export function drawHeader(doc: PDFDocument) {
 }
 
 /* ── Draw teal footer bar ── */
-export function drawFooter(doc: PDFDocument) {
+export function drawFooter(doc: Doc) {
   doc.rect(0, PH - 28, PW, 28).fill(C.teal);
   doc.font("Helvetica").fontSize(7).fillColor("#7AAEB0")
     .text(
@@ -37,7 +38,7 @@ export function drawFooter(doc: PDFDocument) {
 }
 
 /* ── Horizontal separator line ── */
-export function hline(doc: PDFDocument, y: number) {
+export function hline(doc: Doc, y: number) {
   doc.save()
     .moveTo(MX, y).lineTo(PW - MX, y)
     .strokeColor(C.border).lineWidth(0.5)
