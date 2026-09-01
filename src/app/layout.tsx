@@ -4,6 +4,7 @@ import { Playfair_Display, Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { VisitorTracker } from "@/components/rk/VisitorTracker";
+import { GoogleTagManager } from "@/components/rk/GoogleTagManager";
 import { GoogleAnalytics } from "@/components/rk/GoogleAnalytics";
 import { GlobalBookingWidget } from "@/components/rk/GlobalBookingWidget";
 
