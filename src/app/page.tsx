@@ -97,7 +97,7 @@ export default function Home() {
         <SeeMoreButton href="/experiences" label="Explore all Braj experiences" />
         <Dining />
         <SeeMoreButton href="/dining" label="See full dining menu" />
-        <Gallery />
+        <Gallery limit={8} />
         <SeeMoreButton href="/gallery" label="View full gallery" />
         <Offers onBookClick={openBookingCb} />
         <SeeMoreButton href="/offers" label="See all offers & packages" />
