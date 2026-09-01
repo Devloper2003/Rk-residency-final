@@ -196,7 +196,7 @@ function matchFilter(room: Room, filter: string): boolean {
   return true;
 }
 
-export function Rooms({ onBookRoom }: { onBookRoom: (room: Room) => void }) {
+export function Rooms({ onBookRoom, limit }: { onBookRoom: (room: Room) => void; limit?: number }) {
   const rLabel = useContentValue("rooms.label", "Accommodation");
   const rTitle = useContentValue("rooms.title", "Rooms, suites & family ");
   const rSubtitle = useContentValue("rooms.subtitle", "");
@@ -216,7 +216,8 @@ export function Rooms({ onBookRoom }: { onBookRoom: (room: Room) => void }) {
   }, []);
 
   const visible = rooms.filter((r) => matchFilter(r, filter));
-
+  const items = limit ? visible.slice(0, limit) : visible;
+  
   return (
     <section id="rooms" className="relative bg-ivory-deep py-24 lg:py-32">
       {/* Top decorative marigold divider */}
@@ -280,7 +281,7 @@ export function Rooms({ onBookRoom }: { onBookRoom: (room: Room) => void }) {
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {visible.map((r) => (
+            {items.map((r) => (
               <TiltCard key={r.id} room={r} onBook={onBookRoom} />
             ))}
           </div>
