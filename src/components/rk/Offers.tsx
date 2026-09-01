@@ -19,7 +19,7 @@ type Offer = {
   badge: string | null;
 };
 
-export function Offers({ onBookClick }: { onBookClick: () => void }) {
+export function Offers({ onBookClick, limit }: { onBookClick: () => void; limit?: number }) {
   const oLabel = useContentValue("offers.label", "Offers & Packages");
   const oTitle = useContentValue("offers.title", "Sacred seasons, thoughtfully packaged");
   const oSubtitle = useContentValue("offers.subtitle", "");
@@ -35,7 +35,8 @@ export function Offers({ onBookClick }: { onBookClick: () => void }) {
       })
       .catch(() => setLoading(false));
   }, []);
-
+  const items = limit ? offers.slice(0, limit) : offers;
+  
   return (
     <section id="offers" className="relative bg-ivory py-24 lg:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -73,7 +74,7 @@ export function Offers({ onBookClick }: { onBookClick: () => void }) {
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {offers.map((o, i) => {
+            {items.map((o, i) => {
               const perks: string[] = JSON.parse(o.perks || "[]");
               const validUntil = new Date(o.validUntil);
               const now = new Date();
