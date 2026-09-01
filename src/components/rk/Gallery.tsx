@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
@@ -75,7 +75,11 @@ export function Gallery({ limit }: { limit?: number }) {
   const info = useContactInfo();
   const galleryRaw = useContentValue("gallery.items", "[]");
     const gallery = parseJsonArray<GalleryItem>(galleryRaw, GALLERY);
-  const items = limit ? gallery.slice(0, limit) : gallery;
+  const items = useMemo(() => {
+    if (!limit) return gallery;
+    const shuffled = [...gallery].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, limit);
+  }, [gallery, limit]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const close = () => setLightboxIndex(null);
