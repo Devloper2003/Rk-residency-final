@@ -91,19 +91,19 @@ export default function Home() {
         <TrustBadges />
         <About />
         <SeeMoreButton href="/about" label="Read our full story" />
-        <Rooms onBookRoom={openBookingWithRoom} />
+        <Rooms onBookRoom={openBookingWithRoom} limit={3} />
         <SeeMoreButton href="/rooms" label="View all rooms & suites" />
-        <Experiences />
+        <Experiences limit={5} />
         <SeeMoreButton href="/experiences" label="Explore all Braj experiences" />
         <Dining />
         <SeeMoreButton href="/dining" label="See full dining menu" />
         <Gallery limit={8} />
         <SeeMoreButton href="/gallery" label="View full gallery" />
-        <Offers onBookClick={openBookingCb} />
+        <Offers onBookClick={openBookingCb} limit={3} />
         <SeeMoreButton href="/offers" label="See all offers & packages" />
         <Testimonials />
         <SeeMoreButton href="/blog" label="Read the Braj Journal" />
-        <FAQ />
+        <FAQ limit={6} />
         <Contact />
       </main>
 
