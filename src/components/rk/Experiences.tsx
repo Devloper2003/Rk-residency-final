@@ -80,10 +80,11 @@ const BEST_TIME_META = {
   evening: { label: "Best at Evening", icon: Moon, color: "text-teal" },
 } as const;
 
-export function Experiences() {
+export function Experiences({ limit }: { limit?: number }) {
   const prefersReducedMotion = useReducedMotion();
   const experiencesRaw = useContentValue("experiences.items", "[]");
   const experiences = parseJsonArray<Experience>(experiencesRaw, EXPERIENCES);
+  const items = limit ? experiences.slice(0, limit) : experiences;
   return (
     <section
       id="experiences"
@@ -130,7 +131,7 @@ export function Experiences() {
           <div className="absolute left-1/2 top-0 hidden h-full w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-gold/40 to-transparent lg:block" />
 
           <div className="space-y-12 lg:space-y-24">
-            {experiences.map((exp, i) => {
+            {items.map((exp, i) => {
               const isRight = i % 2 === 1;
               const meta = BEST_TIME_META[exp.bestTime as keyof typeof BEST_TIME_META] || BEST_TIME_META.day;
               const TimeIcon = meta?.icon || Sun;
