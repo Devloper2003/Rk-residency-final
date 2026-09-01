@@ -86,6 +86,10 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+    icons: {
+    icon: "/uploads/4554e352db41d79f.webp",
+    apple: "/uploads/4554e352db41d79f.webp",
+  },
 };
 
 export default function RootLayout({
