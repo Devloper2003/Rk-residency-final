@@ -94,7 +94,7 @@ const FAQS: FAQ[] = [
 
 const CATEGORIES = ["All", "Booking", "Rooms", "Dining", "Temple Visits", "Accessibility"];
 
-export function FAQ() {
+export function FAQ({ limit }: { limit?: number }) {
   const [open, setOpen] = useState<number | null>(0);
   const [category, setCategory] = useState("All");
   const navigate = useRouter((s) => s.navigate);
@@ -106,7 +106,8 @@ export function FAQ() {
   const whatsappNumber = useSettingValue("whatsapp_number", "919876543210").replace(/[^\d]/g, "");
   const waUrl = `https://wa.me/${whatsappNumber}`;
 
-  const visible = category === "All" ? FAQS : FAQS.filter((f) => f.category === category);
+  const filtered = category === "All" ? FAQS : FAQS.filter((f) => f.category === category);
+  const visible = limit ? filtered.slice(0, limit) : filtered;
 
   return (
     <section id="faq" className="relative bg-ivory py-24 lg:py-32">
