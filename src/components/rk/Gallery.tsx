@@ -71,18 +71,19 @@ const SPAN_CLASSES: Record<NonNullable<GalleryItem["span"]>, string> = {
   square: "",
 };
 
-export function Gallery() {
+export function Gallery({ limit }: { limit?: number }) {
   const info = useContactInfo();
   const galleryRaw = useContentValue("gallery.items", "[]");
-  const gallery = parseJsonArray<GalleryItem>(galleryRaw, GALLERY);
+    const gallery = parseJsonArray<GalleryItem>(galleryRaw, GALLERY);
+  const items = limit ? gallery.slice(0, limit) : gallery;
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const close = () => setLightboxIndex(null);
   const next = () =>
-    setLightboxIndex((i) => (i === null ? null : (i + 1) % gallery.length));
+    setLightboxIndex((i) => (i === null ? null : (i + 1) % items.length));
   const prev = () =>
     setLightboxIndex((i) =>
-      i === null ? null : (i - 1 + gallery.length) % gallery.length
+      i === null ? null : (i - 1 + items.length) % items.length
     );
 
   return (
@@ -113,7 +114,7 @@ export function Gallery() {
 
         {/* Masonry grid */}
         <div className="grid auto-rows-[180px] grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4 lg:auto-rows-[240px]">
-          {gallery.map((item, i) => (
+          {items.map((item, i) => (
             <Reveal
               key={i}
               delay={(i % 4) * 0.05}
@@ -210,16 +211,16 @@ export function Gallery() {
               onClick={(e) => e.stopPropagation()}
             >
               <img
-                src={gallery[lightboxIndex]?.src || GALLERY[0].src}
-                alt={gallery[lightboxIndex]?.alt || GALLERY[0].alt}
+                src={items[lightboxIndex]?.src || GALLERY[0].src}
+                alt={items[lightboxIndex]?.alt || GALLERY[0].alt}
                 className="max-h-[78vh] w-full object-contain"
               />
               <div className="bg-gradient-to-t from-charcoal/90 to-transparent px-6 py-4">
                 <div className="font-serif text-lg text-ivory">
-                  {gallery[lightboxIndex]?.caption || GALLERY[0].caption}
+                  {items[lightboxIndex]?.caption || GALLERY[0].caption}
                 </div>
                 <div className="mt-1 font-display text-xs uppercase tracking-wider text-gold-soft">
-                  {lightboxIndex + 1} / {gallery.length}
+                  {lightboxIndex + 1} / {items.length}
                 </div>
               </div>
             </motion.div>
