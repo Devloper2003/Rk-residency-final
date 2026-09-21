@@ -75,7 +75,7 @@ model Booking {
   specialRequests String?
   pricePerNight Int
   subtotal      Int
-  taxesGst      Int      // 12% GST
+  taxesGst      Int      // 5% GST
   serviceFee    Int
   totalAmount   Int
   status        String   @default("CONFIRMED") // CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED, NO_SHOW
