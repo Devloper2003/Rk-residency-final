@@ -165,7 +165,7 @@ export async function POST(req: Request) {
           <span style="color:#231F1C;font-size:14px;">₹${subtotal.toLocaleString("en-IN")}</span>
         </div>
         <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-          <span style="color:#6B6560;font-size:13px;">GST (18%)</span>
+          <span style="color:#6B6560;font-size:13px;">GST (5%)</span>
           <span style="color:#231F1C;font-size:14px;">₹${gstAmount.toLocaleString("en-IN")}</span>
         </div>
         <div style="display:flex;justify-content:space-between;margin-top:8px;">
