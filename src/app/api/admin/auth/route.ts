@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
@@ -34,11 +35,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    // Sandbox session token: base64 of adminId + email + expiry
+    // HMAC-signed session token (cannot be forged)
+    const SESSION_SECRET = process.env.ADMIN_SESSION_SECRET || "rk-residency-change-in-prod";
     const expires = Date.now() + 1000 * 60 * 60 * 8; // 8 hours
-    const token = Buffer.from(
+    const payload = Buffer.from(
       JSON.stringify({ id: admin.id, email: admin.email, role: admin.role, expires })
     ).toString("base64");
+    const signature = crypto
+      .createHmac("sha256", SESSION_SECRET)
+      .update(payload)
+      .digest("hex");
+    const token = `${payload}.${signature}`;
 
     await db.auditLog.create({
       data: {
