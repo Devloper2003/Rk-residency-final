@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rate-limit";
 import { db } from "@/lib/db";
 import { z } from "zod";
 
@@ -35,6 +36,10 @@ function generateReference(): string {
  *   3. Otherwise return 409 Conflict
  */
 export async function POST(req: Request) {
+  const ip = req.headers.get("x-forwarded-for") || "unknown";
+  if (!rateLimit(`booking:${ip}`, 3, 60_000)) {
+    return NextResponse.json({ error: "Too many booking attempts. Please wait." }, { status: 429 });
+  }
   try {
     const body = await req.json();
     const parsed = schema.safeParse(body);
