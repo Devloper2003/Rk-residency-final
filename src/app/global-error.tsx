@@ -1,3 +1,4 @@
+// AFTER:
 "use client";
 
 import { useEffect } from "react";
@@ -10,17 +11,15 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("GLOBAL CRASH:", error.message, error.stack);
+    console.error("[global-error]", error.message, error.stack);
   }, [error]);
 
   return (
-    <html>
-      <body style={{ padding: "40px", fontFamily: "monospace", fontSize: "14px" }}>
-        <h2 style={{ color: "red" }}>Global Error</h2>
-        <p><strong>Message:</strong> {error.message}</p>
-        <p><strong>Stack:</strong></p>
-        <pre style={{ whiteSpace: "pre-wrap" }}>{error.stack}</pre>
-        <button onClick={reset} style={{ marginTop: "16px", padding: "8px 16px" }}>Try again</button>
+    <html lang="en">
+      <body style={{ margin: 0, padding: "40px", fontFamily: "Georgia, serif", background: "#FBF6EC", textAlign: "center" }}>
+        <h2 style={{ color: "#231F1C", fontSize: "24px", marginBottom: "8px" }}>Something went wrong</h2>
+        <p style={{ color: "#6B6560", fontSize: "14px", marginBottom: "24px" }}>An unexpected error occurred. Please try again.</p>
+        <button onClick={reset} style={{ background: "#0E4C4F", color: "#FBF6EC", border: "none", padding: "10px 24px", borderRadius: "999px", cursor: "pointer", fontSize: "14px" }}>Try again</button>
       </body>
     </html>
   );
