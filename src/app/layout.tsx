@@ -1,3 +1,4 @@
+import { NextRouterBridge } from "@/components/rk/NextRouterBridge";
 import type { Metadata } from "next";
 import Script from "next/script";
 import { Playfair_Display, Cormorant_Garamond, Inter } from "next/font/google";
@@ -110,6 +111,8 @@ export default function RootLayout({
           'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
           })(window,document,'script','dataLayer','GTM-KSSWNL9K');`}
         </Script>
+         <NextRouterBridge />
+        {children}
         {children}
         <GlobalBookingWidget />
         <VisitorTracker />
