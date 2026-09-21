@@ -1,7 +1,10 @@
+import crypto from "crypto";
 import { db } from "@/lib/db";
 
+const SESSION_SECRET = process.env.ADMIN_SESSION_SECRET || "rk-residency-change-in-prod";
+
 /**
- * Verify the admin session token (sandbox-grade).
+ * Verify the admin session token (HMAC-signed).
  * Reads `rk_admin_session` cookie OR `Authorization: Bearer <token>` header.
  * Returns the admin user or null.
  */
@@ -22,9 +25,25 @@ export async function verifyAdmin(req: Request): Promise<{
     }
     if (!token) return null;
 
-    const decoded = JSON.parse(
-      Buffer.from(decodeURIComponent(token), "base64").toString("utf-8")
-    );
+    // Token format: <base64Payload>.<hmacSignature>
+    const [payload, signature] = decodeURIComponent(token).split(".");
+    if (!payload || !signature) return null;
+
+    // Verify HMAC signature (prevents forgery)
+    const expectedSignature = crypto
+      .createHmac("sha256", SESSION_SECRET)
+      .update(payload)
+      .digest("hex");
+    if (
+      !crypto.timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(expectedSignature)
+      )
+    ) {
+      return null;
+    }
+
+    const decoded = JSON.parse(Buffer.from(payload, "base64").toString("utf-8"));
     if (!decoded.expires || decoded.expires < Date.now()) return null;
 
     const admin = await db.adminUser.findUnique({ where: { id: decoded.id } });
