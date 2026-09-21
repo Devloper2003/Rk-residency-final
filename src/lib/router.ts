@@ -83,8 +83,13 @@ export const useRouter = create<RouterState>((set) => ({
   navigate: (route, param) => {
     const path = toPath(route, param);
     if (typeof window !== "undefined") {
-      // Use Next.js client-side navigation
-      window.location.href = path;
+      // Use Next.js client-side navigation (soft push)
+      // Fallback to full reload only if next/router is unavailable
+      if ((window as any).__nextRouterPush) {
+        (window as any).__nextRouterPush(path);
+      } else {
+        window.location.href = path;
+      }
     }
   },
   back: () => {
