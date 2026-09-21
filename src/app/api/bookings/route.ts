@@ -135,10 +135,9 @@ export async function POST(req: Request) {
         },
       });
 
-      // 5. Generate unique reference code (retry if collision)
+      // 5. Generate unique reference code (loop until unique)
       let referenceCode = generateReference();
-      const exists = await tx.booking.findUnique({ where: { referenceCode } });
-      if (exists) {
+      while (await tx.booking.findUnique({ where: { referenceCode } })) {
         referenceCode = generateReference();
       }
 
