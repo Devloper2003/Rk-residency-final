@@ -45,3 +45,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Subscription failed. Please try again." }, { status: 500 });
   }
 }
+// Add import + rate limit check (5 per minute):
+  if (!rateLimit(`newsletter:${ip}`, 5, 60_000)) {
+    return NextResponse.json({ error: "Too many requests." }, { status: 429 });
+  }
