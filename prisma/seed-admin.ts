@@ -6,6 +6,7 @@
 // NOTE: This is a simple plaintext-equivalent hash for the sandbox demo.
 // In production, use bcrypt/argon2.
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 const db = new PrismaClient();
 
 async function main() {
@@ -14,12 +15,12 @@ async function main() {
     create: {
       email: "admin@rkresidency.in",
       name: "Shyam Khandelwal",
-      passwordHash: "rk-admin-2026", // sandbox only
+      passwordHash: await bcrypt.hash("rk-admin-2026", 12),
       role: "SUPER_ADMIN",
     },
     update: {
       name: "Shyam Khandelwal",
-      passwordHash: "rk-admin-2026",
+      passwordHash: await bcrypt.hash("rk-admin-2026", 12),
       role: "SUPER_ADMIN",
     },
   });
