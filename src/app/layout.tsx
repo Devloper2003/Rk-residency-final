@@ -117,10 +117,10 @@ export default function RootLayout({
         {children}
         
         <GlobalBookingWidget />
-          </ThemeProvider>
         <VisitorTracker />
         <GoogleAnalytics />
         <SonnerToaster position="bottom-right" richColors closeButton />
+          </ThemeProvider>
         {/* Razorpay Checkout.js — loaded lazily, only used when user pays */}
         <Script
           src="https://checkout.razorpay.com/v1/checkout.js"
