@@ -164,6 +164,22 @@ export async function GET(req: Request) {
         return NextResponse.json({ booking, settings: cfg });
       }
 
+       case "inventory": {
+        const dateStr = url.searchParams.get("date") || new Date().toISOString().slice(0, 10);
+        const viewDate = new Date(dateStr + "T00:00:00");
+        const nextDay = new Date(viewDate.getTime() + 86400000);
+        const allRooms = await db.room.findMany({ orderBy: [{ sortOrder: "asc" }] });
+        const activeBookings = await db.booking.findMany({
+          where: { status: { not: "CANCELLED" }, checkIn: { lt: nextDay }, checkOut: { gt: viewDate } },
+          select: { id: true, referenceCode: true, guestName: true, checkIn: true, checkOut: true, nights: true, status: true, totalAmount: true, roomId: true },
+        });
+        const rooms = allRooms.map((room) => {
+          const roomBookings = activeBookings.filter((b) => b.roomId === room.id);
+          return { id: room.id, name: room.name, slug: room.slug, basePrice: room.basePrice, totalCount: room.totalCount, maxGuests: room.maxGuests, badge: room.badge, bookedCount: roomBookings.length, availableCount: room.totalCount - roomBookings.length, activeBookings: roomBookings };
+        });
+        return NextResponse.json({ rooms, date: dateStr });
+      }
+        
       case "rooms": {
         const rooms = await db.room.findMany({ orderBy: [{ sortOrder: "asc" }] });
         return NextResponse.json({ rooms });
