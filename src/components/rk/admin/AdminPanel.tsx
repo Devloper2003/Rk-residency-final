@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, CalendarDays, BedDouble, Star, Mail,
   ScrollText, LogOut, Lock, Loader2, Menu, X,
-  Tag, FileText, ShieldCheck, Edit, Sparkles,
+  Tag, FileText, ShieldCheck, Edit, Sparkles, Warehouse, PlusCircle,
   BarChart3, Users, Search, ExternalLink, Image as ImageIcon,
   Eye, EyeOff, MapPin, Utensils, Camera, CreditCard, Ticket,
 } from "lucide-react";
@@ -24,12 +24,13 @@ type Tab =
   | "dashboard" | "analytics" | "bookings" | "rooms" | "offers"
   | "blog" | "reviews" | "content" | "theme"
   | "experiences" | "dining" | "gallery" | "payment" | "hero"
-  | "settings" | "users" | "leads" | "audit" | "media"| "coupons";
+  | "settings" | "users" | "leads" | "audit" | "media" | "inventory" | "coupons";
 
 const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }>; group: string }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Overview" },
   { id: "analytics", label: "Analytics & SEO", icon: BarChart3, group: "Overview" },
   { id: "bookings", label: "Bookings", icon: CalendarDays, group: "Operations" },
+  { id: "inventory", label: "Inventory", icon: Warehouse, group: "Operations" },
   { id: "rooms", label: "Rooms & Rates", icon: BedDouble, group: "Operations" },
   { id: "offers", label: "Offers", icon: Tag, group: "Operations" },
   { id: "coupons", label: "Coupons", icon: Ticket, group: "Operations" },
@@ -71,6 +72,7 @@ const DiningTab = lazy(() => import("./tabs/DiningTab").then(m => ({ default: m.
 const GalleryTab = lazy(() => import("./tabs/GalleryTab").then(m => ({ default: m.GalleryTab })));
 const PaymentTab = lazy(() => import("./tabs/PaymentTab").then(m => ({ default: m.PaymentTab })));
 const HeroTab = lazy(() => import("./tabs/HeroTab").then(m => ({ default: m.HeroTab })));
+const InventoryTab = lazy(() => import("./tabs/InventoryTab").then(m => ({ default: m.InventoryTab })));
 const CouponsTab = lazy(() => import("./tabs/CouponsTab").then(m => ({ default: m.CouponsTab })));
 
 function TabFallback() {
@@ -288,6 +290,7 @@ export function AdminPanel() {
                 {tab === "dashboard" && <DashboardTab />}
                 {tab === "analytics" && <AnalyticsTab />}
                 {tab === "bookings" && <BookingsTab />}
+                {tab === "inventory" && <InventoryTab />}
                 {tab === "rooms" && <RoomsTab />}
                 {tab === "offers" && <OffersTab />}
                 {tab === "experiences" && <ExperiencesTab />}
