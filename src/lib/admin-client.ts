@@ -79,4 +79,15 @@ export const adminApi = {
   },
   patch: (action: string, payload: Record<string, any>) =>
     adminFetch("/api/admin/all", { method: "PATCH", body: JSON.stringify({ action, ...payload }) }),
-};
+  crud: (resource: string) => ({
+    list: (params?: Record<string, string>) => {
+      const query = params ? new URLSearchParams(params).toString() : "";
+      return adminFetch(`/api/admin/${resource}${query ? `?${query}` : ""}`);
+    },
+    create: (payload: Record<string, any>) =>
+      adminFetch(`/api/admin/${resource}`, { method: "POST", body: JSON.stringify(payload) }),
+    update: (payload: Record<string, any>) =>
+      adminFetch(`/api/admin/${resource}`, { method: "PATCH", body: JSON.stringify(payload) }),
+    remove: (id: string) =>
+      adminFetch(`/api/admin/${resource}?id=${id}`, { method: "DELETE" }),
+  }),
