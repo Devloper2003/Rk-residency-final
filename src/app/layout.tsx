@@ -8,6 +8,7 @@ import { VisitorTracker } from "@/components/rk/VisitorTracker";
 import { GoogleTagManager } from "@/components/rk/GoogleTagManager";
 import { GoogleAnalytics } from "@/components/rk/GoogleAnalytics";
 import { GlobalBookingWidget } from "@/components/rk/GlobalBookingWidget";
+import { ThemeProvider } from "@/components/rk/ThemeProvider";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -103,6 +104,7 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${playfair.variable} ${cormorant.variable} ${inter.variable} antialiased bg-ivory text-charcoal font-sans`}
              >
+        <ThemeProvider>
         {/* Google Tag Manager */}
         <Script id="google-tag-manager" strategy="afterInteractive">
           {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -115,6 +117,7 @@ export default function RootLayout({
         {children}
         
         <GlobalBookingWidget />
+          </ThemeProvider>
         <VisitorTracker />
         <GoogleAnalytics />
         <SonnerToaster position="bottom-right" richColors closeButton />
