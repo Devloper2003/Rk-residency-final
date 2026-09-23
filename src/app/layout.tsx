@@ -113,7 +113,7 @@ export default function RootLayout({
         </Script>
          <NextRouterBridge />
         {children}
-        {children}
+        
         <GlobalBookingWidget />
         <VisitorTracker />
         <GoogleAnalytics />
