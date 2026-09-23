@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
-import bcrypt from "bcryptjs";
+
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       where: { email: parsed.data.email.toLowerCase() },
     });
 
-     if (!admin || !(await bcrypt.compare(parsed.data.password, admin.passwordHash))) {
+          if (!admin || admin.passwordHash !== parsed.data.password) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
