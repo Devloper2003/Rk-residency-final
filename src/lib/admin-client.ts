@@ -91,3 +91,4 @@ export const adminApi = {
     remove: (id: string) =>
       adminFetch(`/api/admin/${resource}?id=${id}`, { method: "DELETE" }),
   }),
+};
