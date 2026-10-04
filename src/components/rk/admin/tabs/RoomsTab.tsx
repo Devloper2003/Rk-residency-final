@@ -1,8 +1,10 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Trash2, X, Save, BedDouble, Star } from "lucide-react";
+import { Plus, Trash2, X, Save, BedDouble, Star, CalendarDays, ChevronDown, ChevronUp, Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { adminApi, adminFetch, LoadingSpinner, Field } from "./_shared";
+import { InventoryCalendar } from "./InventoryCalendar";
 import { refreshSiteContent } from "@/lib/site-content";
 import { ImageUploader } from "../ImageUploader";
 import { toast } from "sonner";
@@ -14,10 +16,263 @@ const EMPTY = {
   featured: false, sortOrder: 0,
 };
 
+const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/* ── Inline Day-wise Quick Inventory Editor ── */
+type Override = { id: string; date: string; availableCount: number; note: string | null };
+
+function InlineInventoryEditor({ roomId, totalCount, onOpenCalendar }: { roomId: string; totalCount: number; onOpenCalendar: () => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const [overrides, setOverrides] = useState<Override[]>([]);
+  const [bookedMap, setBookedMap] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(false);
+  const [editingDate, setEditingDate] = useState<string | null>(null);
+  const [editCount, setEditCount] = useState(0);
+  const [saving, setSaving] = useState(false);
+
+  // Next 7 days
+  const next7 = useCallback(() => {
+    const days: string[] = [];
+    const d = new Date();
+    for (let i = 0; i < 7; i++) {
+      days.push(d.toISOString().slice(0, 10));
+      d.setDate(d.getDate() + 1);
+    }
+    return days;
+  }, []);
+
+  const days = next7();
+  const startDate = days[0];
+  const endDate = days[days.length - 1];
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await adminFetch(
+        `/api/admin/inventory?roomId=${roomId}&startDate=${startDate}&endDate=${endDate}`,
+      );
+      if (res && typeof res === "object") {
+        const data = res as any;
+        setOverrides(data.overrides || []);
+        setBookedMap(data.bookedMap || {});
+      }
+    } catch {
+      /* silent */
+    } finally {
+      setLoading(false);
+    }
+  }, [roomId, startDate, endDate]);
+
+  const toggleExpand = () => {
+    if (!expanded) {
+      fetchData();
+    }
+    setExpanded(!expanded);
+  };
+
+  const startEdit = (date: string) => {
+    const override = overrides.find((o) => o.date === date);
+    setEditingDate(date);
+    setEditCount(override?.availableCount ?? totalCount);
+  };
+
+  const cancelEdit = () => {
+    setEditingDate(null);
+    setEditCount(0);
+  };
+
+  const saveEdit = async () => {
+    if (!editingDate) return;
+    setSaving(true);
+    try {
+      const res = await adminFetch("/api/admin/inventory", {
+        method: "POST",
+        body: JSON.stringify({
+          roomId,
+          date: editingDate,
+          availableCount: editCount,
+          note: "",
+        }),
+      });
+      if (res) {
+        toast.success(`${editingDate}: set to ${editCount} available`);
+        await fetchData();
+        cancelEdit();
+      }
+    } catch {
+      toast.error("Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removeOverride = async (overrideId: string, date: string) => {
+    try {
+      const res = await adminFetch(`/api/admin/inventory?id=${overrideId}`, { method: "DELETE" });
+      if (res) {
+        toast.success(`${date}: reverted to default (${totalCount})`);
+        await fetchData();
+      }
+    } catch {
+      toast.error("Failed to remove override");
+    }
+  };
+
+  const getCellData = (date: string) => {
+    const override = overrides.find((o) => o.date === date) || null;
+    const booked = bookedMap[date] || 0;
+    const total = override?.availableCount ?? totalCount;
+    const avail = total - booked;
+    const hasOverride = !!override;
+    const isBlocked = total === 0;
+    const isSoldOut = avail <= 0 && total > 0;
+    return { override, booked, total, avail, hasOverride, isBlocked, isSoldOut };
+  };
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  return (
+    <div className="border-t border-charcoal/10">
+      {/* Toggle bar */}
+      <button
+        onClick={toggleExpand}
+        className="flex w-full items-center justify-between px-3 py-2 font-display text-[11px] font-semibold text-teal hover:bg-teal/5"
+      >
+        <span className="flex items-center gap-1.5">
+          <CalendarDays className="h-3.5 w-3.5" />
+          Day-wise Inventory
+        </span>
+        {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+      </button>
+
+      {/* Expanded content */}
+      {expanded && (
+        <div className="px-3 pb-3">
+          {loading ? (
+            <div className="flex h-16 items-center justify-center">
+              <Loader2 className="h-4 w-4 animate-spin text-teal" />
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-7 gap-1 mb-1">
+                {days.map((date) => {
+                  const d = new Date(date + "T12:00:00Z");
+                  const isToday = date === today;
+                  return (
+                    <div key={date} className="text-center">
+                      <div className={`font-display text-[8px] uppercase tracking-wider ${isToday ? "text-teal font-bold" : "text-charcoal-soft/60"}`}>
+                        {DAY_SHORT[d.getDay()]}
+                      </div>
+                      <div className={`font-display text-[9px] ${isToday ? "text-teal font-bold" : "text-charcoal-soft"}`}>
+                        {d.getDate()} {MONTH_SHORT[d.getMonth()]}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="grid grid-cols-7 gap-1">
+                {days.map((date) => {
+                  const cell = getCellData(date);
+                  const isToday = date === today;
+                  const isEditing = editingDate === date;
+
+                  let bgColor = "bg-teal/5";
+                  if (cell.isBlocked) bgColor = "bg-marsala/15";
+                  else if (cell.isSoldOut) bgColor = "bg-marsala/10";
+                  else if (cell.booked > 0 && cell.avail > 0) bgColor = "bg-gold/10";
+
+                  return (
+                    <div
+                      key={date}
+                      className={`relative rounded-md border p-1 text-center transition-all ${
+                        cell.hasOverride ? "border-gold/50" : "border-charcoal/8"
+                      } ${isToday ? "ring-1 ring-teal" : ""} ${bgColor}`}
+                    >
+                      {isEditing ? (
+                        <div className="space-y-0.5">
+                          <Input
+                            type="number"
+                            min={0}
+                            max={50}
+                            value={editCount}
+                            onChange={(e) => setEditCount(parseInt(e.target.value) || 0)}
+                            className="h-5 bg-white px-1 py-0 text-[10px]"
+                            autoFocus
+                          />
+                          <div className="flex gap-0.5">
+                            <button
+                              onClick={saveEdit}
+                              disabled={saving}
+                              className="flex-1 rounded bg-teal px-0.5 py-0.5 text-[8px] font-semibold text-ivory hover:bg-teal-deep disabled:opacity-50"
+                            >
+                              <Save className="inline h-2 w-2" />
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              className="flex-1 rounded bg-charcoal/10 px-0.5 py-0.5 text-[8px] text-charcoal-soft hover:bg-charcoal/20"
+                            >
+                              <X className="inline h-2 w-2" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => startEdit(date)}
+                          className="w-full"
+                        >
+                          <div className={`font-serif text-xs font-bold ${
+                            cell.isBlocked ? "text-marsala" : cell.isSoldOut ? "text-marsala/80" : cell.avail === 1 ? "text-gold-deep" : "text-teal"
+                          }`}>
+                            {cell.avail}
+                          </div>
+                          <div className="font-display text-[7px] text-charcoal-soft/60 leading-tight">
+                            {cell.isBlocked ? "BLOCKED" : `${cell.booked}/${cell.total}`}
+                          </div>
+                        </button>
+                      )}
+                      {cell.hasOverride && !isEditing && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); removeOverride(cell.override!.id, date); }}
+                          className="absolute -right-0.5 -top-0.5 text-charcoal-soft/30 hover:text-marsala"
+                          title="Remove override"
+                        >
+                          <RotateCcw className="h-2 w-2" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Legend + Full calendar link */}
+              <div className="mt-2 flex items-center justify-between">
+                <div className="flex flex-wrap gap-2 font-display text-[8px] text-charcoal-soft/60">
+                  <span className="flex items-center gap-0.5"><span className="inline-block h-1.5 w-1.5 rounded-sm bg-teal/30" /> Available</span>
+                  <span className="flex items-center gap-0.5"><span className="inline-block h-1.5 w-1.5 rounded-sm bg-gold/40" /> Partial</span>
+                  <span className="flex items-center gap-0.5"><span className="inline-block h-1.5 w-1.5 rounded-sm bg-marsala/40" /> Blocked</span>
+                </div>
+                <button
+                  onClick={onOpenCalendar}
+                  className="font-display text-[9px] font-semibold text-teal hover:text-teal-deep"
+                >
+                  Full calendar →
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function RoomsTab() {
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<any | null>(null);
+  const [inventoryRoom, setInventoryRoom] = useState<{ id: string; name: string; totalCount: number } | null>(null);
 
   const reload = useCallback(() => {
     adminApi.get("rooms").then((d) => {
@@ -120,6 +375,7 @@ export function RoomsTab() {
                   {imgs.length > 1 && <div className="font-display text-[10px] text-charcoal-soft">{imgs.length} images · {amenities.length} amenities</div>}
                   <div className="flex gap-1 border-t border-charcoal/10 pt-2">
                     <button onClick={() => setEditing(r)} className="flex-1 rounded-lg border border-charcoal/15 py-1.5 font-display text-[11px] font-semibold text-charcoal-soft hover:bg-teal hover:text-ivory">Edit</button>
+                    <button onClick={() => setInventoryRoom({ id: r.id, name: r.name, totalCount: r.totalCount })} className="flex-1 rounded-lg border border-charcoal/15 py-1.5 font-display text-[11px] font-semibold text-charcoal-soft hover:bg-gold hover:text-charcoal">Calendar</button>
                     <button onClick={() => toggleFeatured(r)} className={`grid h-7 w-7 place-items-center rounded-lg border border-charcoal/15 hover:bg-gold hover:text-charcoal ${r.featured ? "text-gold-deep" : "text-charcoal-soft"}`} title={r.featured ? "Unfeature" : "Feature"}>
                       <Star className={`h-3 w-3 ${r.featured ? "fill-current" : ""}`} />
                     </button>
@@ -128,6 +384,12 @@ export function RoomsTab() {
                     </button>
                   </div>
                 </div>
+                {/* Inline day-wise inventory editor */}
+                <InlineInventoryEditor
+                  roomId={r.id}
+                  totalCount={r.totalCount}
+                  onOpenCalendar={() => setInventoryRoom({ id: r.id, name: r.name, totalCount: r.totalCount })}
+                />
               </div>
             );
           })}
@@ -135,6 +397,15 @@ export function RoomsTab() {
       )}
 
       {editing && <RoomEditor room={editing} onClose={() => setEditing(null)} onSave={save} />}
+
+      {inventoryRoom && (
+        <InventoryCalendar
+          roomId={inventoryRoom.id}
+          roomName={inventoryRoom.name}
+          totalCount={inventoryRoom.totalCount}
+          onClose={() => setInventoryRoom(null)}
+        />
+      )}
     </div>
   );
 }
