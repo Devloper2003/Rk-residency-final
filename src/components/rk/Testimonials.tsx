@@ -4,6 +4,7 @@ import { useContentValue } from "@/lib/site-content";
 import { motion } from "framer-motion";
 import { Star, BadgeCheck, Quote, ExternalLink } from "lucide-react";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
+import { BUSINESS } from "@/lib/site.config";
 
 type Review = {
   id: string;
@@ -166,12 +167,16 @@ export function Testimonials() {
         </div>
       )}
 
-      {/* Aggregate badges */}
+      {/* Aggregate badges — linked to the owner's real review profiles from
+          site.config BUSINESS. Hidden entirely until the TODO URLs are filled,
+          so we never link to generic placeholder pages. */}
+      {(BUSINESS.reviews.google || BUSINESS.reviews.tripadvisor) && (
       <div className="relative mt-16">
         <SectionDivider className="mb-8" />
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-6 px-4 sm:flex-row sm:gap-12">
+          {BUSINESS.reviews.google && (
           <a
-            href="https://www.google.com/travel/hotels"
+            href={BUSINESS.reviews.google}
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center gap-3 rounded-2xl border border-ivory/15 bg-ivory/5 px-5 py-3 transition-all hover:border-gold/40 hover:bg-ivory/10"
@@ -187,8 +192,10 @@ export function Testimonials() {
               </div>
             </div>
           </a>
+          )}
+          {BUSINESS.reviews.tripadvisor && (
           <a
-            href="https://www.tripadvisor.in"
+            href={BUSINESS.reviews.tripadvisor}
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center gap-3 rounded-2xl border border-ivory/15 bg-ivory/5 px-5 py-3 transition-all hover:border-gold/40 hover:bg-ivory/10"
@@ -204,8 +211,10 @@ export function Testimonials() {
               </div>
             </div>
           </a>
+          )}
         </div>
       </div>
+      )}
     </section>
   );
 }

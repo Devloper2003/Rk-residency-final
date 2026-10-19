@@ -16,6 +16,7 @@ import { Footer } from "@/components/rk/Footer";
 import { FloatingWhatsApp, ExitIntentModal } from "@/components/rk/FloatingActions";
 import { ScrollProgress } from "@/components/rk/ScrollProgress";
 import { useRouter } from "@/lib/router";
+import { BUSINESS } from "@/lib/site.config";
 import { ArrowRight } from "lucide-react";
 
 /** "See More" button that links to a dedicated page */
@@ -63,8 +64,11 @@ export function HomeClient({ initialRooms }: { initialRooms?: Room[] }) {
             description: "A Soul Immersed in the Spirit of Vrindavan.",
             starRating: { "@type": "Rating", ratingValue: "5" },
             priceRange: "₹1,500 – ₹3,000",
-            telephone: "+91 9760814931",
-            email: "rkresidency121@gmail.com",
+            // Contact points come from site.config BUSINESS (owner TODOs).
+            // Fields are omitted from the JSON-LD until real values exist —
+            // structured data must never contain invented business data.
+            ...(BUSINESS.phonePrimary ? { telephone: BUSINESS.phonePrimary } : {}),
+            ...(BUSINESS.emailPrimary ? { email: BUSINESS.emailPrimary } : {}),
             address: { "@type": "PostalAddress", streetAddress: "Parikrama Marg, Vrindavan", addressLocality: "Vrindavan", addressRegion: "Uttar Pradesh", postalCode: "281121", addressCountry: "IN" },
             geo: { "@type": "GeoCoordinates", latitude: 27.5756, longitude: 77.7100 },
             aggregateRating: { "@type": "AggregateRating", ratingValue: "4.9", reviewCount: "1240" },

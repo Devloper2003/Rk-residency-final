@@ -6,6 +6,7 @@ import { Menu, X, Phone, Globe } from "lucide-react";
 import { Logo } from "./Motifs";
 import { useRouter, type RouteName } from "@/lib/router";
 import { useSettingValue } from "@/lib/site-content";
+import { BUSINESS } from "@/lib/site.config";
 
 // Each nav item: clicking scrolls to the section on home; if not on home, navigates to dedicated page.
 const NAV_ITEMS: { id: string; route: RouteName; label: string; labelHi: string }[] = [
@@ -26,8 +27,8 @@ export function Navbar({ onBookClick: _onBookClick }: { onBookClick?: () => void
   // Live editable brand info
   const brandName = useSettingValue("brand_name", "RK Residency");
   const brandTagline = useSettingValue("brand_tagline", "Vrindavan · Braj");
-  const phoneDisplay = useSettingValue("phone_primary", "+91 565 234 5678");
-  const phoneTel = useSettingValue("phone_primary_tel", "+915652345678");
+  const phoneDisplay = useSettingValue("phone_primary", BUSINESS.phonePrimary);
+  const phoneTel = useSettingValue("phone_primary_tel", BUSINESS.phonePrimaryTel);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);

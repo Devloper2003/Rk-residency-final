@@ -7,6 +7,14 @@ import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { useRouter } from "@/lib/router";
 import { useContentValue, parseJsonArray } from "@/lib/site-content";
 import { useSettingValue } from "@/lib/site-content";
+import { BUSINESS } from "@/lib/site.config";
+
+// Owner-supplied contact details for the FAQ copy — TODO placeholders from
+// site.config; omitted gracefully from the sentence when not yet filled in.
+const FAQ_CONTACT_TAIL =
+  BUSINESS.phonePrimary || BUSINESS.emailPrimary
+    ? ` Contact our concierge${BUSINESS.phonePrimary ? ` at ${BUSINESS.phonePrimary}` : ""}${BUSINESS.phonePrimary && BUSINESS.emailPrimary ? " or" : ""}${BUSINESS.emailPrimary ? ` ${BUSINESS.emailPrimary}` : ""} to modify.`
+    : " Contact our concierge to modify.";
 
 type FAQ = {
   q: string;
@@ -28,7 +36,7 @@ const FAQS: FAQ[] = [
   {
     category: "Booking",
     q: "Can I modify my booking after confirmation?",
-    a: "Yes. Date changes are free up to 72 hours before check-in, subject to availability. Room upgrades are possible at check-in for the difference in rate. Contact our concierge at +91 565 234 5678 or stay@rkresidency.in to modify.",
+    a: "Yes. Date changes are free up to 72 hours before check-in, subject to availability. Room upgrades are possible at check-in for the difference in rate." + FAQ_CONTACT_TAIL,
   },
   {
     category: "Rooms",
@@ -101,10 +109,10 @@ export function FAQ({ limit }: { limit?: number }) {
   const faqLabel = useContentValue("faq.label", "Questions & answers");
   const faqTitle = useContentValue("faq.title", "Everything a Braj pilgrim asks us");
   const faqItems = parseJsonArray(useContentValue("faq.items", "[]"), FAQS);
-  const phoneDisplay = useSettingValue("phone_primary", "+91 565 234 5678");
-  const phoneTel = useSettingValue("phone_primary_tel", "+915652345678");
-  const whatsappNumber = useSettingValue("whatsapp_number", "919876543210").replace(/[^\d]/g, "");
-  const waUrl = `https://wa.me/${whatsappNumber}`;
+  const phoneDisplay = useSettingValue("phone_primary", BUSINESS.phonePrimary);
+  const phoneTel = useSettingValue("phone_primary_tel", BUSINESS.phonePrimaryTel);
+  const whatsappNumber = useSettingValue("whatsapp_number", BUSINESS.whatsappNumber).replace(/[^\d]/g, "");
+  const waUrl = whatsappNumber ? `https://wa.me/${whatsappNumber}` : "";
 
   const filtered = category === "All" ? FAQS : FAQS.filter((f) => f.category === category);
   const visible = limit ? filtered.slice(0, limit) : filtered;

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
 
 const pageTitle = "Contact & Location — RK Residency Vrindavan";
-const pageDescription = "RK Residency, Parikrama Marg, Vrindavan, Mathura, UP 281121. Phone +91 565 234 5678. Concierge replies within 4 hours.";
+const pageDescription = "RK Residency, Parikrama Marg, Vrindavan, Mathura, UP 281121. Concierge replies within 4 hours.";
 
 export const metadata: Metadata = {
   title: pageTitle,

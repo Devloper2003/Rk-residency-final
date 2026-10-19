@@ -226,7 +226,7 @@ export function TempleTour() {
                       <Label htmlFor="tb-phone" className="mb-1.5 block font-display text-xs uppercase tracking-wider text-charcoal-soft">
                         Phone / WhatsApp *
                       </Label>
-                      <Input id="tb-phone" required value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="+91 98765 43210" className="bg-ivory-deep/30" />
+                      <Input id="tb-phone" required value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="+91 XXXXX XXXXX" className="bg-ivory-deep/30" />
                     </div>
                     <div>
                       <Label htmlFor="tb-date" className="mb-1.5 block font-display text-xs uppercase tracking-wider text-charcoal-soft">

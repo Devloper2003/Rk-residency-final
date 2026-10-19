@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Logo, Lotus } from "./Motifs";
 import { toast } from "sonner";
 import { useSettingValue, useContentValue } from "@/lib/site-content";
+import { BUSINESS } from "@/lib/site.config";
 
 const NAV_GROUPS = [
   {
@@ -56,14 +57,14 @@ export function Footer() {
   const newsletterHeading = useContentValue("footer.newsletter_heading", "Stay in the circle");
   const newsletterTitle = useContentValue("footer.newsletter_title", "Festival calendars, member offers & Braj stories");
   const newsletterBody = useContentValue("footer.newsletter_body", "One email a fortnight. Never spam. Unsubscribe anytime.");
-  const phoneDisplay = useSettingValue("phone_primary", "+91 565 234 5678");
-  const phoneTel = useSettingValue("phone_primary_tel", "+915652345678");
-  const emailPrimary = useSettingValue("email_primary", "stay@rkresidency.in");
+  const phoneDisplay = useSettingValue("phone_primary", BUSINESS.phonePrimary);
+  const phoneTel = useSettingValue("phone_primary_tel", BUSINESS.phonePrimaryTel);
+  const emailPrimary = useSettingValue("email_primary", BUSINESS.emailPrimary);
   const addressFull = useSettingValue("address_full", "RK Residency, Parikrama Marg, Vrindavan, Mathura, UP 281121");
-  const gstin = useSettingValue("gstin", "09AAACK1234R1Z5");
-  const instagramUrl = useSettingValue("instagram_url", "https://instagram.com");
-  const facebookUrl = useSettingValue("facebook_url", "https://facebook.com");
-  const youtubeUrl = useSettingValue("youtube_url", "https://youtube.com");
+  const gstin = useSettingValue("gstin", BUSINESS.gstin);
+  const instagramUrl = useSettingValue("instagram_url", BUSINESS.social.instagram);
+  const facebookUrl = useSettingValue("facebook_url", BUSINESS.social.facebook);
+  const youtubeUrl = useSettingValue("youtube_url", BUSINESS.social.youtube);
   // Legal links are structural routes, not editable content — hardcoded so
   // they always resolve to the real policy pages (never "#").
   const privacyUrl = "/privacy-policy";
@@ -223,18 +224,22 @@ export function Footer() {
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
                 <span>{addressFull}</span>
               </li>
-              <li className="flex items-center gap-2">
-                <Phone className="h-4 w-4 shrink-0 text-gold" />
-                <a href={`tel:${phoneTel}`} className="transition-colors hover:text-gold-soft">
-                  {phoneDisplay}
-                </a>
-              </li>
-              <li className="flex items-center gap-2">
-                <Mail className="h-4 w-4 shrink-0 text-gold" />
-                <a href={`mailto:${emailPrimary}`} className="transition-colors hover:text-gold-soft">
-                  {emailPrimary}
-                </a>
-              </li>
+              {phoneDisplay && (
+                <li className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 shrink-0 text-gold" />
+                  <a href={`tel:${phoneTel}`} className="transition-colors hover:text-gold-soft">
+                    {phoneDisplay}
+                  </a>
+                </li>
+              )}
+              {emailPrimary && (
+                <li className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 shrink-0 text-gold" />
+                  <a href={`mailto:${emailPrimary}`} className="transition-colors hover:text-gold-soft">
+                    {emailPrimary}
+                  </a>
+                </li>
+              )}
             </ul>
             <div className="mt-4 flex flex-wrap gap-2">
               {TRUST.map((t) => (

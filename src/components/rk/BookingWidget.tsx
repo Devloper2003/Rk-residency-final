@@ -507,7 +507,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
                       <Label htmlFor="bk-phone" className="mb-1.5 flex items-center gap-1.5 font-display text-xs uppercase tracking-wider text-charcoal-soft">
                         <Phone className="h-3.5 w-3.5" /> Phone (with country code)
                       </Label>
-                      <Input id="bk-phone" value={contact.phone} onChange={(e) => setContact((c) => ({ ...c, phone: e.target.value }))} placeholder="+91 98765 43210" className="bg-white" />
+                      <Input id="bk-phone" value={contact.phone} onChange={(e) => setContact((c) => ({ ...c, phone: e.target.value }))} placeholder="+91 XXXXX XXXXX" className="bg-white" />
                     </div>
                     <div>
                       <Label htmlFor="bk-requests" className="mb-1.5 flex items-center gap-1.5 font-display text-xs uppercase tracking-wider text-charcoal-soft">

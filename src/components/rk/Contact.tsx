@@ -16,6 +16,7 @@ import {
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { toast } from "sonner";
 import { useSettingValue, useContentValue, parseJsonArray } from "@/lib/site-content";
+import { BUSINESS } from "@/lib/site.config";
 
 export function Contact() {
   const [form, setForm] = useState({
@@ -23,18 +24,19 @@ export function Contact() {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  // Live editable contact info (with fallbacks)
-  const phoneDisplay = useSettingValue("phone_primary", "+91 565 234 5678");
-  const phoneTel = useSettingValue("phone_primary_tel", "+915652345678");
-  const phoneReservations = useSettingValue("phone_reservations", "+91 98765 43210");
-  const emailPrimary = useSettingValue("email_primary", "stay@rkresidency.in");
-  const emailEvents = useSettingValue("email_events", "events@rkresidency.in");
+  // Live editable contact info — fallbacks from site.config BUSINESS (TODO
+  // values; DB settings win when present, no dummy data invented in code).
+  const phoneDisplay = useSettingValue("phone_primary", BUSINESS.phonePrimary);
+  const phoneTel = useSettingValue("phone_primary_tel", BUSINESS.phonePrimaryTel);
+  const phoneReservations = useSettingValue("phone_reservations", BUSINESS.phoneReservations);
+  const emailPrimary = useSettingValue("email_primary", BUSINESS.emailPrimary);
+  const emailEvents = useSettingValue("email_events", "");
   const addrLine1 = useSettingValue("address_line1", "RK Residency, Parikrama Marg");
   const addrLine2 = useSettingValue("address_line2", "Vrindavan, Mathura");
   const addrLine3 = useSettingValue("address_line3", "Uttar Pradesh 281121, India");
   const mapEmbedUrl = useSettingValue("map_embed_url", "https://www.openstreetmap.org/export/embed.html?bbox=77.6950%2C27.5650%2C77.7250%2C27.5850&layer=mapnik&marker=27.5756%2C77.7100");
-  const mapDirectionsUrl = useSettingValue("map_directions_url", "https://www.google.com/maps/dir/?api=1&destination=Vrindavan%20Uttar%20Pradesh");
-  const whatsappNumberRaw = useSettingValue("whatsapp_number", "919876543210");
+  const mapDirectionsUrl = useSettingValue("map_directions_url", BUSINESS.maps.directionsUrl);
+  const whatsappNumberRaw = useSettingValue("whatsapp_number", BUSINESS.whatsappNumber);
   const whatsappNumber = whatsappNumberRaw.replace(/[^\d]/g, "");
   const whatsappPrefill = useContentValue("contact.whatsapp_prefill_text", "I would like to enquire about availability at RK Residency");
   const checkinTime = useSettingValue("checkin_time", "2:00 PM");
