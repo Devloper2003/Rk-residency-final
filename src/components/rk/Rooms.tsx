@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { useRouter } from "@/lib/router";
 import { safeJsonArray } from "@/lib/utils";
+import { BUSINESS } from "@/lib/site.config";
 
 type Room = {
   id: string;
@@ -302,15 +303,18 @@ export function Rooms({ onBookRoom, limit }: { onBookRoom: (room: Room) => void;
           </div>
         </Reveal>
 
-        {/* Bottom note */}
+        {/* Bottom note — wording derives from the single breakfast policy
+            in site.config so it always matches the trust badge + FAQ. */}
         <Reveal delay={0.15}>
           <div className="mt-12">
             <SectionDivider className="mb-6" />
             <p className="text-center font-display text-sm text-charcoal-soft">
-              All rates exclude daily satvik breakfast &amp; assistance with temple visits.
+              {BUSINESS.breakfastIncluded
+                ? "Daily satvik breakfast is included in all rates, with assistance for temple visits."
+                : "All rates exclude daily satvik breakfast & assistance with temple visits."}
               <br />
               <span className="text-marsala">
-                Festival surge pricing applies during Janmashtami, Holi &amp; Radhashtami.
+                Festival surge pricing applies during Janmashtami, Holi & Radhashtami.
               </span>
             </p>
           </div>

@@ -62,7 +62,11 @@ export const FAQS: FAQ[] = [
   {
     category: "Dining",
     q: "Is breakfast included in the room rate?",
-    a: "Yes, daily satvik breakfast is included for all guests. It is served from 7:00 AM to 10:30 AM in the rooftop Yamuna Pavilion or in your room. The breakfast menu includes puri-sabzi, parathas, fruit thali, and makhan mishri prasadam.",
+    // Wording derives from the SINGLE breakfast policy in site.config so the
+    // FAQ always matches the trust badge and the rooms-section note.
+    a: BUSINESS.breakfastIncluded
+      ? "Yes, daily satvik breakfast is included for all guests. It is served from 7:00 AM to 10:30 AM in the rooftop Yamuna Pavilion or in your room. The breakfast menu includes puri-sabzi, parathas, fruit thali, and makhan mishri prasadam."
+      : "Room rates do not include breakfast. A pure-satvik breakfast (no onion, no garlic) is served from 7:00 AM to 10:30 AM in the rooftop Yamuna Pavilion and can be added to your stay — please ask at booking.",
   },
   {
     category: "Dining",

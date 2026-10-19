@@ -8,11 +8,14 @@ import { useContentValue, parseJsonArray } from "@/lib/site-content";
 import { BUSINESS } from "@/lib/site.config";
 
 // Stats are derived from site.config (single source of truth) — the walk
-// time to Banke Bihari comes from BUSINESS.distances, not a hardcoded claim.
+// time to Banke Bihari comes from BUSINESS.distances, the years counter from
+// BUSINESS.establishedYear, so no hardcoded contradictions are possible.
 const bankeBihariWalkMins =
   parseInt(BUSINESS.distances.bankeBihari.time, 10) || 0;
+const yearsOfHospitality =
+  new Date().getFullYear() - BUSINESS.establishedYear;
 const stats = [
-  { end: 3, suffix: "", label: "Years of Braj hospitality" },
+  { end: yearsOfHospitality, suffix: "", label: "Years of Braj hospitality" },
   { end: 35, suffix: "", label: "Rooms, suites " },
   { end: 48000, suffix: "+", label: "Devotee guests hosted" },
   { end: bankeBihariWalkMins, suffix: "", label: "Min walk to Banke Bihari Mandir" },
@@ -94,12 +97,11 @@ export function About() {
                     loading="lazy"
                   />
                 </div>
-                {/* Top arch gradient */}
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-charcoal/40 to-transparent" />
-                {/* Bottom caption */}
+                {/* Bottom caption — year from site.config (single source) */}
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-charcoal/85 to-transparent px-6 pb-5 pt-12">
                   <div className="font-display text-xs uppercase tracking-[0.28em] text-gold-soft">
-                    Heart of Vrindavan · Since 2024
+                    Heart of Vrindavan · Since {BUSINESS.establishedYear}
                   </div>
                   <div className="font-serif text-lg text-ivory">
                     A Peaceful Retreat in the Heart of Vrindavan.
@@ -116,7 +118,7 @@ export function About() {
                 className="absolute -bottom-8 -right-4 w-44 rounded-2xl bg-teal p-5 text-ivory shadow-xl lg:-right-8"
               >
                 <div className="font-display text-[10px] uppercase tracking-[0.28em] text-gold-soft">
-                  EST. 2024
+                  EST. {BUSINESS.establishedYear}
                 </div>
                 <div className="mt-1 font-serif text-2xl font-semibold">
                   Trusted by
@@ -149,8 +151,7 @@ export function About() {
                   Nestled in the Kailash Nagar area of Vrindavan — moments from
                   Banke Bihari Mandir and the Yamuna ghats — RK Residency 
                   is more than a hotel—it is a sanctuary where faith, 
-                  comfort, and hospitality come together. Established in 
-                  2024, our purpose has always been to create meaningful 
+                  comfort, and hospitality come together. Established in {BUSINESS.establishedYear}, our purpose has always been to create meaningful 
                   experiences for every pilgrim who walks through our doors.
                 </p>
                 <p>

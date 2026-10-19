@@ -53,7 +53,9 @@ export function Footer() {
   // Live editable content + settings
   const brandName = useSettingValue("brand_name", "RK Residency");
   const brandTagline = useSettingValue("brand_tagline", "Vrindavan · Braj");
-  const footerDesc = useContentValue("footer.description", "A heritage-luxury residency on the banks of the Yamuna, welcoming pilgrims and devotee families since 2014. A guest is a visiting deity.");
+  // Founding year from site.config — the footer, about page and years
+  // counter all show the SAME year (TODO: owner confirms 2024 vs 2014).
+  const footerDesc = useContentValue("footer.description", `A heritage-luxury residency on the banks of the Yamuna, welcoming pilgrims and devotee families since ${BUSINESS.establishedYear}. A guest is a visiting deity.`);
   const newsletterHeading = useContentValue("footer.newsletter_heading", "Stay in the circle");
   const newsletterTitle = useContentValue("footer.newsletter_title", "Festival calendars, member offers & Braj stories");
   const newsletterBody = useContentValue("footer.newsletter_body", "One email a fortnight. Never spam. Unsubscribe anytime.");

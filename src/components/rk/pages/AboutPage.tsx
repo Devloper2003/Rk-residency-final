@@ -5,6 +5,7 @@ import { Heart, Sparkles, HandHeart, Award, Users, Quote } from "lucide-react";
 import { PageShell } from "../PageShell";
 import { Reveal, Lotus, PeacockFeather, CountUp, SectionDivider } from "../Motifs";
 import { useContentValue, parseJsonArray } from "@/lib/site-content";
+import { BUSINESS } from "@/lib/site.config";
 
 const VALUES = [
   { icon: HandHeart, title: "Atithi Devo Bhava", body: "A guest is a visiting deity. Every interaction — from check-in to turn-down — is conducted as a small act of devotion. We do not have 'customers'. We have guests." },
@@ -14,9 +15,9 @@ const VALUES = [
 ];
 
 const TIMELINE = [
-  { year: "2024", title: "RK Residency Opens Its Doors", body: "Established in the holy city of Vrindavan, RK Residency was founded as a tribute to the legacy of Late Shri Ravi Karan Singh and a humble offering of service to the devotees of Shri Banke Bihari Ji. Every guest was welcomed with warmth, comfort, and heartfelt hospitality." },
-  { year: "2025", title: "A Growing Family of Devotees", body: "Through genuine hospitality and memorable guest experiences, RK Residency earned the trust of pilgrims and travelers from across India. Our commitment to cleanliness, personalized service, and spiritual comfort became the foundation of our growing reputation." },
-  { year: "2026", title: "Continuing a Legacy of Service", body: "Today, RK Residency continues its journey with the same purpose that inspired its beginning—to serve every devotee with excellence, preserve the values of faith and selfless hospitality, and make every stay in Vrindavan truly unforgettable." },
+  { year: String(BUSINESS.establishedYear), title: "RK Residency Opens Its Doors", body: "Established in the holy city of Vrindavan, RK Residency was founded as a tribute to the legacy of Late Shri Ravi Karan Singh and a humble offering of service to the devotees of Shri Banke Bihari Ji. Every guest was welcomed with warmth, comfort, and heartfelt hospitality." },
+  { year: String(BUSINESS.establishedYear + 1), title: "A Growing Family of Devotees", body: "Through genuine hospitality and memorable guest experiences, RK Residency earned the trust of pilgrims and travelers from across India. Our commitment to cleanliness, personalized service, and spiritual comfort became the foundation of our growing reputation." },
+  { year: String(BUSINESS.establishedYear + 2), title: "Continuing a Legacy of Service", body: "Today, RK Residency continues its journey with the same purpose that inspired its beginning—to serve every devotee with excellence, preserve the values of faith and selfless hospitality, and make every stay in Vrindavan truly unforgettable." },
   
 ];
 
@@ -28,7 +29,7 @@ const TEAM = [
 ];
 
 const STATS = [
-  { end: 3, suffix: "", label: "Years of paying hospitality" },
+  { end: new Date().getFullYear() - BUSINESS.establishedYear, suffix: "", label: "Years of paying hospitality" },
   { end: 35, suffix: "", label: "Rooms, suites & villas" },
   { end: 48000, suffix: "+", label: "Devotee guests hosted" },
   { end: 42, suffix: "", label: "Countries guests come from" },
@@ -70,7 +71,7 @@ export function AboutPage() {
           </h2>
                  <div className="mt-5 space-y-4 font-display text-base leading-relaxed text-charcoal-soft">
             <p>
-  Founded in <strong>2024</strong>, <span className="text-marsala">RK Residency</span> was established in the
+  Founded in <strong>{BUSINESS.establishedYear}</strong>, <span className="text-marsala">RK Residency</span> was established in the
   Kailash Nagar area of the sacred city of Vrindavan — near the temples of
   Shri Banke Bihari Ji and ISKCON — as a heartfelt tribute to the legacy of
   <strong> Late Shri Ravi Karan Singh</strong>, whose supreme sacrifice during

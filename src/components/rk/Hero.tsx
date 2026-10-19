@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Diya } from "./Motifs";
 import { WeatherWidget } from "./WeatherWidget";
 import { useContentValue, parseJsonArray } from "@/lib/site-content";
+import { BUSINESS } from "@/lib/site.config";
 
 export function Hero({ onBookClick }: { onBookClick: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -250,11 +251,16 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
 
 /** Trust badge strip shown just below hero on scroll. */
 export function TrustBadges() {
+  // Breakfast wording derives from the SINGLE policy in site.config so the
+  // badge, rooms note and FAQ can never contradict each other.
+  const breakfastBadge = BUSINESS.breakfastIncluded
+    ? { label: "Satvik Breakfast", sub: "Pure vegetarian, daily included" }
+    : { label: "Satvik Kitchen", sub: "Pure vegetarian; breakfast available" };
   const badges = [
     { label: "Best Price Guarantee", sub: "Direct booking, no OTA commission" },
     { label: "Free Cancellation", sub: "Up to 72 hours before check-in" },
     { label: "Late Check-out", sub: "Complimentary till 1 PM on request" },
-    { label: "Satvik Breakfast", sub: "Pure vegetarian, daily included" },
+    breakfastBadge,
   ];
   return (
     <div className="relative z-30 -mt-px border-y border-gold/20 bg-teal text-ivory">

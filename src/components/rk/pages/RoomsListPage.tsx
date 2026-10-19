@@ -6,6 +6,7 @@ import { Users, Maximize, BedDouble, Sparkles, ArrowRight } from "lucide-react";
 import { PageShell } from "../PageShell";
 import { Reveal, Lotus } from "../Motifs";
 import { useRouter } from "@/lib/router";
+import { BUSINESS } from "@/lib/site.config";
 
 const BREADCRUMBS = [
   { name: "Home", path: "/" },
@@ -177,7 +178,9 @@ export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
       <div className="mt-12 flex items-center justify-center">
         <Lotus size={18} className="text-gold" />
         <span className="mx-3 font-display text-xs text-charcoal-soft">
-          All rates exclude daily satvik breakfast.
+          {BUSINESS.breakfastIncluded
+            ? "Daily satvik breakfast included in all rates."
+            : "All rates exclude daily satvik breakfast."}
         </span>
         <Lotus size={18} className="text-gold" />
       </div>

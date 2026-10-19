@@ -79,6 +79,23 @@ export const BUSINESS = {
   checkinTime: "2:00 PM",
   checkoutTime: "11:00 AM",
 
+  /**
+   * Breakfast policy — SINGLE SOURCE OF TRUTH.
+   * TODO(owner): the site currently contradicts itself (the trust badge and
+   * FAQ say breakfast is INCLUDED in rates; the rooms note says EXCLUDED).
+   * Set the ONE correct policy here and every page follows.
+   */
+  breakfastIncluded: true,
+
+  /**
+   * Founding year — SINGLE SOURCE OF TRUTH.
+   * TODO(owner): the site currently contradicts itself (page says EST. 2024,
+   * footer said "since 2014"). Set the ONE correct year here; the about
+   * badge, footer line and "Years of Braj hospitality" counter all derive
+   * from it.
+   */
+  establishedYear: 2024,
+
   /** TODO: Confirm this amenity list — currently mirrors the site's own copy (Trust badges + FAQ). */
   amenities: [
     "Free high-speed Wi-Fi",
