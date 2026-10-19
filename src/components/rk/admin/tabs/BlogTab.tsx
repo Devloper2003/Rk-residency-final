@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { Plus, Edit, Trash2, X, Save, Calendar, Wand2, Clock, ListChecks, CheckCircle2, XCircle, Timer, PlayCircle } from "lucide-react";
+import { Plus, Edit, Trash2, X, Save, Calendar, Wand2, Clock, ListChecks, CheckCircle2, XCircle, Timer, PlayCircle, Sparkles, AlertTriangle, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,7 +8,7 @@ import { adminApi, adminFetch, LoadingSpinner, Field } from "./_shared";
 import { refreshSiteContent } from "@/lib/site-content";
 import { ImageUploader } from "../ImageUploader";
 import { toast } from "sonner";
-import { slugifyTitle, calcReadingMins, countWords, evaluateChecklist, effectiveStatus } from "@/lib/blog-utils";
+import { slugifyTitle, calcReadingMins, countWords, evaluateChecklist, effectiveStatus, countVerifyMarkers, verifyMarkerLines } from "@/lib/blog-utils";
 
 const EMPTY = {
   slug: "", title: "", excerpt: "", body: "",
@@ -190,6 +190,10 @@ function BlogEditor({ post, onClose, onSave }: { post: any; onClose: () => void;
 
   const words = useMemo(() => countWords(form.body || ""), [form.body]);
   const autoMins = useMemo(() => calcReadingMins(form.body || ""), [form.body]);
+  // [VERIFY] markers — AI drafts land with these; publishing is blocked
+  // until every one is resolved by a human.
+  const verifyCount = useMemo(() => countVerifyMarkers(form.body || ""), [form.body]);
+  const verifyLines = useMemo(() => verifyMarkerLines(form.body || ""), [form.body]);
   // Natural dimensions of the cover image — for the 1600×900 checklist item.
   const coverSize = useImageSize(form.imageUrl);
 
@@ -315,6 +319,22 @@ function BlogEditor({ post, onClose, onSave }: { post: any; onClose: () => void;
             hint="Recommended: 1600×900px, webp/jpg/png"
           />
 
+          {/* Cover image design brief (Task 5/7) — filled by AI drafts; the
+              owner designs + uploads the image themselves. */}
+          {(form.aiGenerated || form.coverImageTitle || form.coverImageBrief) && (
+            <div className="rounded-2xl border border-gold/30 bg-gold/5 p-4">
+              <div className="mb-2 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-gold-deep" />
+                <span className="font-serif text-sm font-semibold text-charcoal">Cover image design brief</span>
+                <span className="font-display text-[10px] text-charcoal-soft">design this 1600×900 image, then upload it above</span>
+              </div>
+              <div className="space-y-3">
+                <Field label="Cover image title" value={form.coverImageTitle || ""} onChange={(v) => set("coverImageTitle", v)} />
+                <Field label="Cover image brief (composition & mood)" textarea value={form.coverImageBrief || ""} onChange={(v) => set("coverImageBrief", v)} />
+              </div>
+            </div>
+          )}
+
           <Field
             label="Target keyword"
             value={form.targetKeyword || ""}
@@ -377,6 +397,30 @@ function BlogEditor({ post, onClose, onSave }: { post: any; onClose: () => void;
               <span>·</span>
               <button type="button" onClick={() => insertIntoBody("\n\n## New section\n\n")} className="text-teal hover:underline">+ Insert ## heading</button>
             </div>
+
+            {/* [VERIFY] review panel (Task 5) — highlighted while unresolved */}
+            {verifyCount > 0 && (
+              <div className="mt-3 rounded-2xl border border-marsala/40 bg-marsala/5 p-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 text-marsala" />
+                  <span className="font-serif text-sm font-semibold text-marsala">
+                    {verifyCount} [VERIFY] marker{verifyCount === 1 ? "" : "s"} — publishing is blocked
+                  </span>
+                </div>
+                <p className="mb-2 font-display text-[11px] text-charcoal-soft">
+                  The AI marked facts it could not confirm (timings, prices, dates, quotes…). Confirm or rewrite each one, then remove the [VERIFY] tag. Lines:
+                </p>
+                <ul className="space-y-1">
+                  {verifyLines.map((v) => (
+                    <li key={v.line} className="rounded-lg bg-white px-2 py-1 font-mono text-[10px] text-charcoal">
+                      <span className="mr-2 rounded bg-marsala/15 px-1 font-semibold text-marsala">line {v.line}</span>
+                      <span className="rounded bg-marsala/15 px-1 text-marsala">[VERIFY]</span>
+                      {v.text.split("[VERIFY]").join("")}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           {/* Status — replaces the old single Published checkbox (Task 3) */}
@@ -412,11 +456,23 @@ function BlogEditor({ post, onClose, onSave }: { post: any; onClose: () => void;
           </div>
         </div>
 
-        <div className="sticky bottom-0 flex justify-end gap-3 border-t border-charcoal/10 bg-ivory/95 px-6 py-4 backdrop-blur">
-          <Button onClick={onClose} variant="outline" className="rounded-full">Cancel</Button>
-          <Button onClick={handleSave} disabled={saving} className="rounded-full bg-teal px-6 py-2 text-ivory hover:bg-teal-deep">
-            {saving ? <><Save className="mr-2 h-4 w-4 animate-pulse" /> Saving…</> : <><Save className="mr-2 h-4 w-4" /> Save post</>}
-          </Button>
+        <div className="sticky bottom-0 flex items-center justify-between gap-3 border-t border-charcoal/10 bg-ivory/95 px-6 py-4 backdrop-blur">
+          {verifyCount > 0 ? (
+            <span className="inline-flex items-center gap-1.5 font-display text-[11px] font-semibold text-marsala" title="Resolve every [VERIFY] marker to enable publishing">
+              <AlertTriangle className="h-4 w-4" /> Resolve {verifyCount} [VERIFY] marker{verifyCount === 1 ? "" : "s"} to publish
+            </span>
+          ) : <span />}
+          <div className="flex gap-3">
+            <Button onClick={onClose} variant="outline" className="rounded-full">Cancel</Button>
+            <Button
+              onClick={handleSave}
+              disabled={saving || (form.status === "PUBLISHED" && verifyCount > 0)}
+              title={form.status === "PUBLISHED" && verifyCount > 0 ? "Publishing is blocked while [VERIFY] markers remain" : undefined}
+              className="rounded-full bg-teal px-6 py-2 text-ivory hover:bg-teal-deep disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {saving ? <><Save className="mr-2 h-4 w-4 animate-pulse" /> Saving…</> : <><Save className="mr-2 h-4 w-4" /> Save post</>}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

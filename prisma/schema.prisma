@@ -162,6 +162,10 @@ model BlogPost {
   coverAlt        String? // alt text of the cover image (SEO + accessibility)
   targetKeyword   String? // target keyword for the SEO checklist (Task 2)
   calendarId      String? // ContentCalendar row this post was generated for (plain ref; the live link lives on ContentCalendar.linkedPostId)
+  // AI draft generator (Task 5)
+  aiGenerated     Boolean @default(false) // true for drafts created by the AI generator
+  coverImageTitle String? // design brief: cover image title (owner designs the image)
+  coverImageBrief String? // design brief: 1600x900 composition + mood description
   readingMinsAuto Boolean @default(true) // auto-calculate readingMins from body
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

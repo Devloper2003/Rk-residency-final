@@ -6,6 +6,7 @@ import {
   slugifyTitle,
   clampText,
   calcReadingMins,
+  countVerifyMarkers,
 } from "@/lib/blog-utils";
 import { revalidatePostPaths } from "@/lib/blog-publish";
 
@@ -48,6 +49,11 @@ const blogSchema = z.object({
   // Scheduling (Task 3)
   status: z.enum(["DRAFT", "SCHEDULED", "PUBLISHED"]).optional(),
   publishOn: z.string().nullable().optional(),
+  // AI draft fields (Task 5) — preserved when the owner edits and re-saves
+  aiGenerated: z.boolean().optional(),
+  coverImageTitle: z.string().nullable().optional(),
+  coverImageBrief: z.string().nullable().optional(),
+  calendarId: z.string().nullable().optional(),
 });
 
 /**
@@ -61,6 +67,17 @@ const blogSchema = z.object({
 function deriveScheduling(d: z.infer<typeof blogSchema>) {
   const status = d.status || (d.published ? "PUBLISHED" : "DRAFT");
   const publishOn = d.publishOn ? new Date(d.publishOn) : null;
+
+  // Quality guardrail (Task 5): publishing is BLOCKED while unresolved
+  // [VERIFY] markers remain in the body — a human must confirm or remove
+  // every uncertain AI-written detail first.
+  if (status === "PUBLISHED") {
+    const markers = countVerifyMarkers(d.body);
+    if (markers > 0) {
+      throw new Error(`Publish blocked: ${markers} [VERIFY] marker(s) still in the body. Review each one (confirm the fact or rewrite it) and remove the [VERIFY] tags first.`);
+    }
+  }
+
   if (status === "PUBLISHED") {
     return { status, publishOn: null, published: true, publishedAt: d.publishedAt ? new Date(d.publishedAt) : new Date() };
   }
@@ -120,7 +137,12 @@ export async function POST(req: Request) {
     }
     const d = parsed.data;
     const auto = applyAutoSeo(d);
-    const sched = deriveScheduling(d);
+    let sched: ReturnType<typeof deriveScheduling>;
+    try {
+      sched = deriveScheduling(d);
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : "Invalid scheduling data" }, { status: 422 });
+    }
     try {
       const post = await db.blogPost.create({
         data: {
@@ -132,6 +154,10 @@ export async function POST(req: Request) {
           coverAlt: auto.coverAlt, targetKeyword: auto.targetKeyword,
           readingMins: auto.readingMins,
           readingMinsAuto: d.readingMinsAuto !== false,
+          aiGenerated: d.aiGenerated ?? false,
+          coverImageTitle: d.coverImageTitle || null,
+          coverImageBrief: d.coverImageBrief || null,
+          calendarId: d.calendarId || null,
         },
       });
       await db.auditLog.create({
@@ -169,7 +195,7 @@ export async function PATCH(req: Request) {
     try {
       sched = deriveScheduling(d);
     } catch (e) {
-      return NextResponse.json({ error: e instanceof Error ? e.message : "Invalid scheduling data" }, { status: 400 });
+      return NextResponse.json({ error: e instanceof Error ? e.message : "Invalid scheduling data" }, { status: 422 });
     }
     try {
       const post = await db.blogPost.update({
@@ -183,6 +209,10 @@ export async function PATCH(req: Request) {
           coverAlt: auto.coverAlt, targetKeyword: auto.targetKeyword,
           readingMins: auto.readingMins,
           readingMinsAuto: d.readingMinsAuto !== false,
+          aiGenerated: d.aiGenerated ?? false,
+          coverImageTitle: d.coverImageTitle || null,
+          coverImageBrief: d.coverImageBrief || null,
+          calendarId: d.calendarId || null,
         },
       });
       await db.auditLog.create({

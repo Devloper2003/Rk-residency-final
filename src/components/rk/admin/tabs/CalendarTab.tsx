@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Edit, Trash2, X, Save, CalendarDays, Sparkles, Download, ExternalLink } from "lucide-react";
+import { Plus, Edit, Trash2, X, Save, CalendarDays, Sparkles, Download, ExternalLink, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -35,6 +35,8 @@ export function CalendarTab() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<any | null>(null);
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [genError, setGenError] = useState<{ id: string; message: string } | null>(null);
 
   const reload = useCallback(() => {
     adminApi.get("calendar").then((d) => {
@@ -84,6 +86,33 @@ export function CalendarTab() {
       if (r) { toast.success("Row deleted"); reload(); }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Delete failed");
+    }
+  };
+
+  /** AI draft generator (Task 5) — server-side Anthropic call; saves as DRAFT. */
+  const generateDraft = async (id: string) => {
+    setGeneratingId(id);
+    setGenError(null);
+    try {
+      const r = await adminFetch("/api/admin/generate-draft", {
+        method: "POST",
+        body: JSON.stringify({ calendarId: id }),
+      });
+      if (r) {
+        toast.success(
+          r.verifyCount > 0
+            ? `Draft “${r.post.title}” created and saved as DRAFT — ${r.verifyCount} [VERIFY] marker${r.verifyCount === 1 ? "" : "s"} to review before publishing.`
+            : `Draft “${r.post.title}” created and saved as DRAFT.`,
+          { duration: 8000 }
+        );
+        reload();
+      }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "AI generation failed";
+      setGenError({ id, message });
+      toast.error(message, { duration: 10000 });
+    } finally {
+      setGeneratingId(null);
     }
   };
 
@@ -147,8 +176,22 @@ export function CalendarTab() {
                       <ExternalLink className="h-3 w-3" /> Linked post: “{r.post.title}” ({r.post.status.toLowerCase()})
                     </a>
                   )}
+                  {genError?.id === r.id && (
+                    <p className="mt-1 rounded-lg border border-marsala/30 bg-marsala/5 px-2 py-1 font-display text-[11px] text-marsala">
+                      ⚠ {genError.message}
+                    </p>
+                  )}
                 </div>
                 <div className="flex shrink-0 gap-1">
+                  <button
+                    onClick={() => generateDraft(r.id)}
+                    disabled={generatingId === r.id || !!r.linkedPostId}
+                    title={r.linkedPostId ? "This row already has a linked draft/post (one draft per row)" : "Generate an AI draft for this row — always saved as Draft"}
+                    className="inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold/10 px-2.5 py-1 font-display text-[10px] font-semibold text-gold-deep transition-colors hover:bg-gold hover:text-ivory disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {generatingId === r.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                    {generatingId === r.id ? "Generating…" : "Generate draft"}
+                  </button>
                   <button onClick={() => setEditing({ ...EMPTY_ROW, ...r, targetKeywords: JSON.stringify(keywords), notes: r.notes || "" })} className="grid h-7 w-7 place-items-center rounded-full border border-charcoal/15 text-charcoal-soft hover:bg-teal hover:text-ivory" title="Edit row">
                     <Edit className="h-3 w-3" />
                   </button>
