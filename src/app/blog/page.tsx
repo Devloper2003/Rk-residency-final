@@ -2,6 +2,7 @@ import { BlogListPage } from "@/components/rk/pages/BlogPages";
 import { db } from "@/lib/db";
 import type { Metadata } from "next";
 import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
+import { collectionPageJsonLd, breadcrumbJsonLd } from "@/lib/schema-org";
 import { publicPostWhere } from "@/lib/blog-utils";
 
 export const dynamic = "force-dynamic";
@@ -27,5 +28,28 @@ export default async function BlogRoute() {
     where: publicPostWhere(),
     orderBy: [{ publishedAt: "desc" }],
   });
-  return <BlogListPage initialPosts={posts} />;
+
+  return (
+    <>
+      {/* JSON-LD: CollectionPage + BreadcrumbList for the blog listing */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(collectionPageJsonLd()),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            breadcrumbJsonLd([
+              { name: "Home", path: "/" },
+              { name: "Blog", path: "/blog" },
+            ])
+          ),
+        }}
+      />
+      <BlogListPage initialPosts={posts} />
+    </>
+  );
 }

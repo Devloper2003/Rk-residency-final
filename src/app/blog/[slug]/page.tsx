@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { absUrl, pageOpenGraph, pageTwitter, seoTitle, seoDescription } from "@/lib/seo";
-import { blogPostingJsonLd } from "@/lib/schema-org";
+import { blogPostingJsonLd, breadcrumbJsonLd } from "@/lib/schema-org";
 import { tocFromBody, publicPostWhere } from "@/lib/blog-utils";
 
 export const dynamic = "force-dynamic";
@@ -83,21 +83,35 @@ export default async function BlogDetailRoute({ params }: { params: Promise<{ sl
   return (
     <>
       {post && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(
-              blogPostingJsonLd({
-                title: post.title,
-                excerpt: post.excerpt,
-                imageUrl: post.imageUrl,
-                publishedAt: post.publishedAt,
-                updatedAt: post.updatedAt,
-                slug: post.slug,
-              })
-            ),
-          }}
-        />
+        <>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(
+                blogPostingJsonLd({
+                  title: post.title,
+                  excerpt: post.excerpt,
+                  imageUrl: post.imageUrl,
+                  publishedAt: post.publishedAt,
+                  updatedAt: post.updatedAt,
+                  slug: post.slug,
+                })
+              ),
+            }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(
+                breadcrumbJsonLd([
+                  { name: "Home", path: "/" },
+                  { name: "Blog", path: "/blog" },
+                  { name: post.title, path: `/blog/${post.slug}` },
+                ])
+              ),
+            }}
+          />
+        </>
       )}
       <BlogDetailPage slug={slug} initialPost={post} initialRelated={related} initialToc={toc} />
     </>

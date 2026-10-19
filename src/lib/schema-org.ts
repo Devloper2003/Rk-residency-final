@@ -180,3 +180,19 @@ export function blogPostingJsonLd(post: {
     },
   };
 }
+
+/** CollectionPage JSON-LD for the /blog listing page. */
+export function collectionPageJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "The Braj Journal",
+    description: "Temple guides, festival calendars and local tips from our resident scholars and concierge team.",
+    url: absUrl("/blog"),
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+  };
+}
