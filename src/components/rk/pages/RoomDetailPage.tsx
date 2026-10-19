@@ -41,7 +41,15 @@ const AMENITY_ICONS: Record<string, React.ComponentType<{ className?: string }>>
   "Brass diya turn-down ritual": Bell,
 };
 
-export function RoomDetailPage({ slug }: { slug: string }) {
+export function RoomDetailPage({
+  slug,
+  initialRoom,
+  initialRelated,
+}: {
+  slug: string;
+  initialRoom?: Room | null;
+  initialRelated?: Room[];
+}) {
   const navigate = useRouter((s) => s.navigate);
   const openBooking = useRouter((s) => s.openBooking);
   const info = useContactInfo();
@@ -50,13 +58,16 @@ export function RoomDetailPage({ slug }: { slug: string }) {
   // a different API and had a different default ("12:00 PM" vs "2:00 PM").
   const checkinTime = info.checkinTime;
   const checkoutTime = info.checkoutTime;
-  const [room, setRoom] = useState<Room | null>(null);
-  const [related, setRelated] = useState<Room[]>([]);
-  const [loading, setLoading] = useState(true);
+  // SSR: when the server page passes initialRoom, the room name, description,
+  // amenities and gallery are in the initial HTML (crawlable without JS).
+  const [room, setRoom] = useState<Room | null>(initialRoom ?? null);
+  const [related, setRelated] = useState<Room[]>(initialRelated || []);
+  const [loading, setLoading] = useState(initialRoom === undefined);
   const [activeImage, setActiveImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
   useEffect(() => {
+    if (initialRoom !== undefined) return; // rendered server-side
     let cancelled = false;
     fetch("/api/rooms")
       .then((r) => r.json())
@@ -70,7 +81,7 @@ export function RoomDetailPage({ slug }: { slug: string }) {
       })
       .catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [slug]);
+  }, [slug, initialRoom]);
 
   if (loading) {
     return (

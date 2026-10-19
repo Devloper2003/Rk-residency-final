@@ -36,7 +36,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function BlogDetailRoute({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  // Fetch the post for JSON-LD structured data
+  // SSR: the post is fetched once on the server and used BOTH for JSON-LD
+  // and for the rendered article body, so the full text is in the initial HTML.
   const post = await db.blogPost.findUnique({ where: { slug } });
 
   return (
@@ -72,7 +73,7 @@ export default async function BlogDetailRoute({ params }: { params: Promise<{ sl
           }}
         />
       )}
-      <BlogDetailPage slug={slug} />
+      <BlogDetailPage slug={slug} initialPost={post} />
     </>
   );
 }

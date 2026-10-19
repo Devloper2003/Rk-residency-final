@@ -11,7 +11,8 @@ import { useContactInfo } from "@/lib/use-contact-info";
 type BlogPost = {
   id: string; slug: string; title: string; excerpt: string; body: string;
   category: string; tags: string; imageUrl: string | null;
-  publishedAt: string | null; readingMins: number;
+  // string when fetched from /api/blog, Date when passed from the server page (SSR)
+  publishedAt: string | Date | null; readingMins: number;
 };
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -28,13 +29,16 @@ const CATEGORY_COLOR: Record<string, string> = {
   EXPERIENCE: "bg-charcoal/8 text-charcoal",
 };
 
-export function BlogListPage() {
+export function BlogListPage({ initialPosts }: { initialPosts?: BlogPost[] }) {
   const navigate = useRouter((s) => s.navigate);
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [loading, setLoading] = useState(true);
+  // SSR: when the server page passes initialPosts, the story cards are part
+  // of the initial HTML (crawlable). The client fetch remains as a fallback.
+  const [posts, setPosts] = useState<BlogPost[]>(initialPosts || []);
+  const [loading, setLoading] = useState(!initialPosts);
   const [filter, setFilter] = useState("ALL");
 
   useEffect(() => {
+    if (initialPosts) return; // data already rendered server-side
     fetch("/api/blog")
       .then((r) => r.json())
       .then((data) => {
@@ -42,7 +46,7 @@ export function BlogListPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [initialPosts]);
 
   const cats = ["ALL", ...Array.from(new Set(posts.map((p) => p.category)))];
   const visible = filter === "ALL" ? posts : posts.filter((p) => p.category === filter);
@@ -151,13 +155,16 @@ export function BlogListPage() {
   );
 }
 
-export function BlogDetailPage({ slug }: { slug: string }) {
+export function BlogDetailPage({ slug, initialPost }: { slug: string; initialPost?: BlogPost | null }) {
   const navigate = useRouter((s) => s.navigate);
   const info = useContactInfo();
-  const [post, setPost] = useState<BlogPost | null>(null);
-  const [loading, setLoading] = useState(true);
+  // SSR: when the server page passes initialPost, the full article body is in
+  // the initial HTML (crawlable without JS).
+  const [post, setPost] = useState<BlogPost | null>(initialPost ?? null);
+  const [loading, setLoading] = useState(initialPost === undefined);
 
   useEffect(() => {
+    if (initialPost !== undefined) return; // rendered server-side
     fetch(`/api/blog?slug=${slug}`)
       .then((r) => r.json())
       .then((data) => {
@@ -165,7 +172,7 @@ export function BlogDetailPage({ slug }: { slug: string }) {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [slug]);
+  }, [slug, initialPost]);
 
   if (loading) {
     return (

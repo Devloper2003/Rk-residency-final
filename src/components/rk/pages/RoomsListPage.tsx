@@ -31,13 +31,16 @@ function matchFilter(room: Room, filter: string) {
   return true;
 }
 
-export function RoomsListPage() {
+export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
   const navigate = useRouter((s) => s.navigate);
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [loading, setLoading] = useState(true);
+  // SSR: when the server page passes initialRooms, the room cards are part of
+  // the initial HTML (crawlable). The client fetch remains only as a fallback.
+  const [rooms, setRooms] = useState<Room[]>(initialRooms || []);
+  const [loading, setLoading] = useState(!initialRooms);
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
+    if (initialRooms) return; // data already rendered server-side
     fetch("/api/rooms")
       .then((r) => r.json())
       .then((data) => {
@@ -45,7 +48,7 @@ export function RoomsListPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [initialRooms]);
 
   const visible = rooms.filter((r) => matchFilter(r, filter));
 

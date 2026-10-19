@@ -33,5 +33,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function RoomDetailRoute({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  return <RoomDetailPage slug={slug} />;
+  // SSR: fetch the room + related rooms on the server so the room's full
+  // content (name, description, amenities, gallery) is in the initial HTML.
+  const [room, allRooms] = await Promise.all([
+    db.room.findUnique({ where: { slug } }),
+    db.room.findMany({ orderBy: [{ sortOrder: "asc" }] }),
+  ]);
+  const related = allRooms.filter((r) => r.slug !== slug).slice(0, 3);
+  return <RoomDetailPage slug={slug} initialRoom={room} initialRelated={related} />;
 }
