@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
 
 const pageTitle = "Vrindavan Experiences — RK Residency";
-const pageDescription = "Five sacred sites within a 25-minute walk of RK Residency: Banke Bihari, ISKCON, Prem Mandir, Nidhivan, Yamuna Aarti. Full timings, history and pilgrim tips.";
+const pageDescription = "Banke Bihari, ISKCON, Prem Mandir, Nidhivan and Yamuna Aarti — timings, history and pilgrim tips for five sacred sites near RK Residency.";
 
 export const metadata: Metadata = {
   title: pageTitle,

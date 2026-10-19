@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
 
 const pageTitle = "Cancellation & Refund Policy — RK Residency Vrindavan";
-const pageDescription = "Cancellation & Refund Policy for RK Residency — cancellation timeline, refund eligibility, no-show policy, early check-out, date modification, refund processing time.";
+const pageDescription = "Cancellation timelines, refund eligibility, no-show policy and date-change rules for reservations at RK Residency, Vrindavan.";
 
 export const metadata: Metadata = {
   title: pageTitle,

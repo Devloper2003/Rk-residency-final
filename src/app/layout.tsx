@@ -34,21 +34,9 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "RK Residency — Heritage Luxury Stay in Vrindavan | Hotel near Banke Bihari Temple",
+  title: "RK Residency — Heritage Luxury Stay in Vrindavan",
   description:
-    "RK Residency is a heritage-luxury residency in Vrindavan on the banks of the Yamuna. Spiritual luxury for pilgrims, devotee families and cultural travellers. Steps from Banke Bihari Mandir, ISKCON, Prem Mandir. Direct booking best-price guarantee.",
-  keywords: [
-    "Vrindavan hotel",
-    "hotel near Banke Bihari Temple",
-    "hotel near ISKCON Vrindavan",
-    "Vrindavan luxury stay",
-    "Vrindavan resort booking",
-    "RK Residency",
-    "Braj region hotel",
-    "spiritual luxury Vrindavan",
-    "Yamuna aarti stay",
-    "Prem Mandir hotel",
-  ],
+    "Heritage-luxury residency on the banks of the Yamuna, steps from Banke Bihari Mandir and ISKCON. Direct booking with best-price guarantee.",
   authors: [{ name: "RK Residency" }],
   // NOTE: no site-wide canonical here. Canonicals are set PER PAGE
   // (self-referencing, built from SITE_URL) in each route's metadata so no

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
 
 const pageTitle = "Our Story — RK Residency Vrindavan";
-const pageDescription = "RK Residency was founded in 2024 as a heartfelt tribute to the legacy of Late Shri Ravi Karan Singh—a Kargil War hero whose courage and selfless sacrifice continue to inspire our journey of serving every devotee who visits the sacred land of Vrindavan.";
+const pageDescription = "RK Residency honours the legacy of Late Shri Ravi Karan Singh, a Kargil War hero — a heartfelt heritage stay for every devotee in Vrindavan.";
 
 export const metadata: Metadata = {
   title: pageTitle,

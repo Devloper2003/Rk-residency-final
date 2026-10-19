@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
 
 const pageTitle = "Satvik Dining — RK Residency Vrindavan";
-const pageDescription = "Pure vegetarian satvik dining at RK Residency. No onion, no garlic, no eggs. Full menu — Braj Thali, satvik puri-sabzi, rabri-jalebi, tulsi tea. Rooftop Yamuna Pavilion.";
+const pageDescription = "Pure satvik dining — no onion, no garlic. Braj Thali, rabri-jalebi and tulsi tea at the rooftop Yamuna Pavilion, RK Residency Vrindavan.";
 
 export const metadata: Metadata = {
   title: pageTitle,

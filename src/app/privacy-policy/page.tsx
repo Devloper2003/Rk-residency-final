@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
 
 const pageTitle = "Privacy Policy — RK Residency Vrindavan";
-const pageDescription = "Privacy Policy for RK Residency — how we collect, use, store, and protect your personal information when you visit our website, make a reservation, or stay at our hotel.";
+const pageDescription = "How RK Residency collects, uses, stores and protects your personal information when you book a stay or visit our website.";
 
 export const metadata: Metadata = {
   title: pageTitle,

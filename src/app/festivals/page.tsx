@@ -4,7 +4,7 @@ import { PageShell } from "@/components/rk/PageShell";
 import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
 
 const pageTitle = "Braj Festival Calendar 2026 — RK Residency Vrindavan";
-const pageDescription = "Six sacred festivals of Braj: Makar Sankranti, Vasant Panchami, Holi, Radhashtami, Janmashtami, Sharad Purnima. Plan your pilgrimage around the Vrindavan spiritual calendar.";
+const pageDescription = "Makar Sankranti, Holi, Radhashtami, Janmashtami and Sharad Purnima — plan your Vrindavan pilgrimage around the Braj festival calendar.";
 
 export const metadata: Metadata = {
   title: pageTitle,
