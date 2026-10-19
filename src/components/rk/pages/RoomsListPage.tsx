@@ -21,26 +21,31 @@ type Room = {
   badge: string | null; featured: boolean;
 };
 
-const FILTERS = [
-  { id: "all", label: "All" },
-  { id: "suite", label: "Suites" },
-  { id: "deluxe", label: "Deluxe" },
-  { id: "family", label: "Family" },
-  { id: "villa", label: "Villa" },
-  { id: "view", label: "View Rooms" },
-];
+const FILTERS = [{ id: "all", label: "All" }];
+
+/**
+ * Filter tabs are derived from the REAL room list (SSR data) — one tab per
+ * room plus "All" — so the page can never show a tab that matches nothing
+ * (the old hard-coded Family/Villa tabs predate the real room list and
+ * rendered empty; the /rooms meta no longer mentions a "Gokul Royal Villa"
+ * that does not exist). Adding a room in Admin → Rooms adds its tab
+ * automatically.
+ */
+function buildFilters(rooms: Room[]) {
+  const seen = new Set<string>();
+  const tabs = rooms
+    .filter((r) => {
+      if (seen.has(r.slug)) return false;
+      seen.add(r.slug);
+      return true;
+    })
+    .map((r) => ({ id: r.slug, label: r.name }));
+  return [...FILTERS, ...tabs];
+}
 
 function matchFilter(room: Room, filter: string) {
   if (filter === "all") return true;
-  if (filter === "suite") return /suite/i.test(room.name);
-  if (filter === "deluxe") return /deluxe/i.test(room.name);
-  // Family rooms are tagged by badge ("Family") — match badge OR name so the
-  // tab never shows an empty list.
-  if (filter === "family") return /family/i.test(room.name) || room.badge === "Family";
-  // Villas (e.g. Gokul Royal Villa) — matches the /rooms meta description.
-  if (filter === "villa") return /villa/i.test(room.name) || room.badge === "Villa";
-  if (filter === "view") return room.badge === "View" || room.badge === "Signature";
-  return true;
+  return room.slug === filter;
 }
 
 export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
@@ -62,6 +67,7 @@ export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
       .catch(() => setLoading(false));
   }, [initialRooms]);
 
+  const filters = buildFilters(rooms);
   const visible = rooms.filter((r) => matchFilter(r, filter));
 
   // "Starting from ₹X per night" — real price from the SSR room data unless
@@ -88,9 +94,9 @@ export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
         </p>
       )}
 
-      {/* Filters */}
+      {/* Filters — derived from the real room list */}
       <div className="mb-10 flex flex-wrap justify-center gap-2">
-        {FILTERS.map((f) => (
+        {filters.map((f) => (
           <button
             key={f.id}
             onClick={() => setFilter(f.id)}

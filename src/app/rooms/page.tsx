@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const pageTitle = "Rooms & Suites in Vrindavan near Banke Bihari Mandir | RK Residency";
 const pageDescription =
-  "Explore rooms, suites and the Gokul Royal Villa — hand-carved teak, Makrana marble, Braj textiles. Book direct with RK Residency Vrindavan.";
+  "Explore the Deluxe Room, Suite and Triple Bedroom at RK Residency Vrindavan — book direct near Banke Bihari Mandir.";
 
 export const metadata: Metadata = {
   title: pageTitle,
