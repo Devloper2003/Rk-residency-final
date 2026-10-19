@@ -1,104 +1,103 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verifyAdmin } from "@/lib/admin-auth";
-import { bookedPerNight, effectiveSellable } from "@/lib/inventory";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Admin per-day inventory control (Phase 4).
+ * GET /api/admin/inventory
+ * Query: roomId, startDate (YYYY-MM-DD), endDate (YYYY-MM-DD)
  *
- * GET  /api/admin/inventory?startDate=YYYY-MM-DD&days=14
- *   → grid for the Inventory tab: per room, per day:
- *     { booked, closed, override, sellable } where
- *     sellable = effective sellable count that day (0 when closed).
+ * Returns: { overrides: RoomInventoryDay[], bookedMap: Record<string,number>, room }
  *
- * POST /api/admin/inventory
- *   body: { roomId, date: "YYYY-MM-DD",
- *           isClosed?: boolean,
- *           sellableOverride?: number | null,
- *           note?: string,
- *           reset?: boolean }   ← deletes the row (fully default behaviour)
- *   → upserts the RoomInventoryDay row and returns it.
- *
- * Every call is audit-logged. No other data is touched.
+ * Uses RoomInventoryDay model from Prisma schema.
  */
-
-const MAX_DAYS = 31;
-
 export async function GET(req: Request) {
   const admin = await verifyAdmin(req);
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const url = new URL(req.url);
-    const startDateStr = url.searchParams.get("startDate") || new Date().toISOString().slice(0, 10);
-    const days = Math.min(MAX_DAYS, Math.max(1, parseInt(url.searchParams.get("days") || "14", 10) || 14));
+    const roomId = url.searchParams.get("roomId");
+    const startDateStr = url.searchParams.get("startDate");
+    const endDateStr = url.searchParams.get("endDate");
 
-    const start = new Date(`${startDateStr}T00:00:00.000Z`);
-    const keys = Array.from({ length: days }, (_, i) => {
-      const d = new Date(start);
-      d.setUTCDate(d.getUTCDate() + i);
-      return d.toISOString().slice(0, 10);
+    if (!roomId || !startDateStr || !endDateStr) {
+      return NextResponse.json({ error: "Missing roomId, startDate, or endDate" }, { status: 400 });
+    }
+
+    const startDate = new Date(startDateStr + "T00:00:00Z");
+    const endDate = new Date(endDateStr + "T23:59:59Z");
+
+    // Fetch room info
+    const room = await db.room.findUnique({
+      where: { id: roomId },
+      select: { id: true, name: true, totalCount: true },
     });
-    const rangeEnd = new Date(start);
-    rangeEnd.setUTCDate(rangeEnd.getUTCDate() + days);
+    if (!room) return NextResponse.json({ error: "Room not found" }, { status: 404 });
 
-    const [rooms, bookings, inventoryDays] = await Promise.all([
-      db.room.findMany({ orderBy: [{ sortOrder: "asc" }], select: { id: true, name: true, slug: true, totalCount: true, badge: true } }),
-      db.booking.findMany({
-        where: { status: { not: "CANCELLED" }, checkIn: { lt: rangeEnd }, checkOut: { gt: start } },
-        select: { roomId: true, checkIn: true, checkOut: true },
-      }),
-      db.roomInventoryDay.findMany({
-        where: { date: { gte: start, lt: rangeEnd } },
-        select: { roomId: true, date: true, isClosed: true, sellableOverride: true, note: true },
-      }),
-    ]);
+    // Fetch inventory overrides in the date range (using RoomInventoryDay)
+    const overridesRaw = await db.roomInventoryDay.findMany({
+      where: {
+        roomId,
+        date: { gte: startDate, lte: endDate },
+      },
+      orderBy: { date: "asc" },
+    });
 
-    // Per-room booked counts per night
-    const bookedByRoom: Record<string, Record<string, number>> = {};
-    for (const room of rooms) {
-      bookedByRoom[room.id] = bookedPerNight(
-        bookings.filter((b) => b.roomId === room.id).map((b) => ({ checkIn: b.checkIn, checkOut: b.checkOut })),
-        keys
-      );
-    }
+    // Map to the format the frontend expects: { id, date (YYYY-MM-DD string), availableCount, note }
+    const overrides = overridesRaw.map((o) => ({
+      id: o.id,
+      date: o.date.toISOString().slice(0, 10),
+      availableCount: o.sellableOverride ?? 0,
+      note: o.note,
+    }));
 
-    // Per-room inventory-day control rows
-    const controlByRoom: Record<string, Record<string, { isClosed: boolean; sellableOverride: number | null; note: string | null }>> = {};
-    for (const row of inventoryDays) {
-      const key = row.date.toISOString().slice(0, 10);
-      controlByRoom[row.roomId] = controlByRoom[row.roomId] || {};
-      controlByRoom[row.roomId][key] = {
-        isClosed: row.isClosed,
-        sellableOverride: row.sellableOverride,
-        note: row.note,
-      };
-    }
+    // Fetch non-cancelled bookings overlapping the range
+    const bookings = await db.booking.findMany({
+      where: {
+        roomId,
+        status: { not: "CANCELLED" },
+        AND: [
+          { checkIn: { lt: endDate } },
+          { checkOut: { gt: startDate } },
+        ],
+      },
+      select: { checkIn: true, checkOut: true },
+    });
 
-    const grid = rooms.map((room) => {
-      const daysMap: Record<string, { booked: number; closed: boolean; override: number | null; sellable: number; note: string | null }> = {};
-      for (const key of keys) {
-        const control = controlByRoom[room.id]?.[key];
-        const sellable = effectiveSellable(room.totalCount, control);
-        daysMap[key] = {
-          booked: bookedByRoom[room.id][key] || 0,
-          closed: control?.isClosed ?? false,
-          override: control?.sellableOverride ?? null,
-          sellable,
-          note: control?.note ?? null,
-        };
+    // Build per-date booked count map
+    const bookedMap: Record<string, number> = {};
+    for (const b of bookings) {
+      const ci = new Date(b.checkIn);
+      const co = new Date(b.checkOut);
+      const current = new Date(ci);
+      while (current < co) {
+        const ds = current.toISOString().slice(0, 10);
+        bookedMap[ds] = (bookedMap[ds] || 0) + 1;
+        current.setDate(current.getDate() + 1);
       }
-      return { id: room.id, name: room.name, slug: room.slug, totalCount: room.totalCount, badge: room.badge, days: daysMap };
-    });
+    }
 
-    return NextResponse.json({ startDate: startDateStr, days, keys, rooms: grid });
+    return NextResponse.json({
+      room,
+      overrides,
+      bookedMap,
+    });
   } catch (e) {
     console.error("[/api/admin/inventory GET] error:", e);
-    return NextResponse.json({ error: "Failed to load inventory grid" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to load inventory" }, { status: 500 });
   }
 }
+
+/* ── POST: Create or update a day-wise inventory override ── */
+const upsertSchema = z.object({
+  roomId: z.string().min(1),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  availableCount: z.number().int().min(0).max(50),
+  note: z.string().max(200).optional().or(z.literal("")),
+});
 
 export async function POST(req: Request) {
   const admin = await verifyAdmin(req);
@@ -106,65 +105,81 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { roomId, date, isClosed, sellableOverride, note, reset } = body as {
-      roomId?: string; date?: string; isClosed?: boolean;
-      sellableOverride?: number | null; note?: string; reset?: boolean;
-    };
-
-    if (!roomId || !date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return NextResponse.json({ error: "roomId and date (YYYY-MM-DD) are required" }, { status: 400 });
-    }
-    const room = await db.room.findUnique({ where: { id: roomId } });
-    if (!room) return NextResponse.json({ error: "Room not found" }, { status: 404 });
-
-    const dayDate = new Date(`${date}T00:00:00.000Z`);
-
-    // Reset → back to fully default behaviour (delete the control row)
-    if (reset) {
-      await db.roomInventoryDay.deleteMany({ where: { roomId, date: dayDate } });
-      await db.auditLog.create({
-        data: { adminId: admin.id, action: "INVENTORY_DAY_RESET", entity: "RoomInventoryDay", entityId: `${roomId}:${date}`, details: `Reset inventory control for ${room.name} on ${date}` },
-      });
-      return NextResponse.json({ ok: true, reset: true, roomId, date });
+    const parsed = upsertSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid data", details: parsed.error.flatten() }, { status: 400 });
     }
 
-    if (typeof isClosed !== "boolean" && sellableOverride === undefined) {
-      return NextResponse.json({ error: "Nothing to change: pass isClosed and/or sellableOverride" }, { status: 400 });
-    }
-    if (sellableOverride !== undefined && sellableOverride !== null && (!Number.isInteger(sellableOverride) || sellableOverride < 0)) {
-      return NextResponse.json({ error: "sellableOverride must be a non-negative integer or null" }, { status: 400 });
-    }
+    const { roomId, date, availableCount, note } = parsed.data;
+    const dateObj = new Date(date + "T00:00:00Z");
 
-    const existing = await db.roomInventoryDay.findUnique({ where: { roomId_date: { roomId, date: dayDate } } });
-    const row = await db.roomInventoryDay.upsert({
-      where: { roomId_date: { roomId, date: dayDate } },
+    // Upsert using RoomInventoryDay model
+    const override = await db.roomInventoryDay.upsert({
+      where: { roomId_date: { roomId, date: dateObj } },
       create: {
         roomId,
-        date: dayDate,
-        isClosed: isClosed ?? false,
-        sellableOverride: sellableOverride ?? null,
-        note: note ?? null,
+        date: dateObj,
+        isClosed: availableCount === 0,
+        sellableOverride: availableCount,
+        note: note || null,
       },
       update: {
-        ...(typeof isClosed === "boolean" ? { isClosed } : {}),
-        ...(sellableOverride !== undefined ? { sellableOverride } : {}),
-        ...(note !== undefined ? { note } : {}),
+        isClosed: availableCount === 0,
+        sellableOverride: availableCount,
+        note: note || null,
       },
     });
 
     await db.auditLog.create({
       data: {
         adminId: admin.id,
-        action: "INVENTORY_DAY_SET",
+        action: "INVENTORY_OVERRIDE_SET",
         entity: "RoomInventoryDay",
-        entityId: `${roomId}:${date}`,
-        details: `${room.name} on ${date}: ${row.isClosed ? "CLOSED" : `open, sellable ${row.sellableOverride ?? room.totalCount}`}${existing ? " (updated)" : ""}`,
+        entityId: override.id,
+        details: `Room ${roomId} on ${date}: set availableCount=${availableCount}${note ? ` (${note})` : ""}`,
       },
     });
 
-    return NextResponse.json({ ok: true, row });
+    return NextResponse.json({
+      ok: true,
+      override: {
+        id: override.id,
+        date,
+        availableCount,
+        note: note || null,
+      },
+    });
   } catch (e) {
     console.error("[/api/admin/inventory POST] error:", e);
-    return NextResponse.json({ error: "Failed to update inventory day" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to set inventory override" }, { status: 500 });
+  }
+}
+
+/* ── DELETE: Remove a day-wise override (revert to default totalCount) ── */
+export async function DELETE(req: Request) {
+  const admin = await verifyAdmin(req);
+  if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  try {
+    const url = new URL(req.url);
+    const id = url.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "Override id required" }, { status: 400 });
+
+    await db.roomInventoryDay.delete({ where: { id } });
+
+    await db.auditLog.create({
+      data: {
+        adminId: admin.id,
+        action: "INVENTORY_OVERRIDE_REMOVED",
+        entity: "RoomInventoryDay",
+        entityId: id,
+        details: `Removed inventory override ${id} (reverted to default)`,
+      },
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error("[/api/admin/inventory DELETE] error:", e);
+    return NextResponse.json({ error: "Failed to remove override" }, { status: 500 });
   }
 }
