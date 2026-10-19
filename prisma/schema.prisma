@@ -161,9 +161,28 @@ model BlogPost {
   metaDescription String? // SEO meta description, max 155 chars (auto from excerpt when empty)
   coverAlt        String? // alt text of the cover image (SEO + accessibility)
   targetKeyword   String? // target keyword for the SEO checklist (Task 2)
+  calendarId      String? // ContentCalendar row this post was generated for (plain ref; the live link lives on ContentCalendar.linkedPostId)
   readingMinsAuto Boolean @default(true) // auto-calculate readingMins from body
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  calendarRow ContentCalendar?
+}
+
+// Content calendar (Task 4) — planned posts around the Braj festival year.
+// Dates are entered as "YYYY-MM"; suggested rows start with TODO notes until
+// the owner confirms the exact tithi/date for each festival.
+model ContentCalendar {
+  id             String   @id @default(cuid())
+  month          String   // "YYYY-MM" (e.g. "2026-08") — TODO dates to be confirmed by the owner
+  event          String   // e.g. "Janmashtami", "Holi & Lathmar Holi"
+  targetKeywords String   @default("[]") // JSON array of target keyword phrases
+  category       String   @default("FESTIVAL") // TEMPLE_GUIDE, FESTIVAL, LOCAL_TIP, EXPERIENCE
+  status         String   @default("PLANNED") // PLANNED | DRAFTED | PUBLISHED
+  linkedPostId   String?  @unique // BlogPost created for this row (draft or published)
+  linkedPost     BlogPost? @relation(fields: [linkedPostId], references: [id], onDelete: SetNull)
+  notes          String?  // e.g. "Date TODO — confirm exact tithi"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model AdminUser {

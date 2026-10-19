@@ -195,6 +195,16 @@ export async function GET(req: Request) {
         return NextResponse.json({ posts });
       }
 
+      case "calendar": {
+        const rows = await db.contentCalendar.findMany({
+          orderBy: [{ month: "asc" }, { event: "asc" }],
+          include: { linkedPost: { select: { id: true, slug: true, title: true, status: true } } },
+        });
+        return NextResponse.json({
+          rows: rows.map((r) => ({ ...r, post: r.linkedPost })),
+        });
+      }
+
       case "reviews": {
         const reviews = await db.review.findMany({ orderBy: [{ createdAt: "desc" }] });
         return NextResponse.json({ reviews });
