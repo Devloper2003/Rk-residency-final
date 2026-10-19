@@ -3,9 +3,9 @@ import { useEffect, useState, useCallback } from "react";
 import {
   BedDouble, CalendarDays, AlertTriangle,
   CheckCircle2, ChevronLeft, ChevronRight,
-  Plus, Eye,
+  Plus, Eye, Lock, LockOpen,
 } from "lucide-react";
-import { adminApi, LoadingSpinner, ErrorState, KpiCard } from "./_shared";
+import { adminApi, adminFetch, LoadingSpinner, ErrorState, KpiCard } from "./_shared";
 import { ManualBookingModal } from "./ManualBookingModal";
 
 type Booking = {
@@ -18,8 +18,13 @@ type InventoryRoom = {
   id: string; name: string; slug: string; basePrice: number;
   totalCount: number; maxGuests: number; badge: string | null;
   bookedCount: number; availableCount: number;
+  closed?: boolean; sellableOverride?: number | null;
   activeBookings: Booking[];
 };
+
+type GridDay = { booked: number; closed: boolean; override: number | null; sellable: number; note: string | null };
+type GridRoom = { id: string; name: string; slug: string; totalCount: number; badge: string | null; days: Record<string, GridDay> };
+type GridData = { startDate: string; days: number; keys: string[]; rooms: GridRoom[] };
 
 export function InventoryTab() {
   const [rooms, setRooms] = useState<InventoryRoom[]>([]);
@@ -29,6 +34,9 @@ export function InventoryTab() {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [detailRoom, setDetailRoom] = useState<string | null>(null);
+  // Day-by-day open/close grid (14 days from the viewed date)
+  const [grid, setGrid] = useState<GridData | null>(null);
+  const [gridSaving, setGridSaving] = useState<string | null>(null); // "roomId:date"
 
   const load = useCallback(() => {
     let cancelled = false;
@@ -39,6 +47,11 @@ export function InventoryTab() {
       setRooms(data.rooms || []);
       setLoading(false);
     }).catch(() => { if (!cancelled) { setError(true); setLoading(false); } });
+    // Load the editable 14-day open/close grid in parallel
+    adminFetch(`/api/admin/inventory?startDate=${viewDate}&days=14`).then((data: any) => {
+      if (cancelled) return;
+      if (data && !data.error) setGrid(data);
+    }).catch(() => { /* grid is auxiliary — day view still works */ });
     return () => { cancelled = true; };
   }, [viewDate]);
 
@@ -48,6 +61,61 @@ export function InventoryTab() {
     const d = new Date(viewDate);
     d.setDate(d.getDate() + days);
     setViewDate(d.toISOString().slice(0, 10));
+  };
+
+  /** Toggle a room-type OPEN/CLOSED for one calendar day. */
+  const toggleDay = async (roomId: string, date: string, currentlyClosed: boolean) => {
+    const key = `${roomId}:${date}`;
+    setGridSaving(key);
+    try {
+      const r = await adminFetch("/api/admin/inventory", {
+        method: "POST",
+        body: JSON.stringify({ roomId, date, isClosed: !currentlyClosed }),
+      });
+      if (r && !r.error) {
+        // refresh grid + day view so both stay in sync
+        const g = await adminFetch(`/api/admin/inventory?startDate=${viewDate}&days=14`);
+        if (g && !g.error) setGrid(g);
+        adminApi.get("inventory", { date: viewDate }).then((data: any) => {
+          if (data && !data.error) setRooms(data.rooms || []);
+        });
+      }
+    } finally {
+      setGridSaving(null);
+    }
+  };
+
+  /** Shift+click a cell → set a custom sellable limit for that day (empty = reset). */
+  const setDayLimit = async (roomId: string, date: string, roomName: string, current: number | null) => {
+    const input = window.prompt(
+      `Sellable rooms for ${roomName} on ${date}\n\n` +
+      `Current: ${current === null ? "default (all rooms)" : current}\n` +
+      `Enter a number to limit how many rooms can be sold that day,\nor leave empty to reset to default:`,
+      current === null ? "" : String(current)
+    );
+    if (input === null) return; // cancelled
+    const key = `${roomId}:${date}`;
+    setGridSaving(key);
+    try {
+      const trimmed = input.trim();
+      const body = trimmed === ""
+        ? { roomId, date, reset: true }
+        : { roomId, date, sellableOverride: parseInt(trimmed, 10) };
+      if (trimmed !== "" && (!Number.isInteger(body.sellableOverride) || (body.sellableOverride as number) < 0)) {
+        window.alert("Please enter a whole number 0 or greater (or leave empty to reset).");
+        return;
+      }
+      const r = await adminFetch("/api/admin/inventory", { method: "POST", body: JSON.stringify(body) });
+      if (r && !r.error) {
+        const g = await adminFetch(`/api/admin/inventory?startDate=${viewDate}&days=14`);
+        if (g && !g.error) setGrid(g);
+        adminApi.get("inventory", { date: viewDate }).then((data: any) => {
+          if (data && !data.error) setRooms(data.rooms || []);
+        });
+      }
+    } finally {
+      setGridSaving(null);
+    }
   };
 
   const totalInventory = rooms.reduce((s, r) => s + r.totalCount, 0);
@@ -117,9 +185,12 @@ export function InventoryTab() {
                       <span>Max {room.maxGuests} guests</span><span>·</span><span>Total: {room.totalCount}</span>
                     </div>
                   </div>
-                  <div className={`flex items-center gap-2 rounded-full px-3 py-1.5 ${statusBg}`}>
-                    <span className={`font-serif text-lg font-bold ${statusColor}`}>{room.availableCount}</span>
-                    <span className={`font-display text-[10px] uppercase tracking-wider ${statusColor}`}>avail</span>
+                  <div className={`flex items-center gap-2 rounded-full px-3 py-1.5 ${room.closed ? "bg-marsala/10" : statusBg}`}>
+                    {room.closed && <Lock className="h-3.5 w-3.5 text-marsala" />}
+                    <span className={`font-serif text-lg font-bold ${room.closed ? "text-marsala" : statusColor}`}>
+                      {room.closed ? "Closed" : room.availableCount}
+                    </span>
+                    {!room.closed && <span className={`font-display text-[10px] uppercase tracking-wider ${statusColor}`}>avail</span>}
                   </div>
                   <div className="hidden w-24 sm:block">
                     <div className="mb-1 flex justify-between font-display text-[9px] text-charcoal-soft"><span>{pct}%</span><span>{room.bookedCount}/{room.totalCount}</span></div>
@@ -161,6 +232,91 @@ export function InventoryTab() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Day-by-day OPEN/CLOSE inventory control (Phase 4) */}
+      {grid && grid.rooms.length > 0 && (
+        <div className="rounded-2xl border border-charcoal/10 bg-white p-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 className="font-serif text-sm font-semibold text-charcoal">Open / Close inventory by day</h3>
+              <p className="mt-0.5 font-display text-[11px] text-charcoal-soft">
+                Click a cell to close/reopen that room type for the day — closed days are blocked for bookings instantly.
+                Shift+click to set a custom sellable limit (empty = reset). Next 14 days from {dateLabel}.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 font-display text-[10px] text-charcoal-soft">
+              <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded bg-teal/15" /> open (rooms left)</span>
+              <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded bg-marsala/15" /> closed</span>
+              <span className="inline-flex items-center gap-1"><LockOpen className="h-3 w-3" /> custom limit</span>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px] border-collapse">
+              <thead>
+                <tr>
+                  <th className="sticky left-0 z-10 bg-white px-2 py-2 text-left font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Room type</th>
+                  {grid.keys.map((key) => {
+                    const d = new Date(key + "T00:00:00");
+                    return (
+                      <th key={key} className={`px-1 py-2 text-center font-display text-[10px] uppercase tracking-wider ${key === viewDate ? "text-teal" : "text-charcoal-soft"}`}>
+                        <div>{d.toLocaleDateString("en-IN", { weekday: "short" })}</div>
+                        <div className="font-serif text-xs font-bold text-charcoal">{d.getDate()}</div>
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {grid.rooms.map((room) => (
+                  <tr key={room.id} className="border-t border-charcoal/5">
+                    <td className="sticky left-0 z-10 bg-white px-2 py-1.5">
+                      <div className="font-serif text-xs font-semibold text-charcoal">{room.name}</div>
+                      <div className="font-display text-[9px] text-charcoal-soft">{room.totalCount} total</div>
+                    </td>
+                    {grid.keys.map((key) => {
+                      const day = room.days[key];
+                      if (!day) return <td key={key} />;
+                      const saving = gridSaving === `${room.id}:${key}`;
+                      const left = Math.max(0, day.sellable - day.booked);
+                      const tooltip = `${room.name} — ${key}\nBooked: ${day.booked}\nSellable: ${day.closed ? "CLOSED" : day.override !== null ? `${day.override} (custom limit)` : `${room.totalCount} (default)`}\n\nClick: ${day.closed ? "REOPEN" : "CLOSE"} this day\nShift+click: set custom sellable limit`;
+                      return (
+                        <td key={key} className="px-0.5 py-1">
+                          <button
+                            disabled={saving}
+                            onClick={(e) => {
+                              if (e.shiftKey) setDayLimit(room.id, key, room.name, day.override);
+                              else toggleDay(room.id, key, day.closed);
+                            }}
+                            title={tooltip}
+                            className={`relative h-10 w-full min-w-[44px] rounded-lg font-serif text-sm font-bold transition-all disabled:opacity-50 ${
+                              day.closed
+                                ? "bg-marsala/15 text-marsala hover:bg-marsala/25"
+                                : day.override !== null
+                                ? "bg-gold/15 text-gold-deep ring-1 ring-inset ring-gold/40 hover:bg-gold/25"
+                                : left === 0
+                                ? "bg-charcoal/10 text-charcoal/40 hover:bg-charcoal/15"
+                                : "bg-teal/10 text-teal hover:bg-teal hover:text-ivory"
+                            }`}
+                          >
+                            {saving ? "…" : day.closed ? (
+                              <Lock className="mx-auto h-4 w-4" />
+                            ) : (
+                              <>
+                                {left}
+                                {day.override !== null && <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-gold-deep" />}
+                              </>
+                            )}
+                          </button>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

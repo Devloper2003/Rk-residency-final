@@ -59,6 +59,8 @@ export function AvailabilityCalendar({
     return new Date(now.getFullYear(), now.getMonth() + 1, 1);
   });
   const [bookedDates, setBookedDates] = useState<Record<string, number>>({});
+  const [closedDates, setClosedDates] = useState<Record<string, boolean>>({});
+  const [sellableOverrides, setSellableOverrides] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -75,6 +77,9 @@ export function AvailabilityCalendar({
         if (data.availability) {
           setBookedDates(data.availability);
         }
+        // Admin per-day inventory control (open/close + sellable overrides)
+        setClosedDates(data.closed || {});
+        setSellableOverrides(data.overrides || {});
         setLoading(false);
       })
       .catch(() => {
@@ -136,7 +141,15 @@ export function AvailabilityCalendar({
             const dateStr = formatDate(date);
             const isPast = date < today;
             const bookedCount = bookedDates[dateStr] || 0;
-            const roomsLeft = Math.max(0, totalCount - bookedCount);
+            // Effective sellable = admin override (or 0 when closed), else the
+            // room's normal total — mirrors the booking API exactly.
+            const sellable = closedDates[dateStr]
+              ? 0
+              : sellableOverrides[dateStr] !== undefined
+              ? Math.max(0, sellableOverrides[dateStr])
+              : totalCount;
+            const roomsLeft = Math.max(0, sellable - bookedCount);
+            const isClosedDay = !!closedDates[dateStr] && !isPast;
             const isSoldOut = roomsLeft === 0 && !isPast;
             const isLow = roomsLeft > 0 && roomsLeft <= 1 && !isPast;
             const isToday = isSameDay(date, today);
@@ -147,6 +160,8 @@ export function AvailabilityCalendar({
                 className={`relative grid aspect-square place-items-center rounded-lg text-xs font-medium transition-all ${
                   isPast
                     ? "bg-ivory-deep/30 text-charcoal/30"
+                    : isClosedDay
+                    ? "bg-charcoal/10 text-charcoal/50"
                     : isSoldOut
                     ? "bg-marsala/10 text-marsala line-through"
                     : isLow
@@ -156,12 +171,17 @@ export function AvailabilityCalendar({
                 title={
                   isPast
                     ? "Past date"
+                    : isClosedDay
+                    ? "Not accepting bookings this day"
                     : isSoldOut
                     ? "Sold out"
                     : `${roomsLeft} room${roomsLeft === 1 ? "" : "s"} left`
                 }
               >
                 {date.getDate()}
+                {isClosedDay && !isPast && (
+                  <span className="absolute inset-x-2 bottom-1 h-0.5 rounded-full bg-charcoal/40" />
+                )}
                 {isLow && !isPast && (
                   <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-gold" />
                 )}

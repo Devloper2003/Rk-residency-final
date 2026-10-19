@@ -32,6 +32,28 @@ model Room {
   updatedAt     DateTime @updatedAt
   bookings      Booking[]
   rateOverrides RateOverride[]
+  inventoryDays RoomInventoryDay[]
+}
+
+/**
+ * Per-day inventory control (Phase 4): lets the admin OPEN or CLOSE sales of
+ * a room type for a specific calendar day, and optionally override how many
+ * rooms are sellable that day. No row for a date = normal behaviour
+ * (sellable = Room.totalCount minus booked). Additive-only — existing
+ * behaviour is unchanged when no rows exist.
+ */
+model RoomInventoryDay {
+  id        String   @id @default(cuid())
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  date      DateTime // UTC midnight of the controlled calendar day
+  isClosed  Boolean  @default(false) // true = stop selling this room type that day
+  sellableOverride Int? // optional: how many rooms are sellable that day (0..n)
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([roomId, date])
 }
 
 // Festival / seasonal surge pricing (Janmashtami, Holi, Radhashtami, weekends)

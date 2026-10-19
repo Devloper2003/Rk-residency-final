@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verifyAdmin } from "@/lib/admin-auth";
+import { checkRangeAvailability } from "@/lib/inventory";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -42,8 +43,14 @@ export async function POST(req: Request) {
 
     const checkIn = new Date(d.checkIn);
     const checkOut = new Date(d.checkOut);
-    const overlappingBookings = await db.booking.count({ where: { roomId: d.roomId, status: { not: "CANCELLED" }, checkIn: { lt: checkOut }, checkOut: { gt: checkIn } } });
-    if (overlappingBookings >= room.totalCount) return NextResponse.json({ error: `No availability for ${room.name} on these dates.` }, { status: 409 });
+    // Per-night availability honouring admin open/close inventory control
+    const range = await checkRangeAvailability(room.id, room.totalCount, checkIn, checkOut);
+    if (!range.available) {
+      const reason = range.closedDates.length
+        ? ` — hotel is closed to sales on ${range.closedDates.join(", ")}`
+        : "";
+      return NextResponse.json({ error: `No availability for ${room.name} on these dates${reason}.` }, { status: 409 });
+    }
 
     const year = new Date().getFullYear();
     const lastBooking = await db.booking.findFirst({ where: { referenceCode: { startsWith: `RK-VRD-${year}-` } }, orderBy: { referenceCode: "desc" }, select: { referenceCode: true } });
