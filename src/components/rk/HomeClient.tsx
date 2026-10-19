@@ -67,7 +67,8 @@ export function HomeClient({ initialRooms }: { initialRooms?: Room[] }) {
         <SeeMoreButton href="/about" label="Read our full story" />
         {/* Exact, config-driven distances to temples + transport hubs */}
         <DistancesSection />
-        <Rooms onBookRoom={openBookingWithRoom} limit={3} />
+        {/* SSR rooms: cards + prices are in the initial HTML */}
+        <Rooms onBookRoom={openBookingWithRoom} limit={3} initialRooms={initialRooms} />
         <SeeMoreButton href="/rooms" label="View all rooms & suites" />
         <Experiences limit={5} />
         <SeeMoreButton href="/experiences" label="Explore all Braj experiences" />

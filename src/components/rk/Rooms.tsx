@@ -199,16 +199,27 @@ function matchFilter(room: Room, filter: string): boolean {
   return true;
 }
 
-export function Rooms({ onBookRoom, limit }: { onBookRoom: (room: Room) => void; limit?: number }) {
+export function Rooms({
+  onBookRoom,
+  limit,
+  initialRooms,
+}: {
+  onBookRoom: (room: Room) => void;
+  limit?: number;
+  /** SSR: rooms fetched by the server page — keeps cards + prices in the
+   *  initial HTML. The client fetch below remains only as a fallback. */
+  initialRooms?: Room[];
+}) {
   const rLabel = useContentValue("rooms.label", "Accommodation");
   const rTitle = useContentValue("rooms.title", "Rooms, suites & family ");
   const rSubtitle = useContentValue("rooms.subtitle", "");
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [rooms, setRooms] = useState<Room[]>(initialRooms || []);
+  const [loading, setLoading] = useState(!initialRooms);
   const [filter, setFilter] = useState("all");
   const navigate = useRouter((s) => s.navigate);
 
   useEffect(() => {
+    if (initialRooms) return; // data already rendered server-side
     fetch("/api/rooms")
       .then((r) => r.json())
       .then((data) => {
@@ -216,10 +227,16 @@ export function Rooms({ onBookRoom, limit }: { onBookRoom: (room: Room) => void;
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [initialRooms]);
 
   const visible = rooms.filter((r) => matchFilter(r, filter));
   const items = limit ? visible.slice(0, limit) : visible;
+
+  // "Starting from ₹X per night" — real price: lowest room basePrice in the
+  // DB, unless the owner pins one in site.config. Rendered server-side.
+  const startingFrom =
+    BUSINESS.startingFromPrice ||
+    (rooms.length ? Math.min(...rooms.map((r) => r.basePrice)) : 0);
   
   return (
     <section id="rooms" className="relative bg-ivory-deep py-24 lg:py-32">
@@ -250,6 +267,17 @@ export function Rooms({ onBookRoom, limit }: { onBookRoom: (room: Room) => void;
               where guests can experience the timeless charm and spiritual essence of Vrindavan.
             </p>
           </Reveal>
+          {startingFrom > 0 && (
+            <Reveal delay={0.12}>
+              <p className="mt-4 font-display text-base text-charcoal sm:text-lg">
+                Starting from{" "}
+                <span className="font-serif text-xl font-bold text-teal sm:text-2xl">
+                  ₹{startingFrom.toLocaleString("en-IN")}
+                </span>{" "}
+                <span className="text-charcoal-soft">per night</span>
+              </p>
+            </Reveal>
+          )}
         </div>
 
         {/* Filters */}

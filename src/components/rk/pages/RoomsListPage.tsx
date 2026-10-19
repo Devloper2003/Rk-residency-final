@@ -58,6 +58,12 @@ export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
 
   const visible = rooms.filter((r) => matchFilter(r, filter));
 
+  // "Starting from ₹X per night" — real price from the SSR room data unless
+  // the owner pins one in site.config. Rendered in the initial HTML.
+  const startingFrom =
+    BUSINESS.startingFromPrice ||
+    (rooms.length ? Math.min(...rooms.map((r) => r.basePrice)) : 0);
+
   return (
     <PageShell
       title="Rooms & Suites in Vrindavan"
@@ -65,6 +71,17 @@ export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
       accent="teal"
       breadcrumbs={BREADCRUMBS}
     >
+      {/* Starting price — visible in the initial HTML (SEO + conversion) */}
+      {startingFrom > 0 && (
+        <p className="mb-8 text-center font-display text-base text-charcoal sm:text-lg">
+          Starting from{" "}
+          <span className="font-serif text-2xl font-bold text-teal">
+            ₹{startingFrom.toLocaleString("en-IN")}
+          </span>{" "}
+          <span className="text-charcoal-soft">per night</span>
+        </p>
+      )}
+
       {/* Filters */}
       <div className="mb-10 flex flex-wrap justify-center gap-2">
         {FILTERS.map((f) => (

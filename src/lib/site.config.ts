@@ -124,6 +124,14 @@ export const BUSINESS = {
   priceRange: "",
 
   /**
+   * "Starting from" price shown on the homepage rooms section and /rooms.
+   * When empty, the site derives the real figure from the lowest room
+   * basePrice in the database (no invented numbers).
+   * TODO: leave empty to auto-derive, or set a fixed INR number e.g. 1500.
+   */
+  startingFromPrice: 0,
+
+  /**
    * Distances from the hotel — SINGLE SOURCE OF TRUTH used by the homepage
    * "Distances from RK Residency" section, the contact page and the
    * experiences data, so every page shows the SAME figures.
