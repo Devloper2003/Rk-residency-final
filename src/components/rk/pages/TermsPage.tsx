@@ -10,13 +10,20 @@ export function TermsPage() {
       accent="gold"
       effectiveDate="July 2026"
       intro={
-        <p>
+        <>
+          <Callout variant="warning">
+            <strong>TODO — legal review:</strong> this page uses placeholder template
+            text. Have it reviewed, completed and confirmed by your lawyer/legal team
+            before treating it as the final policy.
+          </Callout>
+          <p>
           Welcome to <strong className="text-gold-deep">RK Residency</strong>. These Terms &
           Conditions govern your use of our website and hotel services. By accessing our website,
           making a reservation, or staying at RK Residency, you agree to comply with these terms.
           If you do not agree with any part of these Terms & Conditions, please refrain from using
           our website or services.
         </p>
+        </>
       }
       sections={[
         {

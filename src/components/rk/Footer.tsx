@@ -64,9 +64,11 @@ export function Footer() {
   const instagramUrl = useSettingValue("instagram_url", "https://instagram.com");
   const facebookUrl = useSettingValue("facebook_url", "https://facebook.com");
   const youtubeUrl = useSettingValue("youtube_url", "https://youtube.com");
-  const privacyUrl = useContentValue("footer.privacy_url", "#");
-  const termsUrl = useContentValue("footer.terms_url", "#");
-  const cancellationUrl = useContentValue("footer.cancellation_url", "#");
+  // Legal links are structural routes, not editable content — hardcoded so
+  // they always resolve to the real policy pages (never "#").
+  const privacyUrl = "/privacy-policy";
+  const termsUrl = "/terms-and-conditions";
+  const cancellationUrl = "/cancellation-policy";
 
   const SOCIAL = [
     { icon: Instagram, label: "Instagram", href: instagramUrl },
