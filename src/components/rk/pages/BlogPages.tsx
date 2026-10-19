@@ -55,7 +55,7 @@ export function BlogListPage({ initialPosts }: { initialPosts?: BlogPost[] }) {
   return (
     <PageShell
       title="The Braj Journal — Vrindavan Blog"
-      subtitle="Temple guides, festival calendars aur local tips, hamare resident scholars aur concierge team ki taraf se."
+      subtitle="Temple guides, festival calendars and local tips from our resident scholars and concierge team."
       accent="gold"
       breadcrumbs={[
         { name: "Home", path: "/" },
@@ -102,8 +102,15 @@ export function BlogListPage({ initialPosts }: { initialPosts?: BlogPost[] }) {
         <div className="rounded-3xl border border-charcoal/10 bg-white p-10 text-center">
           <Lotus size={32} className="mx-auto mb-3 text-gold" />
           <p className="font-display text-sm text-charcoal-soft">
-            No stories yet in this category. Check back soon.
+            We are working on new stories about Vrindavan temples, festivals and travel tips. Check back soon!
           </p>
+          <a
+            href="/rooms"
+            className="mt-4 inline-flex items-center gap-1 rounded-full bg-teal px-5 py-2 text-sm font-semibold text-ivory transition-all hover:bg-teal/90"
+          >
+            Browse rooms &amp; suites
+            <ArrowRight className="h-4 w-4" />
+          </a>
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

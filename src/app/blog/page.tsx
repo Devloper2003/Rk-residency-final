@@ -6,8 +6,9 @@ import { publicPostWhere } from "@/lib/blog-utils";
 
 export const dynamic = "force-dynamic";
 
-const pageTitle = "The Braj Journal — RK Residency Vrindavan";
-const pageDescription = "Temple guides, festival calendars aur local tips, hamare resident scholars aur concierge team ki taraf se.";
+// Title: 55 chars (limit 60), description: 91 chars (limit 155)
+const pageTitle = "The Braj Journal | Vrindavan Temple Guides & Travel Tips";
+const pageDescription = "Temple guides, festival calendars and local tips from our resident scholars and concierge team.";
 
 export const metadata: Metadata = {
   title: pageTitle,
