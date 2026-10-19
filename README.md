@@ -58,3 +58,150 @@ src/components/ui/       # shadcn/ui subset
 src/lib/                 # Shared utils (db, auth, router, admin-client)
 scripts/                 # Standalone scripts (dev launcher, image converter)
 ```
+
+---
+
+## Blog Automation (Phase 3)
+
+Blog posts are stored in the **database** (Prisma `BlogPost` table) and written
+in the admin panel's markdown editor (`Admin → Blog`). Nothing is auto-published:
+every post goes through **Draft → (review) → Scheduled/Published**, and a human
+always presses the publish button.
+
+### Environment variables (required)
+
+| Variable | Where | Purpose |
+|---|---|---|
+| `SITE_URL` | everywhere (already set) | Single source of truth for canonical / og:url / sitemap URLs — never hardcode the domain |
+| `ANTHROPIC_API_KEY` | server only | Used by the AI draft generator (`/api/admin/generate-draft`, `/api/cron/monthly-drafts`). Never referenced in client code |
+| `CRON_SECRET` | server only | Protects the two cron endpoints; Vercel Cron sends it as `Authorization: Bearer <CRON_SECRET>` |
+| `ANTHROPIC_MODEL` | optional | Defaults to `claude-sonnet-4-6` |
+
+### Content calendar (Admin → Content Calendar)
+
+- **Add a row**: fill Month (YYYY-MM), Event/Festival, Target keywords
+  (comma-separated), Category, Status (Planned / Drafted / Published), Notes.
+- **One-click start**: press **“Load suggested Braj calendar”** to pre-fill the
+  11 key Braj events (Janmashtami, Radhashtami, Holi & Lathmar Holi, Kartik
+  month, Govardhan Puja, Diwali, Ram Navami, Guru Purnima, Sharad Purnima &
+  Rasa Leela season, Vasant Panchami, Akshaya Tritiya) — all marked with
+  `Date TODO` notes for the owner to confirm.
+- Each row can be **linked to a post** (set automatically when you generate a
+  draft from it). Row status moves Planned → Drafted → Published as work
+  progresses.
+
+### Generate an AI draft
+
+1. In the Content Calendar, press **“Generate draft”** on a row
+   (or let the monthly cron do it — see below).
+2. The server calls Anthropic (`claude-sonnet-4-6`) and returns structured
+   JSON: title, slug, excerpt, meta description, category, tags, reading time,
+   900–1200-word markdown body with `##` headings and a closing FAQ, cover
+   image title + 1600×900 composition brief, and 3 suggested internal links.
+3. The result is saved **as a DRAFT linked to that calendar row**. It never
+   publishes itself. Only one draft can be generated per calendar row (delete
+   or unlink the post first to regenerate).
+4. Retries: the API tries up to 3 times with backoff on network errors /
+   rate limits / 5xx; failures surface as a visible admin error toast.
+5. The **monthly cron** (`/api/cron/monthly-drafts`, runs 05:00 UTC on the 1st)
+   auto-generates drafts for next month's calendar rows that have no linked post.
+
+### Review a draft and clear [VERIFY] markers
+
+- Any detail the AI could not verify (timings, prices, distances, quotes) is
+  written as `**[VERIFY]** …` in the body.
+- Unresolved markers are **highlighted in the editor** while you type.
+- **Publish is blocked** while any `[VERIFY]` remains — confirm or rewrite each
+  marked sentence, delete the marker, then publish.
+- Fields the AI filled (slug, meta title/description, reading time) are fully
+  editable; auto-SEO only fills EMPTY fields and never overwrites yours.
+
+### Schedule a post
+
+1. In Admin → Blog, replace the old Published checkbox with **Status**:
+   Draft / Scheduled / Published.
+2. Pick **“Publish on”** date+time for a Scheduled post.
+3. The hourly cron (`/api/cron/publish-posts`, every hour) publishes due
+   posts and revalidates the blog list, post page, homepage latest-posts
+   section and sitemap. You can also trigger it manually from the editor
+   (“Run scheduler now”).
+4. Future-dated posts never appear in the blog list, sitemap or public HTML
+   before their publish time.
+5. Existing posts were migrated to `PUBLISHED` by
+   `scripts/migrate-blog-status.ts` (legacy `published=true` rows are also
+   self-healed by the first cron run — no post was lost).
+
+### On-publish behaviour
+
+Publishing (manual or by cron) revalidates: `/blog`, `/blog/[slug]`,
+the homepage latest-posts section, and `/sitemap.xml` (correct `lastmod`).
+No deprecated ping endpoints are called. Every publish/update is recorded in
+the audit log.
+
+### Quality guardrails (non-blocking warnings)
+
+On save the API warns about:
+- duplicate / near-duplicate **titles** across posts;
+- **keyword cannibalization** — the same target keyword already used by
+  another PUBLISHED post;
+- exact duplicate **slugs** remain a hard error (409);
+- publishing without a **cover image** warns first;
+- only **one AI draft per calendar row** can exist.
+
+### Cover image workflow
+
+1. AI drafts store the **cover image title + composition brief** (1600×900)
+   in visible editor fields — the owner designs/uploads the image.
+2. On upload the filename is renamed to a descriptive slug and **alt text is
+   required**.
+3. Publishing without a cover shows a confirm warning (posts fall back to a
+   generic marigold image).
+
+### Cron deployment (Vercel)
+
+`vercel.json` already defines:
+```json
+{ "path": "/api/cron/publish-posts",  "schedule": "0 * * * *" },
+{ "path": "/api/cron/monthly-drafts", "schedule": "0 5 1 * *" }
+```
+Set `CRON_SECRET` in the Vercel project env vars. Vercel Cron calls include
+the `Authorization: Bearer <CRON_SECRET>` header automatically; requests
+without it are rejected with 401. On self-hosted servers, add two system
+crontabs hitting the same URLs with the same header.
+
+---
+
+### TODO (owner action required)
+
+- [ ] **Confirm exact festival dates** for all 11 preset calendar rows
+      (lunar calendar — shift every year): Janmashtami, Radhashtami,
+      Holi & Lathmar Holi, Kartik month, Govardhan Puja, Diwali, Ram Navami,
+      Guru Purnima, Sharad Purnima & Rasa Leela season, Vasant Panchami,
+      Akshaya Tritiya. Update the Month field of each row.
+- [ ] Set `ANTHROPIC_API_KEY` and `CRON_SECRET` in production env vars.
+- [ ] Verify the Vercel project has Vercel Cron enabled (Pro plan) or set up
+      system cron for self-hosting.
+- [ ] Review each generated draft and clear its `[VERIFY]` markers before
+      publishing.
+- [ ] Upload a real 1600×900 cover image for every post before publishing.
+
+### Test checklist (run after deploy)
+
+1. **Auto-SEO on save** — create a post with a title, an excerpt and `##`
+   headings; save; confirm: slug is lowercase-hyphenated, meta title ≤ 60,
+   meta description ≤ 155, canonical URL is self-referencing
+   (`SITE_URL/blog/<slug>`), BlogPosting + BreadcrumbList JSON-LD render,
+   reading time auto-filled, a TOC built from `##` headings appears,
+   `dateModified` (updatedAt) changes after edits, and the post appears in
+   `/sitemap.xml`.
+2. **Scheduling** — schedule a post 5 minutes ahead; confirm it is absent
+   from `/blog`, the sitemap and public HTML, then wait for the hourly cron
+   (or press “Run scheduler now”) and confirm it goes live and appears
+   everywhere.
+3. **AI draft stays Draft** — press “Generate draft” on a calendar row;
+   confirm the post is saved as Draft, `Publish` is blocked while `[VERIFY]`
+   markers remain, and the editor highlights them; clear the markers and
+   publish successfully.
+4. **Guardrails** — try saving a second post with the same title (warning),
+   set the same target keyword on two published posts (warning), use an
+   existing slug (hard 409 error).
