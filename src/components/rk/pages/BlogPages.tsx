@@ -54,7 +54,7 @@ export function BlogListPage({ initialPosts }: { initialPosts?: BlogPost[] }) {
   return (
     <PageShell
       title="The Braj Journal"
-      subtitle="Temple guides, festival calendars, local tips and stories from Vrindavan — our primary organic-traffic engine. Written by our resident scholars and concierge team."
+      subtitle="Temple guides, festival calendars, local tips and stories from Vrindavan — written by our resident scholars and concierge team."
       accent="gold"
     >
       {/* Filters */}
