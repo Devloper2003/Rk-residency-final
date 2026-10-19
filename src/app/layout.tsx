@@ -90,15 +90,27 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${playfair.variable} ${cormorant.variable} ${inter.variable} antialiased bg-ivory text-charcoal font-sans`}
              >
-        <ThemeProvider>
-        {/* Google Tag Manager */}
-        <Script id="google-tag-manager" strategy="afterInteractive">
+        {/* Google Tag Manager (noscript) — per GTM spec this must be the FIRST
+            element inside <body>, right after the opening tag. */}
+        <noscript>
+          <iframe
+            src="https://www.googletagmanager.com/ns.html?id=GTM-KSSWNL9K"
+            height="0"
+            width="0"
+            style={{ display: "none", visibility: "hidden" }}
+            title="Google Tag Manager"
+          />
+        </noscript>
+        {/* Google Tag Manager — loaded with beforeInteractive so Next.js injects
+            it as high in the <head> as possible, exactly as GTM requires. */}
+        <Script id="google-tag-manager" strategy="beforeInteractive">
           {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
           new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
           j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
           })(window,document,'script','dataLayer','GTM-KSSWNL9K');`}
         </Script>
+        <ThemeProvider>
          <NextRouterBridge />
         {children}
         
