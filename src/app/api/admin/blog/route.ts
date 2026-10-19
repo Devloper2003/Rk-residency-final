@@ -118,6 +118,50 @@ function slugConflict(e: unknown): boolean {
   );
 }
 
+/**
+ * Task 9 — quality guardrails. NON-BLOCKING warnings returned to the editor
+ * (BlogTab shows them as a toast) so the owner can decide before going live:
+ *   1. Duplicate / near-duplicate title — another post has the same
+ *      normalized title (case/punctuation-insensitive).
+ *   2. Keyword cannibalization — the same target keyword is already targeted
+ *      by another PUBLISHED post (both would compete for the same SERP spot).
+ * An exact duplicate slug stays a HARD 409 error (DB unique constraint).
+ */
+async function collectWarnings(
+  d: z.infer<typeof blogSchema>,
+  currentId?: string
+): Promise<string[]> {
+  const warnings: string[] = [];
+  const posts = await db.blogPost.findMany({
+    where: currentId ? { id: { not: currentId } } : undefined,
+    select: { id: true, title: true, slug: true, status: true, targetKeyword: true },
+  });
+
+  // 1. Duplicate / near-duplicate title (normalize: lowercase, strip symbols)
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  const twin = posts.find((p) => norm(p.title) === norm(d.title));
+  if (twin) {
+    warnings.push(
+      `Duplicate title risk: “${twin.title}” (${twin.slug.toLowerCase()}, ${twin.status.toLowerCase()}) already has this title. Use a distinct angle so both posts can rank.`
+    );
+  }
+
+  // 2. Cannibalization — same target keyword on another published post
+  const kw = (d.targetKeyword || "").trim().toLowerCase();
+  if (kw) {
+    const rival = posts.find(
+      (p) => p.status === "PUBLISHED" && (p.targetKeyword || "").trim().toLowerCase() === kw
+    );
+    if (rival) {
+      warnings.push(
+        `Keyword cannibalization: “${kw}” is already the target keyword of the published post “${rival.title}” (${rival.slug.toLowerCase()}). Pick a different keyword or merge the two posts.`
+      );
+    }
+  }
+
+  return warnings;
+}
+
 export async function GET(req: Request) {
   const admin = await verifyAdmin(req);
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -164,7 +208,7 @@ export async function POST(req: Request) {
         data: { adminId: admin.id, action: "BLOG_CREATED", entity: "BlogPost", entityId: post.id, details: `Created post ${post.title} (${post.status})` },
       });
       revalidatePostPaths(post.slug);
-      return NextResponse.json({ ok: true, post });
+      return NextResponse.json({ ok: true, post, warnings: await collectWarnings(d, post.id) });
     } catch (e) {
       if (slugConflict(e)) {
         return NextResponse.json({ error: `The slug "${normalizeSlug(d.slug, d.title)}" is already used by another post. Choose a different slug.` }, { status: 409 });
@@ -219,7 +263,7 @@ export async function PATCH(req: Request) {
         data: { adminId: admin.id, action: "BLOG_UPDATED", entity: "BlogPost", entityId: post.id, details: `Updated post ${post.title} (${post.status})` },
       });
       revalidatePostPaths(post.slug);
-      return NextResponse.json({ ok: true, post });
+      return NextResponse.json({ ok: true, post, warnings: await collectWarnings(d, post.id) });
     } catch (e) {
       if (slugConflict(e)) {
         return NextResponse.json({ error: `The slug "${normalizeSlug(d.slug, d.title)}" is already used by another post. Choose a different slug.` }, { status: 409 });
