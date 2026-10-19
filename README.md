@@ -205,3 +205,80 @@ crontabs hitting the same URLs with the same header.
 4. **Guardrails** — try saving a second post with the same title (warning),
    set the same target keyword on two published posts (warning), use an
    existing slug (hard 409 error).
+
+---
+
+## Phase 4 — Contact data, GTM, content fixes & day-by-day inventory
+
+### Contact details are settings-driven
+
+There are **no hardcoded phone numbers, emails or social links** anywhere.
+Every WhatsApp / Call / Email / social button reads the matching setting and
+**hides itself when the value is empty** — the site never shows placeholder
+numbers or dead links.
+
+- **Fill real details:** Admin → Settings → set `phone_primary`,
+  `phone_primary_tel`, `phone_reservations`, `whatsapp_number` (country code,
+  no +), `email_primary`, `email_events`, `instagram_url`, `facebook_url`,
+  `youtube_url`, `tripadvisor_url`, `google_reviews_url`. Buttons reappear
+  automatically the moment a value is saved.
+- **Get directions** always points to a real Google Maps directions link
+  built from the business address (Kailash Nagar, Vrindavan). When the
+  Google Business Profile is claimed, paste the exact place link into the
+  `map_directions_url` setting to upgrade it.
+- Old placeholder rows (sample numbers, generic instagram.com links,
+  Parikrama Marg address) were cleared from seeds; existing databases can be
+  cleaned with `bun scripts/clear-placeholder-contact.ts` (idempotent).
+
+### Day-by-day inventory (Admin → Inventory)
+
+- The **“Open / Close inventory by day”** grid shows 14 days × room types.
+  - **Click a cell** → close that room type for that calendar day (red lock).
+    Click again to reopen. Closed days are blocked for bookings instantly —
+    a stay that includes a closed night cannot be booked (public check,
+    public write and admin manual booking all enforce it).
+  - **Shift+click a cell** → set a custom sellable limit for that day
+    (e.g. sell only 2 of 4 rooms), leave empty to reset to default.
+  - Cells show **rooms left** (sellable − booked); gold dot = custom limit.
+- Public room calendars render closed days as “Not accepting bookings this
+  day”. Schema: additive `RoomInventoryDay` table (unique per room + date);
+  **no row = exactly the old behaviour**, so nothing changes until you use it.
+- Deploy note: run `prisma db push` (or the equivalent migration) once, then
+  optionally run `bun scripts/fix-content-mismatches.ts` to clean legacy FAQ
+  text and unverified rating claims from existing databases.
+
+### Google Tag Manager
+
+Container `GTM-KSSWNL9K` is installed in `src/app/layout.tsx`:
+`<noscript>` iframe is the first element inside `<body>`, and the `gtm.js`
+loader fires before any Next.js code (`strategy="beforeInteractive"` — the
+earliest position Next.js App Router supports, equivalent to Google's
+"as high as possible" requirement). Tags/conversions are managed inside the
+GTM container — no code change needed for new tags.
+
+### Unverified claims policy
+
+“4.9 · 1,240+ verified stays” and the testimonials 4.9 aggregate are **hidden
+until the owner provides a verifiable source** (real Google/TripAdvisor
+listing link). They are never emitted in JSON-LD schema. To restore them:
+set `hero.rating_text` / `testimonials.aggregate_rating` in Admin → Page
+editor AND fill `google_reviews_url` / `tripadvisor_url` with the real
+listing URLs.
+
+### Phase 4 TODO (owner action required)
+
+- [ ] Fill REAL phone / WhatsApp / email / social profile values in
+      Admin → Settings (buttons appear automatically).
+- [ ] Upload real hotel photos for every room (WebP, descriptive filenames
+      e.g. `rk-residency-vrindavan-deluxe-room.webp`) via Admin → Media and
+      set them on each room — current images are Unsplash placeholders
+      (no MakeMyTrip assets exist in the repo). Alt texts are already
+      descriptive and include the location.
+- [ ] Claim + verify the **Google Business Profile** (same phone & address:
+      Kailash Nagar, Vrindavan), then paste the exact place link into
+      `map_directions_url`.
+- [ ] Confirm the 11 festival dates in the blog content calendar (Phase 3).
+- [ ] After deploy: **purge the CDN/cache**, then in Search Console
+      “Request indexing” for the homepage, `/rooms`, `/contact` and one blog
+      post; submit `/sitemap.xml`; validate Hotel + FAQ schema in the
+      Rich Results Test; check mobile score in PageSpeed Insights.
