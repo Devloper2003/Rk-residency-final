@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { Plus, Edit, Trash2, X, Save, Calendar, Wand2, Clock } from "lucide-react";
+import { Plus, Edit, Trash2, X, Save, Calendar, Wand2, Clock, ListChecks, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,14 +8,14 @@ import { adminApi, adminFetch, LoadingSpinner, Field } from "./_shared";
 import { refreshSiteContent } from "@/lib/site-content";
 import { ImageUploader } from "../ImageUploader";
 import { toast } from "sonner";
-import { slugifyTitle, calcReadingMins, countWords } from "@/lib/blog-utils";
+import { slugifyTitle, calcReadingMins, countWords, evaluateChecklist } from "@/lib/blog-utils";
 
 const EMPTY = {
   slug: "", title: "", excerpt: "", body: "",
   category: "TEMPLE_GUIDE", tags: "[]", imageUrl: null as string | null,
   published: false, publishedAt: null as string | null, readingMins: 4,
   // Phase 3 — auto-SEO fields (server fills the empty ones on save too)
-  metaTitle: "", metaDescription: "", coverAlt: "", readingMinsAuto: true,
+  metaTitle: "", metaDescription: "", coverAlt: "", targetKeyword: "", readingMinsAuto: true,
 };
 
 export function BlogTab() {
@@ -138,6 +138,26 @@ function BlogEditor({ post, onClose, onSave }: { post: any; onClose: () => void;
 
   const words = useMemo(() => countWords(form.body || ""), [form.body]);
   const autoMins = useMemo(() => calcReadingMins(form.body || ""), [form.body]);
+  // Natural dimensions of the cover image — for the 1600×900 checklist item.
+  const coverSize = useImageSize(form.imageUrl);
+
+  /** Live SEO checklist (Task 2) — pass/fail updates as the author types. */
+  const checklist = useMemo(
+    () =>
+      evaluateChecklist({
+        title: form.title || "",
+        targetKeyword: form.targetKeyword || "",
+        metaTitle: form.metaTitle || "",
+        metaDescription: form.metaDescription || "",
+        excerpt: form.excerpt || "",
+        body: form.body || "",
+        imageUrl: form.imageUrl || null,
+        coverAlt: form.coverAlt || "",
+        coverWidth: coverSize?.width ?? null,
+        coverHeight: coverSize?.height ?? null,
+      }),
+    [form, coverSize]
+  );
 
   /** Auto-generate the slug from the title (lowercase, hyphens, editable). */
   const onTitleChange = (v: string) => {
@@ -244,11 +264,21 @@ function BlogEditor({ post, onClose, onSave }: { post: any; onClose: () => void;
           />
 
           <Field
+            label="Target keyword"
+            value={form.targetKeyword || ""}
+            onChange={(v) => set("targetKeyword", v)}
+            hint="The search phrase this post should rank for, e.g. 'banke bihari mandir darshan guide' — checked against title, intro and other published posts"
+          />
+
+          <Field
             label="Cover image alt text"
             value={form.coverAlt || ""}
             onChange={(v) => set("coverAlt", v)}
             hint="Describe the cover for Google Images + screen readers, e.g. 'Satvik thali on a brass plate at RK Residency Vrindavan'"
           />
+
+          {/* SEO checklist — live pass/fail (Task 2) */}
+          <SeoChecklist items={checklist} />
 
           <Field label="Excerpt" textarea value={form.excerpt} onChange={(v) => set("excerpt", v)} />
 
@@ -325,5 +355,54 @@ function CharCount({ value, fallback, max }: { value: string; fallback: string; 
     <p className={`mt-1 font-display text-[10px] ${over ? "text-marsala" : "text-charcoal-soft/70"}`}>
       {len}/{max} chars{over ? " — too long, shorten it" : ""}{!value.trim() && fallback ? " (auto)" : ""}
     </p>
+  );
+}
+
+/** Load an image URL and report its natural dimensions (for the 1600×900 check). */
+function useImageSize(url: string | null | undefined): { width: number; height: number } | null {
+  const [size, setSize] = useState<{ width: number; height: number } | null>(null);
+  useEffect(() => {
+    if (!url) { setSize(null); return; }
+    let alive = true;
+    const img = new Image();
+    img.onload = () => { if (alive) setSize({ width: img.naturalWidth, height: img.naturalHeight }); };
+    img.onerror = () => { if (alive) setSize(null); };
+    img.src = url;
+    return () => { alive = false; };
+  }, [url]);
+  return size;
+}
+
+/** Live pass/fail SEO checklist panel shown inside the blog editor. */
+function SeoChecklist({ items }: { items: ReturnType<typeof evaluateChecklist> }) {
+  const passed = items.filter((i) => i.pass).length;
+  const allPass = passed === items.length;
+  return (
+    <div className={`rounded-2xl border p-4 ${allPass ? "border-teal/40 bg-teal/5" : "border-gold/40 bg-gold/5"}`}>
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <ListChecks className="h-4 w-4 text-teal" />
+          <span className="font-serif text-sm font-semibold text-charcoal">SEO checklist</span>
+        </div>
+        <span className={`rounded-full px-2 py-0.5 font-display text-[10px] font-semibold ${allPass ? "bg-teal text-ivory" : "bg-gold/20 text-gold-deep"}`}>
+          {passed}/{items.length} passed
+        </span>
+      </div>
+      <ul className="space-y-1.5">
+        {items.map((i) => (
+          <li key={i.id} className="flex items-start gap-2 font-display text-xs">
+            {i.pass ? (
+              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal" />
+            ) : (
+              <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-marsala" />
+            )}
+            <span className={i.pass ? "text-charcoal-soft" : "text-charcoal"}>
+              {i.label}
+              {i.info && <span className="ml-1 text-charcoal-soft/70">({i.info})</span>}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

@@ -43,6 +43,7 @@ const blogSchema = z.object({
   metaTitle: z.string().nullable().optional(),
   metaDescription: z.string().nullable().optional(),
   coverAlt: z.string().nullable().optional(),
+  targetKeyword: z.string().nullable().optional(),
   readingMinsAuto: z.boolean().optional(),
 });
 
@@ -65,6 +66,7 @@ function applyAutoSeo(d: z.infer<typeof blogSchema>) {
     metaDescription: clampText(metaDescription, 155),
     readingMins,
     coverAlt: (d.coverAlt || "").trim() || null,
+    targetKeyword: (d.targetKeyword || "").trim() || null,
   };
 }
 
@@ -101,7 +103,8 @@ export async function POST(req: Request) {
           category: d.category, tags: d.tags, imageUrl: d.imageUrl,
           published: d.published, publishedAt: d.publishedAt ? new Date(d.publishedAt) : null,
           metaTitle: auto.metaTitle, metaDescription: auto.metaDescription,
-          coverAlt: auto.coverAlt, readingMins: auto.readingMins,
+          coverAlt: auto.coverAlt, targetKeyword: auto.targetKeyword,
+          readingMins: auto.readingMins,
           readingMinsAuto: d.readingMinsAuto !== false,
         },
       });
@@ -144,7 +147,8 @@ export async function PATCH(req: Request) {
           category: d.category, tags: d.tags, imageUrl: d.imageUrl,
           published: d.published, publishedAt: d.publishedAt ? new Date(d.publishedAt) : null,
           metaTitle: auto.metaTitle, metaDescription: auto.metaDescription,
-          coverAlt: auto.coverAlt, readingMins: auto.readingMins,
+          coverAlt: auto.coverAlt, targetKeyword: auto.targetKeyword,
+          readingMins: auto.readingMins,
           readingMinsAuto: d.readingMinsAuto !== false,
         },
       });

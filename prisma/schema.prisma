@@ -154,6 +154,7 @@ model BlogPost {
   metaTitle       String? // SEO <title>, max 60 chars (auto from title when empty)
   metaDescription String? // SEO meta description, max 155 chars (auto from excerpt when empty)
   coverAlt        String? // alt text of the cover image (SEO + accessibility)
+  targetKeyword   String? // target keyword for the SEO checklist (Task 2)
   readingMinsAuto Boolean @default(true) // auto-calculate readingMins from body
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
