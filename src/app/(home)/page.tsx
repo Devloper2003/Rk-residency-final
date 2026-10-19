@@ -5,9 +5,9 @@ import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
-const pageTitle = "RK Residency — Heritage Luxury Stay in Vrindavan";
+const pageTitle = "Hotel near Banke Bihari Mandir, Vrindavan | RK Residency";
 const pageDescription =
-  "Heritage-luxury stay on the banks of the Yamuna, steps from Banke Bihari Mandir and ISKCON. Direct booking with best-price guarantee.";
+  "Heritage hotel near Banke Bihari Mandir & ISKCON Vrindavan. Satvik dining, serene rooms on the Yamuna. Book direct for the best price.";
 
 export const metadata: Metadata = {
   alternates: {

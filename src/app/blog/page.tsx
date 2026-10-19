@@ -6,7 +6,7 @@ import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 
 const pageTitle = "The Braj Journal — RK Residency Vrindavan";
-const pageDescription = "Temple guides, festival calendars, local tips and stories from Vrindavan — written by our resident scholars and concierge team.";
+const pageDescription = "Temple guides, festival calendars, local tips and stories from Vrindavan by our resident team. Plan your Braj pilgrimage with us.";
 
 export const metadata: Metadata = {
   title: pageTitle,

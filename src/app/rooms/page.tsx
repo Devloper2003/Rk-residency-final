@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const pageTitle = "Rooms & Suites — RK Residency Vrindavan";
 const pageDescription =
-  "Explore all rooms, suites and the Gokul Royal Villa at RK Residency. Hand-carved teak, Makrana marble, Braj textiles. Direct booking best-price guarantee.";
+  "Explore rooms, suites and the Gokul Royal Villa — hand-carved teak, Makrana marble, Braj textiles. Book direct with RK Residency Vrindavan.";
 
 export const metadata: Metadata = {
   title: pageTitle,

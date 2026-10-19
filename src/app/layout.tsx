@@ -34,17 +34,17 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "RK Residency — Heritage Luxury Stay in Vrindavan",
+  title: "Hotel near Banke Bihari Mandir, Vrindavan | RK Residency",
   description:
-    "Heritage-luxury residency on the banks of the Yamuna, steps from Banke Bihari Mandir and ISKCON. Direct booking with best-price guarantee.",
+    "Heritage hotel near Banke Bihari Mandir & ISKCON Vrindavan. Satvik dining, serene rooms on the Yamuna. Book direct for the best price.",
   authors: [{ name: "RK Residency" }],
   // NOTE: no site-wide canonical here. Canonicals are set PER PAGE
   // (self-referencing, built from SITE_URL) in each route's metadata so no
   // page ever inherits another page's canonical.
   openGraph: {
-    title: "RK Residency — Heritage Luxury Stay in Vrindavan",
+    title: "Hotel near Banke Bihari Mandir, Vrindavan | RK Residency",
     description:
-      "Spiritual luxury on the banks of the Yamuna. Steps from Banke Bihari Mandir and ISKCON Vrindavan. Direct booking with best-price guarantee.",
+      "Heritage hotel near Banke Bihari Mandir & ISKCON Vrindavan. Satvik dining, serene rooms on the Yamuna. Book direct for the best price.",
     url: "/",
     siteName: "RK Residency",
     locale: "en_IN",
@@ -60,9 +60,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "RK Residency — Heritage Luxury Stay in Vrindavan",
+    title: "Hotel near Banke Bihari Mandir, Vrindavan | RK Residency",
     description:
-      "Spiritual luxury on the banks of the Yamuna. Direct booking with best-price guarantee.",
+      "Heritage hotel near Banke Bihari Mandir & ISKCON Vrindavan. Book direct for the best price.",
     images: ["/images/hero-vrindavan.webp"],
   },
   robots: {

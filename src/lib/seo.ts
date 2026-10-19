@@ -14,15 +14,36 @@ export const TITLE_MAX = 60;
 export const DESCRIPTION_MAX = 155;
 
 /**
+ * Development-only guardrail: warns in the server console when a title or
+ * description exceeds the SEO limits. In production this is a no-op.
+ */
+function warnIfOver(kind: "title" | "description", value: string, max: number) {
+  if (process.env.NODE_ENV !== "development") return;
+  if (value.length > max) {
+    console.warn(
+      `[seo] WARNING: ${kind} is ${value.length} chars (limit ${max}): "${value}"`
+    );
+  }
+}
+
+/**
  * Build a page <title> from a page-specific title and append the brand
  * suffix when there is room, guaranteeing the result stays under 60 chars.
  */
 export function seoTitle(pageTitle: string, brand: string = SITE_NAME): string {
   const clean = pageTitle.trim().replace(/\s+/g, " ");
-  if (clean.length <= TITLE_MAX) return clean;
+  if (clean.length <= TITLE_MAX) {
+    warnIfOver("title", clean, TITLE_MAX);
+    return clean;
+  }
   const withBrand = `${clean} — ${brand}`;
-  if (withBrand.length <= TITLE_MAX) return withBrand;
-  return clean.slice(0, TITLE_MAX - 1).trimEnd() + "…";
+  if (withBrand.length <= TITLE_MAX) {
+    warnIfOver("title", withBrand, TITLE_MAX);
+    return withBrand;
+  }
+  const truncated = clean.slice(0, TITLE_MAX - 1).trimEnd() + "…";
+  warnIfOver("title", truncated, TITLE_MAX);
+  return truncated;
 }
 
 /**
@@ -31,7 +52,10 @@ export function seoTitle(pageTitle: string, brand: string = SITE_NAME): string {
 export function titledPageTitle(pageTitle: string, brand: string = SITE_NAME): string {
   const clean = pageTitle.trim().replace(/\s+/g, " ");
   const withBrand = `${clean} — ${brand}`;
-  if (withBrand.length <= TITLE_MAX) return withBrand;
+  if (withBrand.length <= TITLE_MAX) {
+    warnIfOver("title", withBrand, TITLE_MAX);
+    return withBrand;
+  }
   return seoTitle(clean, brand);
 }
 
@@ -40,10 +64,15 @@ export function titledPageTitle(pageTitle: string, brand: string = SITE_NAME): s
  */
 export function seoDescription(text: string): string {
   const clean = text.trim().replace(/\s+/g, " ");
-  if (clean.length <= DESCRIPTION_MAX) return clean;
+  if (clean.length <= DESCRIPTION_MAX) {
+    warnIfOver("description", clean, DESCRIPTION_MAX);
+    return clean;
+  }
   const cut = clean.slice(0, DESCRIPTION_MAX);
   const lastSpace = cut.lastIndexOf(" ");
-  return (lastSpace > 80 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…";
+  const truncated = (lastSpace > 80 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…";
+  warnIfOver("description", truncated, DESCRIPTION_MAX);
+  return truncated;
 }
 
 /**
