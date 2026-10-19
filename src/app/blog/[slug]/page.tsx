@@ -1,7 +1,7 @@
 import { BlogDetailPage } from "@/components/rk/pages/BlogPages";
 import { db } from "@/lib/db";
 import { absUrl, pageOpenGraph, pageTwitter, seoTitle, seoDescription } from "@/lib/seo";
-import { SITE_URL } from "@/lib/site.config";
+import { blogPostingJsonLd } from "@/lib/schema-org";
 
 export const dynamic = "force-dynamic";
 
@@ -46,30 +46,16 @@ export default async function BlogDetailRoute({ params }: { params: Promise<{ sl
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Article",
-              headline: post.title,
-              description: post.excerpt,
-              image: post.imageUrl,
-              datePublished: post.publishedAt?.toISOString(),
-              author: {
-                "@type": "Organization",
-                name: "RK Residency",
-              },
-              publisher: {
-                "@type": "Organization",
-                name: "RK Residency",
-                logo: {
-                  "@type": "ImageObject",
-                  url: `${SITE_URL}/images/heritage-room.webp`,
-                },
-              },
-              mainEntityOfPage: {
-                "@type": "WebPage",
-                "@id": absUrl(`/blog/${post.slug}`),
-              },
-            }),
+            __html: JSON.stringify(
+              blogPostingJsonLd({
+                title: post.title,
+                excerpt: post.excerpt,
+                imageUrl: post.imageUrl,
+                publishedAt: post.publishedAt,
+                updatedAt: post.updatedAt,
+                slug: post.slug,
+              })
+            ),
           }}
         />
       )}

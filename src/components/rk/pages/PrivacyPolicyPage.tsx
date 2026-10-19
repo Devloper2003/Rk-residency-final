@@ -8,6 +8,7 @@ export function PrivacyPolicyPage() {
       title="Privacy Policy"
       subtitle="How RK Residency collects, uses, stores, and protects your personal information when you visit our website, make a reservation, or stay at our hotel."
       accent="teal"
+      path="/privacy-policy"
       effectiveDate="July 2026"
       intro={
         <>

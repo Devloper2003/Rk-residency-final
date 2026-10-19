@@ -63,6 +63,10 @@ export function DiningPage() {
       title="Satvik Dining in Vrindavan"
       subtitle="Our kitchen follows the strict satvik tradition of Braj — no onion, no garlic, no eggs. Every meal is prepared after a kitchen aarti and served as prasadam."
       accent="marsala"
+      breadcrumbs={[
+        { name: "Home", path: "/" },
+        { name: "Dining", path: "/dining" },
+      ]}
     >
       {/* Hero image */}
       <div className="relative mb-12 aspect-[16/9] overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">

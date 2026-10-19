@@ -37,6 +37,10 @@ export function ContactPage() {
       title="Contact & Location — Hotel in Vrindavan"
       subtitle={`Whether you are planning a pilgrimage, a satsang retreat or a small wedding — write to us. Our concierge replies within four hours, ${info.conciergeHours}.`}
       accent="teal"
+      breadcrumbs={[
+        { name: "Home", path: "/" },
+        { name: "Contact", path: "/contact" },
+      ]}
     >
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Left: contact info + map */}

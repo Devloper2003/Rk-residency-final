@@ -52,6 +52,10 @@ export function GalleryPage() {
       title="Photo Gallery — RK Residency Vrindavan"
       subtitle="Every photograph tells a story of comfort, devotion, and heartfelt hospitality in the sacred city of Vrindavan."
       accent="gold"
+      breadcrumbs={[
+        { name: "Home", path: "/" },
+        { name: "Gallery", path: "/gallery" },
+      ]}
     >
       {/* Filter pills */}
       <div className="mb-8 flex flex-wrap items-center justify-center gap-2">

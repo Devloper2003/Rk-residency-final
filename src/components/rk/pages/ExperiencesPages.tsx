@@ -27,6 +27,10 @@ export function ExperiencesListPage() {
       title="Vrindavan Temple & Braj Experiences"
       subtitle="Five sacred sites within a 25-minute walk of RK Residency. Tap any experience for full timings, history, highlights and pilgrim tips."
       accent="marsala"
+      breadcrumbs={[
+        { name: "Home", path: "/" },
+        { name: "Experiences", path: "/experiences" },
+      ]}
     >
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {EXPERIENCES.map((exp, i) => {
@@ -118,7 +122,16 @@ export function ExperienceDetailPage({ slug }: { slug: string }) {
   const TimeIcon = meta.icon;
 
   return (
-    <PageShell title={exp.name} subtitle={exp.description} accent="marsala">
+    <PageShell
+      title={exp.name}
+      subtitle={exp.description}
+      accent="marsala"
+      breadcrumbs={[
+        { name: "Home", path: "/" },
+        { name: "Experiences", path: "/experiences" },
+        { name: exp.name, path: `/experiences/${exp.slug}` },
+      ]}
+    >
       {/* Hero image */}
       <div className="relative mb-10 aspect-[16/9] overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
         <img src={exp.image} alt={exp.name} className="h-full w-full object-cover" />

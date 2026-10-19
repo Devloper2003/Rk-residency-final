@@ -8,6 +8,7 @@ export function CancellationPage() {
       title="Cancellation & Refund Policy"
       subtitle="The terms applicable to reservations made through our website, phone, email, WhatsApp, or authorized booking partners. By confirming a reservation, you agree to the terms stated below."
       accent="marsala"
+      path="/cancellation-policy"
       effectiveDate="July 2026"
       intro={
         <>

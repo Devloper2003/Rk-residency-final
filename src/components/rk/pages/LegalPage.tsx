@@ -21,6 +21,8 @@ export type LegalPageProps = {
   sections: LegalSection[];
   closing?: React.ReactNode;
   effectiveDate?: string;
+  /** Route path of this legal page, used for BreadcrumbList JSON-LD. */
+  path?: string;
 };
 
 /**
@@ -40,6 +42,7 @@ export function LegalPage({
   sections,
   closing,
   effectiveDate,
+  path,
 }: LegalPageProps) {
   const info = useContactInfo();
   const [activeId, setActiveId] = useState<string>(sections[0]?.id || "");
@@ -72,7 +75,15 @@ export function LegalPage({
   };
 
   return (
-    <PageShell title={title} subtitle={subtitle} accent={accent}>
+    <PageShell
+      title={title}
+      subtitle={subtitle}
+      accent={accent}
+      breadcrumbs={[
+        { name: "Home", path: "/" },
+        { name: title, path: path || "/" },
+      ]}
+    >
       <div className="grid gap-10 lg:grid-cols-[260px_1fr]">
         {/* Sticky table of contents (desktop only) */}
         <aside className="hidden lg:block">

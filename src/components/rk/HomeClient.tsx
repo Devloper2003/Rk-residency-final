@@ -16,7 +16,6 @@ import { Footer } from "@/components/rk/Footer";
 import { FloatingWhatsApp, ExitIntentModal } from "@/components/rk/FloatingActions";
 import { ScrollProgress } from "@/components/rk/ScrollProgress";
 import { useRouter } from "@/lib/router";
-import { BUSINESS } from "@/lib/site.config";
 import { ArrowRight } from "lucide-react";
 
 /** "See More" button that links to a dedicated page */
@@ -54,40 +53,8 @@ export function HomeClient({ initialRooms }: { initialRooms?: Room[] }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-ivory">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Hotel",
-            name: "RK Residency",
-            description: "A Soul Immersed in the Spirit of Vrindavan.",
-            starRating: { "@type": "Rating", ratingValue: "5" },
-            priceRange: "₹1,500 – ₹3,000",
-            // Contact points come from site.config BUSINESS (owner TODOs).
-            // Fields are omitted from the JSON-LD until real values exist —
-            // structured data must never contain invented business data.
-            ...(BUSINESS.phonePrimary ? { telephone: BUSINESS.phonePrimary } : {}),
-            ...(BUSINESS.emailPrimary ? { email: BUSINESS.emailPrimary } : {}),
-            address: { "@type": "PostalAddress", streetAddress: "Parikrama Marg, Vrindavan", addressLocality: "Vrindavan", addressRegion: "Uttar Pradesh", postalCode: "281121", addressCountry: "IN" },
-            geo: { "@type": "GeoCoordinates", latitude: 27.5756, longitude: 77.7100 },
-            aggregateRating: { "@type": "AggregateRating", ratingValue: "4.9", reviewCount: "1240" },
-          }),
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: [
-              { "@type": "Question", name: "What is your cancellation policy?", acceptedAnswer: { "@type": "Answer", text: "Free cancellation up to 72 hours before check-in." } },
-              { "@type": "Question", name: "Is the food pure vegetarian?", acceptedAnswer: { "@type": "Answer", text: "Yes, strictly satvik." } },
-            ],
-          }),
-        }}
-      />
+      {/* Hotel + FAQPage JSON-LD are rendered server-side in
+          src/app/(home)/page.tsx so they are always in the initial HTML. */}
 
       <ScrollProgress />
       <Navbar onBookClick={openBookingCb} />

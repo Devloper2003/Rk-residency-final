@@ -56,6 +56,10 @@ export function BlogListPage({ initialPosts }: { initialPosts?: BlogPost[] }) {
       title="The Braj Journal — Vrindavan Blog"
       subtitle="Temple guides, festival calendars, local tips and stories from Vrindavan — written by our resident scholars and concierge team."
       accent="gold"
+      breadcrumbs={[
+        { name: "Home", path: "/" },
+        { name: "Blog", path: "/blog" },
+      ]}
     >
       {/* Filters */}
       <div className="mb-10 flex flex-wrap justify-center gap-2">
@@ -197,7 +201,16 @@ export function BlogDetailPage({ slug, initialPost }: { slug: string; initialPos
   const tags: string[] = JSON.parse(post.tags || "[]");
 
   return (
-    <PageShell title={post.title} subtitle={post.excerpt} accent="gold">
+    <PageShell
+      title={post.title}
+      subtitle={post.excerpt}
+      accent="gold"
+      breadcrumbs={[
+        { name: "Home", path: "/" },
+        { name: "Blog", path: "/blog" },
+        { name: post.title, path: `/blog/${post.slug}` },
+      ]}
+    >
       {/* Hero */}
       <div className="relative mb-8 aspect-[16/9] overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
         <img

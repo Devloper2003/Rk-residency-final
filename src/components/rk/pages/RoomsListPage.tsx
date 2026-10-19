@@ -7,6 +7,11 @@ import { PageShell } from "../PageShell";
 import { Reveal, Lotus } from "../Motifs";
 import { useRouter } from "@/lib/router";
 
+const BREADCRUMBS = [
+  { name: "Home", path: "/" },
+  { name: "Rooms & Suites", path: "/rooms" },
+];
+
 type Room = {
   id: string; slug: string; name: string; tagline: string; description: string;
   basePrice: number; maxGuests: number; sizeSqft: number; bedType: string;
@@ -57,6 +62,7 @@ export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
       title="Rooms & Suites in Vrindavan"
       subtitle="Every room at RK Residency is thoughtfully curated to provide comfort, elegance, and a peaceful escape in the sacred city of Vrindavan. Explore each room category to view detailed amenities, photo galleries, and seamless booking options."
       accent="teal"
+      breadcrumbs={BREADCRUMBS}
     >
       {/* Filters */}
       <div className="mb-10 flex flex-wrap justify-center gap-2">

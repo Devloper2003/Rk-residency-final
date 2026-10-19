@@ -56,6 +56,56 @@ export const BUSINESS = {
   /** TODO: Real GSTIN of the property, 15 chars, e.g. "09ABCDE1234F1Z5" (was placeholder "09AAACK1234R1Z5"). */
   gstin: "",
 
+  /**
+   * Postal address — used by the footer, contact page and Hotel JSON-LD so the
+   * SAME address appears everywhere. The property is in the Kailash Nagar
+   * area; TODO: replace with the exact street/plot once confirmed.
+   */
+  address: {
+    streetAddress: "Kailash Nagar, Vrindavan", // TODO: exact street/plot
+    addressLocality: "Vrindavan",
+    addressRegion: "Uttar Pradesh",
+    postalCode: "281121",
+    addressCountry: "IN",
+  },
+
+  /** TODO: Exact geo coordinates of the hotel pin. Hotel JSON-LD omits `geo` until BOTH are filled. */
+  geo: {
+    latitude: "",
+    longitude: "",
+  },
+
+  /** TODO: Confirm the real check-in / check-out times (currently the site's own claim). */
+  checkinTime: "2:00 PM",
+  checkoutTime: "11:00 AM",
+
+  /** TODO: Confirm this amenity list — currently mirrors the site's own copy (Trust badges + FAQ). */
+  amenities: [
+    "Free high-speed Wi-Fi",
+    "Air conditioning",
+    "24-hour hot water",
+    "Power backup",
+    "Rooftop satvik dining",
+    "Wheelchair-accessible Heritage Wing",
+  ],
+
+  /**
+   * AggregateRating for Hotel JSON-LD is emitted ONLY when BOTH a real,
+   * verifiable rating value and review count are filled in here.
+   * TODO: copy the exact rating + count shown on the Google Business Profile.
+   */
+  rating: {
+    value: "", // e.g. "4.9"
+    count: "", // e.g. "1240"
+  },
+
+  /**
+   * Price range for Hotel JSON-LD. When empty, the homepage derives a real
+   * range from the live room prices in the database instead.
+   * TODO: leave empty to auto-derive, or set a fixed range e.g. "₹1,500 – ₹3,000".
+   */
+  priceRange: "",
+
   social: {
     /** TODO: Real Instagram profile URL (was placeholder "https://instagram.com"). */
     instagram: "",

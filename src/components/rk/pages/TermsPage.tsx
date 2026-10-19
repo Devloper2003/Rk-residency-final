@@ -8,6 +8,7 @@ export function TermsPage() {
       title="Terms & Conditions"
       subtitle="The terms that govern your use of our website and hotel services. By accessing our website, making a reservation, or staying at RK Residency, you agree to comply with these terms."
       accent="gold"
+      path="/terms-and-conditions"
       effectiveDate="July 2026"
       intro={
         <>

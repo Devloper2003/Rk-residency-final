@@ -41,6 +41,10 @@ export function OffersListPage({ onBookClick }: { onBookClick?: () => void }) {
       title="Offers & Festival Packages in Vrindavan"
       subtitle="From the midnight abhishek of Janmashtami to the colours of Holi in Barsana — our festival packages are designed around the real Braj calendar, not generic hotel promotions."
       accent="gold"
+      breadcrumbs={[
+        { name: "Home", path: "/" },
+        { name: "Offers", path: "/offers" },
+      ]}
     >
       {loading ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -176,7 +180,16 @@ export function OfferDetailPage({ slug, onBookClick }: { slug: string; onBookCli
   );
 
   return (
-    <PageShell title={offer.title} subtitle={offer.tagline} accent="gold">
+    <PageShell
+      title={offer.title}
+      subtitle={offer.tagline}
+      accent="gold"
+      breadcrumbs={[
+        { name: "Home", path: "/" },
+        { name: "Offers", path: "/offers" },
+        { name: offer.title, path: `/offers/${offer.slug}` },
+      ]}
+    >
       {/* Hero */}
       <div className="relative mb-10 aspect-[16/9] overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
         <img

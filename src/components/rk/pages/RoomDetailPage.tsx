@@ -107,7 +107,16 @@ export function RoomDetailPage({
   const prevImage = () => setActiveImage((i) => (i - 1 + gallery.length) % gallery.length);
 
   return (
-    <PageShell title={room.name} subtitle={room.tagline} accent="teal">
+    <PageShell
+      title={room.name}
+      subtitle={room.tagline}
+      accent="teal"
+      breadcrumbs={[
+        { name: "Home", path: "/" },
+        { name: "Rooms & Suites", path: "/rooms" },
+        { name: room.name, path: `/rooms/${room.slug}` },
+      ]}
+    >
       {/* ===== HERO GALLERY — Full-width immersive ===== */}
       <div className="mb-8 overflow-hidden rounded-3xl shadow-2xl">
         <div className="relative aspect-[21/9] w-full overflow-hidden bg-charcoal sm:aspect-[16/8]">

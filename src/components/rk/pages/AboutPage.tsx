@@ -55,6 +55,10 @@ export function AboutPage() {
       title={`${titleLine1} ${titleLine2}`}
       subtitle="Where the Divine Blessings of Shri Banke Bihari Ji Welcome Every Guest into a World of Peace, Comfort, and Heartfelt Hospitality."
       accent="teal"
+      breadcrumbs={[
+        { name: "Home", path: "/" },
+        { name: "About", path: "/about" },
+      ]}
     >
       <PeacockFeather size={100} className="pointer-events-none absolute right-4 top-24 hidden rotate-12 text-teal/10 lg:block" />
 

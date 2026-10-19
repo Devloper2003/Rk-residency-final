@@ -1,7 +1,7 @@
 import { FestivalCalendar } from "@/components/rk/FestivalCalendar";
 import type { Metadata } from "next";
-import { PageShell } from "@/components/rk/PageShell";
 import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
+import { breadcrumbJsonLd } from "@/lib/schema-org";
 
 const pageTitle = "Braj Festival Calendar 2026 — RK Residency Vrindavan";
 const pageDescription = "Makar Sankranti, Holi, Radhashtami, Janmashtami and Sharad Purnima — plan your Vrindavan pilgrimage around the Braj festival calendar.";
@@ -17,6 +17,18 @@ export const metadata: Metadata = {
 export default function FestivalsRoute() {
   return (
     <>
+      {/* BreadcrumbList — server-rendered (this page does not use PageShell) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            breadcrumbJsonLd([
+              { name: "Home", path: "/" },
+              { name: "Festival Calendar", path: "/festivals" },
+            ])
+          ),
+        }}
+      />
       <FestivalCalendar />
     </>
   );
