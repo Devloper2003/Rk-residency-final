@@ -5,7 +5,8 @@ import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
-const pageTitle = "Rooms & Suites in Vrindavan near Banke Bihari Mandir | RK Residency";
+// ≤60 chars per the SEO spec (the longer wording, 67 chars, truncated in Google)
+const pageTitle = "Rooms & Suites near Banke Bihari Mandir | RK Residency";
 const pageDescription =
   "Explore the Deluxe Room, Suite and Triple Bedroom at RK Residency Vrindavan — book direct near Banke Bihari Mandir.";
 

@@ -2,7 +2,8 @@ import { AboutPage } from "@/components/rk/pages/AboutPage";
 import type { Metadata } from "next";
 import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
 
-const pageTitle = "About RK Residency | Heritage Hotel in Kailash Nagar, Vrindavan";
+// ≤60 chars per the SEO spec (the longer wording, 63 chars, truncated in Google)
+const pageTitle = "About RK Residency | Heritage Hotel in Vrindavan";
 const pageDescription = "RK Residency honours the legacy of Late Shri Ravi Karan Singh, a Kargil War hero — a heartfelt heritage stay for every devotee in Vrindavan.";
 
 export const metadata: Metadata = {
