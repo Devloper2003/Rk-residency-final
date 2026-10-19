@@ -151,3 +151,22 @@ export const BUSINESS = {
     directionsUrl: "",
   },
 } as const;
+
+/**
+ * The SAME address formatted for display everywhere (footer, contact page,
+ * contact section, JSON-LD) so no page can drift from BUSINESS.address.
+ * Update BUSINESS.address above and every surface follows.
+ */
+export function businessAddress() {
+  const a = BUSINESS.address;
+  return {
+    /** "RK Residency, Kailash Nagar, Vrindavan" */
+    line1: `RK Residency, ${a.streetAddress}`,
+    /** "Vrindavan, Mathura" */
+    line2: `${a.addressLocality}, Mathura`,
+    /** "Uttar Pradesh 281121, India" */
+    line3: `${a.addressRegion} ${a.postalCode}, India`,
+    /** "RK Residency, Kailash Nagar, Vrindavan, Mathura, UP 281121" */
+    full: `RK Residency, ${a.streetAddress}, ${a.addressLocality}, Mathura, UP ${a.postalCode}`,
+  };
+}

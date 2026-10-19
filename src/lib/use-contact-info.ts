@@ -1,7 +1,7 @@
 "use client";
 
 import { useSettingValue, useContentValue } from "./site-content";
-import { BUSINESS } from "./site.config";
+import { BUSINESS, businessAddress } from "./site.config";
 
 /**
  * Shared hook that returns all the live contact info used across multiple
@@ -18,10 +18,13 @@ export function useContactInfo() {
   const phoneReservations = useSettingValue("phone_reservations", BUSINESS.phoneReservations);
   const emailPrimary = useSettingValue("email_primary", BUSINESS.emailPrimary);
   const emailEvents = useSettingValue("email_events", "");
-  const addrLine1 = useSettingValue("address_line1", "RK Residency, Parikrama Marg");
-  const addrLine2 = useSettingValue("address_line2", "Vrindavan, Mathura");
-  const addrLine3 = useSettingValue("address_line3", "Uttar Pradesh 281121, India");
-  const addressFull = useSettingValue("address_full", "RK Residency, Parikrama Marg, Vrindavan, Mathura, UP 281121");
+  // Address comes from BUSINESS.address (single source of truth) so the
+  // header, footer, contact page and Hotel JSON-LD all show the SAME one.
+  const addr = businessAddress();
+  const addrLine1 = useSettingValue("address_line1", addr.line1);
+  const addrLine2 = useSettingValue("address_line2", addr.line2);
+  const addrLine3 = useSettingValue("address_line3", addr.line3);
+  const addressFull = useSettingValue("address_full", addr.full);
   const mapEmbedUrl = useSettingValue("map_embed_url", "https://www.openstreetmap.org/export/embed.html?bbox=77.6950%2C27.5650%2C77.7250%2C27.5850&layer=mapnik&marker=27.5756%2C77.7100");
   const mapDirectionsUrl = useSettingValue("map_directions_url", BUSINESS.maps.directionsUrl);
   const whatsappNumberRaw = useSettingValue("whatsapp_number", BUSINESS.whatsappNumber);

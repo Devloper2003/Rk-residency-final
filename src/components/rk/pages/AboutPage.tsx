@@ -71,7 +71,8 @@ export function AboutPage() {
                  <div className="mt-5 space-y-4 font-display text-base leading-relaxed text-charcoal-soft">
             <p>
   Founded in <strong>2024</strong>, <span className="text-marsala">RK Residency</span> was established in the
-  sacred city of Vrindavan as a heartfelt tribute to the legacy of
+  Kailash Nagar area of the sacred city of Vrindavan — near the temples of
+  Shri Banke Bihari Ji and ISKCON — as a heartfelt tribute to the legacy of
   <strong> Late Shri Ravi Karan Singh</strong>, whose supreme sacrifice during
   the <em className="text-teal">Kargil War</em> continues to inspire us.
   Guided by the divine blessings of <strong>Shri Banke Bihari Ji</strong>, our

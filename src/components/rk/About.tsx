@@ -146,7 +146,8 @@ export function About() {
             <Reveal delay={0.1}>
               <div className="mt-6 space-y-4 text-base leading-relaxed text-charcoal-soft">
                 <p>
-                  Nestled in the holy city of Vrindavan, RK Residency 
+                  Nestled in the Kailash Nagar area of Vrindavan — moments from
+                  Banke Bihari Mandir and the Yamuna ghats — RK Residency 
                   is more than a hotel—it is a sanctuary where faith, 
                   comfort, and hospitality come together. Established in 
                   2024, our purpose has always been to create meaningful 

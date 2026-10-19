@@ -16,7 +16,7 @@ import {
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { toast } from "sonner";
 import { useSettingValue, useContentValue } from "@/lib/site-content";
-import { BUSINESS } from "@/lib/site.config";
+import { BUSINESS, businessAddress } from "@/lib/site.config";
 
 export function Contact() {
   const [form, setForm] = useState({
@@ -31,9 +31,11 @@ export function Contact() {
   const phoneReservations = useSettingValue("phone_reservations", BUSINESS.phoneReservations);
   const emailPrimary = useSettingValue("email_primary", BUSINESS.emailPrimary);
   const emailEvents = useSettingValue("email_events", "");
-  const addrLine1 = useSettingValue("address_line1", "RK Residency, Parikrama Marg");
-  const addrLine2 = useSettingValue("address_line2", "Vrindavan, Mathura");
-  const addrLine3 = useSettingValue("address_line3", "Uttar Pradesh 281121, India");
+  // Address from site.config BUSINESS.address — same as footer + JSON-LD.
+  const addr = businessAddress();
+  const addrLine1 = useSettingValue("address_line1", addr.line1);
+  const addrLine2 = useSettingValue("address_line2", addr.line2);
+  const addrLine3 = useSettingValue("address_line3", addr.line3);
   const mapEmbedUrl = useSettingValue("map_embed_url", "https://www.openstreetmap.org/export/embed.html?bbox=77.6950%2C27.5650%2C77.7250%2C27.5850&layer=mapnik&marker=27.5756%2C77.7100");
   const mapDirectionsUrl = useSettingValue("map_directions_url", BUSINESS.maps.directionsUrl);
   const whatsappNumberRaw = useSettingValue("whatsapp_number", BUSINESS.whatsappNumber);
