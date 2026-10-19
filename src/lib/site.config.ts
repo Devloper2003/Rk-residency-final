@@ -106,6 +106,27 @@ export const BUSINESS = {
    */
   priceRange: "",
 
+  /**
+   * Distances from the hotel — SINGLE SOURCE OF TRUTH used by the homepage
+   * "Distances from RK Residency" section, the contact page and the
+   * experiences data, so every page shows the SAME figures.
+   *
+   * ⚠️ The pre-filled numbers mirror the claims ALREADY on the site (contact
+   * page) — TODO: verify each one against Google Maps and correct here.
+   * Empty km/time entries are omitted from the UI until filled in.
+   */
+  distances: {
+    bankeBihari: { label: "Banke Bihari Mandir", km: "0.45", time: "6 min walk" }, // TODO: confirm
+    iskcon: { label: "ISKCON Vrindavan", km: "1.2", time: "15 min walk" }, // TODO: confirm
+    premMandir: { label: "Prem Mandir", km: "2.0", time: "25 min walk" }, // TODO: confirm
+    shaniDevMandir: { label: "Shani Dev Mandir", km: "", time: "" }, // TODO: fill exact km + minutes
+    keshiGhat: { label: "Keshi Ghat (Yamuna)", km: "0.65", time: "8 min walk" }, // TODO: confirm
+    nidhivan: { label: "Nidhivan", km: "", time: "" }, // TODO: fill exact km + minutes
+    railwayStation: { label: "Mathura Junction Railway Station", km: "12", time: "30 min drive" }, // TODO: confirm
+    busStand: { label: "Vrindavan Bus Stand", km: "", time: "" }, // TODO: fill exact km + minutes
+    agraAirport: { label: "Agra Airport", km: "65", time: "90 min drive" }, // TODO: confirm
+  },
+
   social: {
     /** TODO: Real Instagram profile URL (was placeholder "https://instagram.com"). */
     instagram: "",

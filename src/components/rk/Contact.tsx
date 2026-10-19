@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { toast } from "sonner";
-import { useSettingValue, useContentValue, parseJsonArray } from "@/lib/site-content";
+import { useSettingValue, useContentValue } from "@/lib/site-content";
 import { BUSINESS } from "@/lib/site.config";
 
 export function Contact() {
@@ -42,15 +42,11 @@ export function Contact() {
   const checkinTime = useSettingValue("checkin_time", "2:00 PM");
   const checkoutTime = useSettingValue("checkout_time", "11:00 AM");
   const conciergeHours = useSettingValue("concierge_hours", "7 AM – 11 PM IST");
-  const nearbyRaw = useContentValue("contact.nearby", "[]");
-  const nearby = parseJsonArray<{ name: string; distance: string; time: string }>(nearbyRaw, [
-    { name: "Banke Bihari Mandir", distance: "450 m", time: "6 min walk" },
-    { name: "ISKCON Vrindavan", distance: "1.2 km", time: "15 min walk" },
-    { name: "Prem Mandir", distance: "2 km", time: "25 min walk" },
-    { name: "Keshi Ghat", distance: "650 m", time: "8 min walk" },
-    { name: "Mathura Junction", distance: "12 km", time: "30 min drive" },
-    { name: "Agra Airport", distance: "65 km", time: "90 min drive" },
-  ]);
+  // Distances come from site.config BUSINESS.distances — the SAME single
+  // source as the homepage "Distances from RK Residency" section.
+  const nearby = Object.values(BUSINESS.distances)
+    .filter((d) => d && d.km && d.time)
+    .map((d) => ({ name: d.label, distance: `${d.km} km`, time: d.time }));
 
   const CONTACT_INFO = [
     {

@@ -25,7 +25,7 @@ export function ExperiencesListPage() {
   return (
     <PageShell
       title="Vrindavan Temple & Braj Experiences"
-      subtitle="Five sacred sites within a 25-minute walk of RK Residency. Tap any experience for full timings, history, highlights and pilgrim tips."
+      subtitle="Exact distances, walk times, darshan timings, history and pilgrim tips for the sacred sites around RK Residency — Banke Bihari, ISKCON, Prem Mandir, Nidhivan and Yamuna Aarti."
       accent="marsala"
       breadcrumbs={[
         { name: "Home", path: "/" },

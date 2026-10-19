@@ -5,11 +5,17 @@ import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion
 import { Lotus, PeacockFeather, CountUp, Reveal, SectionDivider } from "./Motifs";
 
 import { useContentValue, parseJsonArray } from "@/lib/site-content";
+import { BUSINESS } from "@/lib/site.config";
+
+// Stats are derived from site.config (single source of truth) — the walk
+// time to Banke Bihari comes from BUSINESS.distances, not a hardcoded claim.
+const bankeBihariWalkMins =
+  parseInt(BUSINESS.distances.bankeBihari.time, 10) || 0;
 const stats = [
   { end: 3, suffix: "", label: "Years of Braj hospitality" },
   { end: 35, suffix: "", label: "Rooms, suites " },
   { end: 48000, suffix: "+", label: "Devotee guests hosted" },
-  { end: 4, suffix: "", label: "Temples within 1.5 km" },
+  { end: bankeBihariWalkMins, suffix: "", label: "Min walk to Banke Bihari Mandir" },
 ];
 
 export function About() {

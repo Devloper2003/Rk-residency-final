@@ -15,12 +15,22 @@ export type Experience = {
 
 // Shared, server-importable experience data (moved out of the client module so
 // generateMetadata for /experiences/[slug] can read it on the server).
+// Distances come from site.config BUSINESS.distances — the single source of
+// truth shared with the homepage "Distances from RK Residency" section, so
+// every page quotes the SAME figures (owner verifies them in one place).
+import { BUSINESS } from "./site.config";
+
+const D = BUSINESS.distances;
+const fromConfig = (d: { km: string; time: string }, fbKm: string, fbTime: string) => ({
+  distance: d.km ? `${d.km} km` : fbKm,
+  walkTime: d.time || fbTime,
+});
+
 export const EXPERIENCES: Experience[] = [
   {
     slug: "banke-bihari-mandir",
     name: "Banke Bihari Mandir",
-    distance: "2.6 km",
-    walkTime: "40 min walk",
+    ...fromConfig(D.bankeBihari, "0.45 km", "6 min walk"),
     bestTime: "dawn",
     timings: "Mangala 7:45 AM · Evening 7:00 PM",
     description:
@@ -45,8 +55,7 @@ export const EXPERIENCES: Experience[] = [
   {
     slug: "iskcon-krishna-balaram",
     name: "ISKCON Sri Krishna Balaram Mandir",
-    distance: "2 km",
-    walkTime: "30 min walk",
+    ...fromConfig(D.iskcon, "1.2 km", "15 min walk"),
     bestTime: "evening",
     timings: "Sandhya Aarti 7:00 PM · Kirtan till 8:30 PM",
     description:
@@ -72,8 +81,7 @@ export const EXPERIENCES: Experience[] = [
   {
     slug: "prem-mandir",
     name: "Prem Mandir",
-    distance: "2.3 km",
-    walkTime: "32 min walk",
+    ...fromConfig(D.premMandir, "2.0 km", "25 min walk"),
     bestTime: "evening",
     timings: "Illumination 7:30 PM · Closes 9:00 PM",
     description:
@@ -99,6 +107,8 @@ export const EXPERIENCES: Experience[] = [
   {
     slug: "nidhivan",
     name: "Nidhivan",
+    // TODO(owner): fill BUSINESS.distances.nidhivan in site.config — the
+    // figures below are the pre-existing site copy, unverified.
     distance: "2.8 km",
     walkTime: "40 min walk",
     bestTime: "day",
@@ -126,8 +136,7 @@ export const EXPERIENCES: Experience[] = [
   {
     slug: "yamuna-aarti-keshi-ghat",
     name: "Yamuna Aarti at Keshi Ghat",
-    distance: "3.1 km",
-    walkTime: "40 min walk",
+    ...fromConfig(D.keshiGhat, "0.65 km", "8 min walk"),
     bestTime: "evening",
     timings: "Sunset Aarti · Daily (varies by season)",
     description:

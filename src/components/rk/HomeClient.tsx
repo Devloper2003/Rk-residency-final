@@ -5,6 +5,7 @@ import { Navbar } from "@/components/rk/Navbar";
 import { Hero, TrustBadges } from "@/components/rk/Hero";
 import { About } from "@/components/rk/About";
 import { Rooms, type Room } from "@/components/rk/Rooms";
+import { DistancesSection } from "@/components/rk/DistancesSection";
 import { Experiences } from "@/components/rk/Experiences";
 import { Dining } from "@/components/rk/Dining";
 import { Gallery } from "@/components/rk/Gallery";
@@ -64,6 +65,8 @@ export function HomeClient({ initialRooms }: { initialRooms?: Room[] }) {
         <TrustBadges />
         <About />
         <SeeMoreButton href="/about" label="Read our full story" />
+        {/* Exact, config-driven distances to temples + transport hubs */}
+        <DistancesSection />
         <Rooms onBookRoom={openBookingWithRoom} limit={3} />
         <SeeMoreButton href="/rooms" label="View all rooms & suites" />
         <Experiences limit={5} />
