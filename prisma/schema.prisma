@@ -149,6 +149,12 @@ model BlogPost {
   published   Boolean  @default(false)
   publishedAt DateTime?
   readingMins Int      @default(4)
+  // --- Blog automation (Phase 3) — all additions are nullable/defaulted so
+  // --- existing rows keep working untouched. ---
+  metaTitle       String? // SEO <title>, max 60 chars (auto from title when empty)
+  metaDescription String? // SEO meta description, max 155 chars (auto from excerpt when empty)
+  coverAlt        String? // alt text of the cover image (SEO + accessibility)
+  readingMinsAuto Boolean @default(true) // auto-calculate readingMins from body
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

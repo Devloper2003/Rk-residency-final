@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Clock, ArrowRight, ArrowLeft, Calendar, Tag } from "lucide-react";
+import { Clock, ArrowRight, ArrowLeft, Calendar, Tag, ListTree } from "lucide-react";
 import { PageShell } from "../PageShell";
 import { Reveal, Lotus } from "../Motifs";
 import { useRouter } from "@/lib/router";
 import { useContactInfo } from "@/lib/use-contact-info";
+import { tocFromBody } from "@/lib/blog-utils";
 
 type BlogPost = {
   id: string; slug: string; title: string; excerpt: string; body: string;
-  category: string; tags: string; imageUrl: string | null;
+  category: string; tags: string; imageUrl: string | null; coverAlt?: string | null;
   // string when fetched from /api/blog, Date when passed from the server page (SSR)
   publishedAt: string | Date | null; readingMins: number;
 };
@@ -178,12 +179,16 @@ export function BlogDetailPage({
   slug,
   initialPost,
   initialRelated = [],
+  initialToc,
 }: {
   slug: string;
   initialPost?: BlogPost | null;
-  /** SSR: up to 3 related posts (same category first) fetched by the server
-   *  page, so the internal links + images are in the initial HTML. */
+  /** SSR: up to 3 related posts (same category / shared tags first) fetched by
+   *  the server page, so the internal links + images are in the initial HTML. */
   initialRelated?: BlogPost[];
+  /** SSR: auto table of contents generated from the ## headings. When the
+   *  client falls back to fetching the post itself, the TOC is recomputed. */
+  initialToc?: { id: string; text: string }[];
 }) {
   const navigate = useRouter((s) => s.navigate);
   const info = useContactInfo();
@@ -191,6 +196,8 @@ export function BlogDetailPage({
   // the initial HTML (crawlable without JS).
   const [post, setPost] = useState<BlogPost | null>(initialPost ?? null);
   const [loading, setLoading] = useState(initialPost === undefined);
+  // Table of contents — from the server when provided, recomputed on fallback.
+  const [toc, setToc] = useState<{ id: string; text: string }[]>(initialToc || []);
 
   useEffect(() => {
     if (initialPost !== undefined) return; // rendered server-side
@@ -198,6 +205,7 @@ export function BlogDetailPage({
       .then((r) => r.json())
       .then((data) => {
         setPost(data.post || null);
+        setToc(tocFromBody(data.post?.body || ""));
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -240,7 +248,7 @@ export function BlogDetailPage({
       <div className="relative mb-8 aspect-[16/9] overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
         <img
           src={post.imageUrl || "/images/marigold-garland.webp"}
-          alt={post.title}
+          alt={post.coverAlt || post.title}
           width={1600}
           height={900}
           loading="eager"
@@ -269,22 +277,43 @@ export function BlogDetailPage({
 
       {/* Body */}
       <article className="mx-auto max-w-3xl">
+        {/* Auto table of contents — generated from the ## headings */}
+        {toc.length > 0 && (
+          <nav aria-label="Table of contents" className="mb-8 rounded-2xl border border-gold/25 bg-gold/5 p-5">
+            <div className="mb-2 flex items-center gap-2">
+              <ListTree className="h-4 w-4 text-gold-deep" />
+              <span className="font-serif text-base font-semibold text-charcoal">In this story</span>
+            </div>
+            <ol className="ml-1 list-decimal space-y-1 pl-4 font-display text-sm text-charcoal-soft">
+              {toc.map((t) => (
+                <li key={t.id}>
+                  <a href={`#${t.id}`} className="transition-colors hover:text-teal hover:underline">{t.text}</a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
         <div className="prose prose-lg max-w-none font-display text-base leading-[1.85] text-charcoal-soft [&_h2]:font-serif [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-charcoal [&_h2]:mt-8 [&_h2]:mb-3 [&_p]:mb-4 [&_ul]:my-4 [&_ul]:list-disc [&_ul]:pl-6 [&_li]:mb-2 [&_strong]:text-charcoal [&_strong]:font-semibold">
-          {post.body.split("\n\n").map((para, i) => {
-            // Simple paragraph rendering
-            if (para.startsWith("## ")) {
-              return <h2 key={i}>{para.replace(/^##\s+/, "")}</h2>;
-            }
-            if (para.startsWith("- ")) {
-              const items = para.split("\n").filter((l) => l.startsWith("- ")).map((l) => l.replace(/^-\s+/, ""));
-              return (
-                <ul key={i}>
-                  {items.map((it, j) => <li key={j}>{it}</li>)}
-                </ul>
-              );
-            }
-            return <p key={i}>{para}</p>;
-          })}
+          {(() => {
+            // Render ## headings with anchor ids matching the TOC entries.
+            let headingIdx = 0;
+            return post.body.split("\n\n").map((para, i) => {
+              if (para.startsWith("## ")) {
+                const entry = toc[headingIdx];
+                headingIdx++;
+                return <h2 key={i} id={entry ? entry.id : undefined}>{para.replace(/^##\s+/, "")}</h2>;
+              }
+              if (para.startsWith("- ")) {
+                const items = para.split("\n").filter((l) => l.startsWith("- ")).map((l) => l.replace(/^-\s+/, ""));
+                return (
+                  <ul key={i}>
+                    {items.map((it, j) => <li key={j}>{it}</li>)}
+                  </ul>
+                );
+              }
+              return <p key={i}>{para}</p>;
+            });
+          })()}
         </div>
 
         {/* Tags */}

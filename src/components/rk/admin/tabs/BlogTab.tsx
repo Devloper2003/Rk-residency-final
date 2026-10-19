@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
-import { Plus, Edit, Trash2, X, Save, Calendar } from "lucide-react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { Plus, Edit, Trash2, X, Save, Calendar, Wand2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,11 +8,14 @@ import { adminApi, adminFetch, LoadingSpinner, Field } from "./_shared";
 import { refreshSiteContent } from "@/lib/site-content";
 import { ImageUploader } from "../ImageUploader";
 import { toast } from "sonner";
+import { slugifyTitle, calcReadingMins, countWords } from "@/lib/blog-utils";
 
 const EMPTY = {
   slug: "", title: "", excerpt: "", body: "",
   category: "TEMPLE_GUIDE", tags: "[]", imageUrl: null as string | null,
   published: false, publishedAt: null as string | null, readingMins: 4,
+  // Phase 3 — auto-SEO fields (server fills the empty ones on save too)
+  metaTitle: "", metaDescription: "", coverAlt: "", readingMinsAuto: true,
 };
 
 export function BlogTab() {
@@ -47,6 +50,7 @@ export function BlogTab() {
     };
     const r = await adminFetch("/api/admin/blog", { method, body: JSON.stringify(payload) });
     if (r) {
+      if (r.warnings?.length) toast.warning(r.warnings.join(" · "));
       toast.success(p.id ? "Post updated" : "Post created");
       refreshSiteContent();
       setEditing(null);
@@ -124,11 +128,40 @@ export function BlogTab() {
 function BlogEditor({ post, onClose, onSave }: { post: any; onClose: () => void; onSave: (p: any) => void }) {
   const [form, setForm] = useState(post);
   const [saving, setSaving] = useState(false);
+  // Auto-slug: once the author edits the slug by hand, stop auto-filling it.
+  const [slugTouched, setSlugTouched] = useState(!!post.slug);
+  // Meta title/description follow the title/excerpt until the author edits them.
+  const [metaTitleTouched, setMetaTitleTouched] = useState(!!post.metaTitle);
+  const [metaDescTouched, setMetaDescTouched] = useState(!!post.metaDescription);
+  const bodyRef = useRef<HTMLTextAreaElement | null>(null);
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
+
+  const words = useMemo(() => countWords(form.body || ""), [form.body]);
+  const autoMins = useMemo(() => calcReadingMins(form.body || ""), [form.body]);
+
+  /** Auto-generate the slug from the title (lowercase, hyphens, editable). */
+  const onTitleChange = (v: string) => {
+    setForm((f: any) => ({
+      ...f,
+      title: v,
+      slug: slugTouched ? f.slug : slugifyTitle(v),
+      metaTitle: metaTitleTouched ? f.metaTitle : v,
+    }));
+  };
 
   const handleSave = async () => {
     setSaving(true);
     try { await onSave(form); } finally { setSaving(false); }
+  };
+
+  const insertIntoBody = (text: string) => {
+    const el = bodyRef.current;
+    if (!el) { set("body", `${form.body || ""}${text}`); return; }
+    const start = el.selectionStart ?? (form.body || "").length;
+    const end = el.selectionEnd ?? start;
+    const next = (form.body || "").slice(0, start) + text + (form.body || "").slice(end);
+    set("body", next);
+    requestAnimationFrame(() => { el.focus(); el.selectionStart = el.selectionEnd = start + text.length; });
   };
 
   return (
@@ -137,7 +170,7 @@ function BlogEditor({ post, onClose, onSave }: { post: any; onClose: () => void;
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-charcoal/10 bg-ivory/95 px-6 py-4 backdrop-blur">
           <div>
             <h3 className="font-serif text-lg font-semibold text-charcoal">{post.id ? "Edit post" : "New post"}</h3>
-            <p className="font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Blog editor</p>
+            <p className="font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Blog editor · auto-SEO on save</p>
           </div>
           <button onClick={onClose} className="grid h-9 w-9 place-items-center rounded-full border border-charcoal/15 text-charcoal-soft hover:bg-charcoal hover:text-ivory">
             <X className="h-4 w-4" />
@@ -146,8 +179,20 @@ function BlogEditor({ post, onClose, onSave }: { post: any; onClose: () => void;
 
         <div className="space-y-4 p-6">
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Title" value={form.title} onChange={(v) => set("title", v)} />
-            <Field label="Slug" value={form.slug} onChange={(v) => set("slug", v)} hint="URL-safe, lowercase, hyphen-separated" />
+            <Field label="Title" value={form.title} onChange={onTitleChange} />
+            <div>
+              <Label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">
+                Slug <span className="normal-case text-teal">· auto-generated, editable</span>
+              </Label>
+              <input
+                type="text"
+                value={form.slug}
+                onChange={(e) => { setSlugTouched(true); set("slug", e.target.value); }}
+                placeholder="auto-from-title"
+                className="w-full rounded-md border border-charcoal/15 bg-ivory-deep/30 px-3 py-2 font-display text-xs text-charcoal focus:border-teal focus:outline-none"
+              />
+              <p className="mt-1 font-display text-[10px] text-charcoal-soft/70">/blog/{form.slug || "…"} — lowercase, hyphen-separated</p>
+            </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
@@ -163,7 +208,29 @@ function BlogEditor({ post, onClose, onSave }: { post: any; onClose: () => void;
                 </SelectContent>
               </Select>
             </div>
-            <Field label="Reading mins" type="number" value={form.readingMins} onChange={(v) => set("readingMins", parseInt(v) || 4)} />
+            <div>
+              <Label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">
+                Reading mins {form.readingMinsAuto !== false && <span className="normal-case text-teal">· auto ({autoMins} min, {words} words)</span>}
+              </Label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number" min={1}
+                  value={form.readingMinsAuto !== false ? autoMins : form.readingMins}
+                  disabled={form.readingMinsAuto !== false}
+                  onChange={(e) => set("readingMins", parseInt(e.target.value) || 4)}
+                  className="w-full rounded-md border border-charcoal/15 bg-ivory-deep/30 px-3 py-2 font-display text-xs text-charcoal focus:border-teal focus:outline-none disabled:opacity-60"
+                />
+              </div>
+              <label className="mt-1 flex cursor-pointer items-center gap-1.5 font-display text-[10px] text-charcoal-soft">
+                <input
+                  type="checkbox"
+                  checked={form.readingMinsAuto !== false}
+                  onChange={(e) => set("readingMinsAuto", e.target.checked)}
+                  className="h-3 w-3 rounded border-charcoal/30"
+                />
+                <Wand2 className="h-3 w-3 text-teal" /> Auto from body (uncheck to override)
+              </label>
+            </div>
             <Field label="Tags (comma-separated)" value={(() => {
               try { return JSON.parse(form.tags).join(", "); } catch { return form.tags; }
             })()} onChange={(v) => set("tags", JSON.stringify(v.split(",").map((t) => t.trim()).filter(Boolean)))} />
@@ -176,8 +243,59 @@ function BlogEditor({ post, onClose, onSave }: { post: any; onClose: () => void;
             hint="Recommended: 1600×900px, webp/jpg/png"
           />
 
+          <Field
+            label="Cover image alt text"
+            value={form.coverAlt || ""}
+            onChange={(v) => set("coverAlt", v)}
+            hint="Describe the cover for Google Images + screen readers, e.g. 'Satvik thali on a brass plate at RK Residency Vrindavan'"
+          />
+
           <Field label="Excerpt" textarea value={form.excerpt} onChange={(v) => set("excerpt", v)} />
-          <Field label="Body (Markdown — use ## for headings)" textarea value={form.body} onChange={(v) => set("body", v)} />
+
+          {/* SEO meta — auto-filled from title/excerpt when left empty */}
+          <div className="rounded-2xl border border-charcoal/10 bg-white p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <Wand2 className="h-4 w-4 text-teal" />
+              <span className="font-serif text-sm font-semibold text-charcoal">SEO meta</span>
+              <span className="font-display text-[10px] text-charcoal-soft">auto-generated on save when left empty</span>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <Label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Meta title</Label>
+                <input
+                  type="text" maxLength={70}
+                  value={form.metaTitle || ""}
+                  onChange={(e) => { setMetaTitleTouched(true); set("metaTitle", e.target.value); }}
+                  placeholder="auto from title"
+                  className="w-full rounded-md border border-charcoal/15 bg-ivory-deep/30 px-3 py-2 font-display text-xs text-charcoal focus:border-teal focus:outline-none"
+                />
+                <CharCount value={form.metaTitle || ""} fallback={form.title} max={60} />
+              </div>
+              <div>
+                <Label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Meta description</Label>
+                <textarea
+                  rows={2} maxLength={180}
+                  value={form.metaDescription || ""}
+                  onChange={(e) => { setMetaDescTouched(true); set("metaDescription", e.target.value); }}
+                  placeholder="auto from excerpt"
+                  className="w-full rounded-md border border-charcoal/15 bg-ivory-deep/30 px-3 py-2 font-display text-xs text-charcoal focus:border-teal focus:outline-none"
+                />
+                <CharCount value={form.metaDescription || ""} fallback={form.excerpt} max={155} />
+              </div>
+              <p className="font-display text-[10px] text-charcoal-soft/70">
+                Canonical, og:title, og:description, og:image and og:url are generated automatically from these values when the post is saved.
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <Field label="Body (Markdown — use ## for headings)" textarea rows={12} value={form.body} onChange={(v) => set("body", v)} />
+            <div className="mt-1 flex items-center gap-3 font-display text-[10px] text-charcoal-soft/70">
+              <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{words} words · {autoMins} min read</span>
+              <span>·</span>
+              <button type="button" onClick={() => insertIntoBody("\n\n## New section\n\n")} className="text-teal hover:underline">+ Insert ## heading</button>
+            </div>
+          </div>
 
           <div className="flex items-center gap-3 rounded-xl border border-charcoal/10 bg-white p-3">
             <input type="checkbox" id="pub" checked={!!form.published} onChange={(e) => set("published", e.target.checked)} className="h-4 w-4 rounded border-charcoal/30" />
@@ -196,5 +314,16 @@ function BlogEditor({ post, onClose, onSave }: { post: any; onClose: () => void;
         </div>
       </div>
     </div>
+  );
+}
+
+/** Character counter that shows the auto (fallback) length when the field is empty. */
+function CharCount({ value, fallback, max }: { value: string; fallback: string; max: number }) {
+  const len = (value.trim() || fallback || "").trim().length;
+  const over = len > max;
+  return (
+    <p className={`mt-1 font-display text-[10px] ${over ? "text-marsala" : "text-charcoal-soft/70"}`}>
+      {len}/{max} chars{over ? " — too long, shorten it" : ""}{!value.trim() && fallback ? " (auto)" : ""}
+    </p>
   );
 }
