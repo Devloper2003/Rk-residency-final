@@ -1,11 +1,16 @@
 import { ExperiencesListPage } from "@/components/rk/pages/ExperiencesPages";
-import { absUrl } from "@/lib/seo";
+import type { Metadata } from "next";
+import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
 
-export const metadata = {
+const pageTitle = "Vrindavan Experiences — RK Residency";
+const pageDescription = "Five sacred sites within a 25-minute walk of RK Residency: Banke Bihari, ISKCON, Prem Mandir, Nidhivan, Yamuna Aarti. Full timings, history and pilgrim tips.";
+
+export const metadata: Metadata = {
+  title: pageTitle,
+  description: pageDescription,
   alternates: { canonical: absUrl("/experiences") },
-  title: "Vrindavan Experiences — RK Residency",
-  description:
-    "Five sacred sites within a 25-minute walk of RK Residency: Banke Bihari, ISKCON, Prem Mandir, Nidhivan, Yamuna Aarti. Full timings, history and pilgrim tips.",
+  openGraph: pageOpenGraph({ path: "/experiences", title: pageTitle, description: pageDescription, image: "/images/yamuna-aarti.webp" }),
+  twitter: pageTwitter({ title: pageTitle, description: pageDescription, image: "/images/yamuna-aarti.webp" }),
 };
 
 export default function ExperiencesRoute() {

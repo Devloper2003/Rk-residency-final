@@ -1,11 +1,16 @@
 import { DiningPage } from "@/components/rk/pages/DiningPage";
-import { absUrl } from "@/lib/seo";
+import type { Metadata } from "next";
+import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
 
-export const metadata = {
+const pageTitle = "Satvik Dining — RK Residency Vrindavan";
+const pageDescription = "Pure vegetarian satvik dining at RK Residency. No onion, no garlic, no eggs. Full menu — Braj Thali, satvik puri-sabzi, rabri-jalebi, tulsi tea. Rooftop Yamuna Pavilion.";
+
+export const metadata: Metadata = {
+  title: pageTitle,
+  description: pageDescription,
   alternates: { canonical: absUrl("/dining") },
-  title: "Satvik Dining — RK Residency Vrindavan",
-  description:
-    "Pure vegetarian satvik dining at RK Residency. No onion, no garlic, no eggs. Full menu — Braj Thali, satvik puri-sabzi, rabri-jalebi, tulsi tea. Rooftop Yamuna Pavilion.",
+  openGraph: pageOpenGraph({ path: "/dining", title: pageTitle, description: pageDescription, image: "/images/satvik-dining.webp" }),
+  twitter: pageTwitter({ title: pageTitle, description: pageDescription, image: "/images/satvik-dining.webp" }),
 };
 
 export default function DiningRoute() {

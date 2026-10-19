@@ -1,11 +1,16 @@
 import { PrivacyPolicyPage } from "@/components/rk/pages/PrivacyPolicyPage";
-import { absUrl } from "@/lib/seo";
+import type { Metadata } from "next";
+import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
 
-export const metadata = {
+const pageTitle = "Privacy Policy — RK Residency Vrindavan";
+const pageDescription = "Privacy Policy for RK Residency — how we collect, use, store, and protect your personal information when you visit our website, make a reservation, or stay at our hotel.";
+
+export const metadata: Metadata = {
+  title: pageTitle,
+  description: pageDescription,
   alternates: { canonical: absUrl("/privacy-policy") },
-  title: "Privacy Policy — RK Residency Vrindavan",
-  description:
-    "Privacy Policy for RK Residency — how we collect, use, store, and protect your personal information when you visit our website, make a reservation, or stay at our hotel.",
+  openGraph: pageOpenGraph({ path: "/privacy-policy", title: pageTitle, description: pageDescription, image: "/images/hero-vrindavan.webp" }),
+  twitter: pageTwitter({ title: pageTitle, description: pageDescription, image: "/images/hero-vrindavan.webp" }),
   robots: { index: true, follow: true },
 };
 

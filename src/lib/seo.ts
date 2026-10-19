@@ -6,6 +6,7 @@
  *   - meta description must stay under 155 characters.
  *   - canonicals are always built from SITE_URL (never hardcoded domains).
  */
+import type { Metadata } from "next";
 import { SITE_NAME, SITE_URL } from "./site.config";
 
 /** Hard limits from the SEO spec. */
@@ -52,4 +53,49 @@ export function seoDescription(text: string): string {
  */
 export function absUrl(path: string): string {
   return `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+/**
+ * Open Graph metadata for a page. og:url always equals the page canonical;
+ * title/description are the page's own; image defaults to the brand hero
+ * unless the page has a more specific one. Relative image paths are resolved
+ * against metadataBase (set in the root layout from SITE_URL).
+ */
+export function pageOpenGraph(opts: {
+  path: string;
+  title: string;
+  description: string;
+  image?: string;
+  type?: "website" | "article";
+}): Metadata["openGraph"] {
+  return {
+    title: opts.title,
+    description: opts.description,
+    url: absUrl(opts.path),
+    siteName: SITE_NAME,
+    locale: "en_IN",
+    type: opts.type ?? "website",
+    images: [
+      {
+        url: opts.image || "/images/hero-vrindavan.webp",
+        width: 1344,
+        height: 768,
+        alt: opts.title,
+      },
+    ],
+  };
+}
+
+/** Twitter card metadata matching the page's OG tags. */
+export function pageTwitter(opts: {
+  title: string;
+  description: string;
+  image?: string;
+}): Metadata["twitter"] {
+  return {
+    card: "summary_large_image",
+    title: opts.title,
+    description: opts.description,
+    images: [opts.image || "/images/hero-vrindavan.webp"],
+  };
 }
