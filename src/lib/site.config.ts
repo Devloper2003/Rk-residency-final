@@ -62,7 +62,7 @@ export const BUSINESS = {
    * area; TODO: replace with the exact street/plot once confirmed.
    */
   address: {
-    streetAddress: "Kailash Nagar, Vrindavan", // TODO: exact street/plot
+    streetAddress: "Kailash Nagar", // TODO: exact street/plot (area: Kailash Nagar)
     addressLocality: "Vrindavan",
     addressRegion: "Uttar Pradesh",
     postalCode: "281121",
@@ -172,8 +172,18 @@ export const BUSINESS = {
   },
 
   maps: {
+    /**
+     * TODO: Google Maps EMBED URL of the EXACT hotel pin — open Google Maps,
+     * search the hotel, Share → "Embed a map", copy the iframe src="…" URL.
+     * When empty, the site builds a no-key embed from BUSINESS.address.
+     */
+    embedUrl: "",
+
     /** TODO: Google Maps place URL (share link) of the hotel for "Get Directions". */
     directionsUrl: "",
+
+    /** TODO: Google Business Profile URL — shown as "View on Google" next to the map. */
+    googleBusinessProfile: "",
   },
 } as const;
 

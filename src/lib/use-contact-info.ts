@@ -4,6 +4,18 @@ import { useSettingValue, useContentValue } from "./site-content";
 import { BUSINESS, businessAddress } from "./site.config";
 
 /**
+ * Google Maps embed (no API key needed) built from the address in
+ * site.config. Replaces the old OpenStreetMap iframe. When the owner fills
+ * BUSINESS.maps.embedUrl with the exact-place embed URL, that wins.
+ */
+export function googleMapsEmbedUrl() {
+  return (
+    BUSINESS.maps.embedUrl ||
+    `https://www.google.com/maps?q=${encodeURIComponent(businessAddress().full)}&output=embed`
+  );
+}
+
+/**
  * Shared hook that returns all the live contact info used across multiple
  * page components (ContactPage, RoomDetailPage, ExperiencesPages, OffersPages,
  * BlogPages, GalleryPage, FAQ, etc.). Each consumer reads the same settings
@@ -25,7 +37,7 @@ export function useContactInfo() {
   const addrLine2 = useSettingValue("address_line2", addr.line2);
   const addrLine3 = useSettingValue("address_line3", addr.line3);
   const addressFull = useSettingValue("address_full", addr.full);
-  const mapEmbedUrl = useSettingValue("map_embed_url", "https://www.openstreetmap.org/export/embed.html?bbox=77.6950%2C27.5650%2C77.7250%2C27.5850&layer=mapnik&marker=27.5756%2C77.7100");
+  const mapEmbedUrl = useSettingValue("map_embed_url", googleMapsEmbedUrl());
   const mapDirectionsUrl = useSettingValue("map_directions_url", BUSINESS.maps.directionsUrl);
   const whatsappNumberRaw = useSettingValue("whatsapp_number", BUSINESS.whatsappNumber);
   const whatsappPrefill = useContentValue("contact.whatsapp_prefill_text", "I would like to enquire about availability at RK Residency");

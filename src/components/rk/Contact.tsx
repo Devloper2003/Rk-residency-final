@@ -17,6 +17,7 @@ import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { toast } from "sonner";
 import { useSettingValue, useContentValue } from "@/lib/site-content";
 import { BUSINESS, businessAddress } from "@/lib/site.config";
+import { googleMapsEmbedUrl } from "@/lib/use-contact-info";
 
 export function Contact() {
   const [form, setForm] = useState({
@@ -36,8 +37,10 @@ export function Contact() {
   const addrLine1 = useSettingValue("address_line1", addr.line1);
   const addrLine2 = useSettingValue("address_line2", addr.line2);
   const addrLine3 = useSettingValue("address_line3", addr.line3);
-  const mapEmbedUrl = useSettingValue("map_embed_url", "https://www.openstreetmap.org/export/embed.html?bbox=77.6950%2C27.5650%2C77.7250%2C27.5850&layer=mapnik&marker=27.5756%2C77.7100");
+  // Google Maps embed of the exact hotel location (was OpenStreetMap).
+  const mapEmbedUrl = useSettingValue("map_embed_url", googleMapsEmbedUrl());
   const mapDirectionsUrl = useSettingValue("map_directions_url", BUSINESS.maps.directionsUrl);
+  const gbpUrl = BUSINESS.maps.googleBusinessProfile || BUSINESS.reviews.google;
   const whatsappNumberRaw = useSettingValue("whatsapp_number", BUSINESS.whatsappNumber);
   const whatsappNumber = whatsappNumberRaw.replace(/[^\d]/g, "");
   const whatsappPrefill = useContentValue("contact.whatsapp_prefill_text", "I would like to enquire about availability at RK Residency");
@@ -165,15 +168,27 @@ export function Contact() {
                   <div className="font-display text-xs text-charcoal-soft">
                     {addrLine1} · {addrLine2} · {addrLine3}
                   </div>
-                  <a
-                    href={mapDirectionsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-teal px-3 py-1.5 font-display text-xs font-semibold text-ivory transition-colors hover:bg-teal-deep"
-                  >
-                    <Navigation className="h-3.5 w-3.5" />
-                    Get directions
-                  </a>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {gbpUrl && (
+                      <a
+                        href={gbpUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-white px-3 py-1.5 font-display text-xs font-semibold text-gold-deep transition-colors hover:bg-gold/10"
+                      >
+                        View on Google
+                      </a>
+                    )}
+                    <a
+                      href={mapDirectionsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-teal px-3 py-1.5 font-display text-xs font-semibold text-ivory transition-colors hover:bg-teal-deep"
+                    >
+                      <Navigation className="h-3.5 w-3.5" />
+                      Get directions
+                    </a>
+                  </div>
                 </div>
               </div>
 
