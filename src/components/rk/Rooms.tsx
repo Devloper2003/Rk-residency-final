@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { useRouter } from "@/lib/router";
 import { safeJsonArray } from "@/lib/utils";
+import { roomImageAlt, sanitizeRoomView } from "@/lib/room-display";
 import { BUSINESS } from "@/lib/site.config";
 
 type Room = {
@@ -75,7 +76,7 @@ function TiltCard({
         <div className="relative h-60 overflow-hidden sm:h-72">
           <img
             src={cover}
-            alt={`${room.name} — ${room.view} room at RK Residency, Kailash Nagar, Vrindavan`}
+            alt={roomImageAlt(room.name, room.view)}
             width={800}
             height={600}
             loading="lazy"
@@ -97,9 +98,11 @@ function TiltCard({
             className="absolute inset-x-0 bottom-0 p-4 text-left text-ivory focus-ring sm:p-5"
             aria-label={`View ${room.name} details`}
           >
-            <div className="font-display text-[10px] uppercase tracking-[0.28em] text-gold-soft sm:text-xs">
-              {room.view}
-            </div>
+            {sanitizeRoomView(room.view) && (
+              <div className="font-display text-[10px] uppercase tracking-[0.28em] text-gold-soft sm:text-xs">
+                {sanitizeRoomView(room.view)}
+              </div>
+            )}
             <h3 className="mt-1 line-clamp-2 font-serif text-xl font-semibold leading-tight group-hover:underline sm:text-2xl">{room.name}</h3>
             <p className="mt-0.5 line-clamp-1 font-display text-xs text-ivory/80 sm:text-sm">{room.tagline}</p>
           </button>

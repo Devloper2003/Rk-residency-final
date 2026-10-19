@@ -7,6 +7,7 @@ import { PageShell } from "../PageShell";
 import { Reveal, Lotus } from "../Motifs";
 import { useRouter } from "@/lib/router";
 import { BUSINESS } from "@/lib/site.config";
+import { roomImageAlt, sanitizeRoomView } from "@/lib/room-display";
 
 const BREADCRUMBS = [
   { name: "Home", path: "/" },
@@ -128,7 +129,7 @@ export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
                 <div className="relative h-64 overflow-hidden">
                   <img
                     src={imgs[0] || "/images/heritage-room.webp"}
-                    alt={`${r.name} — ${r.view} room at RK Residency, Kailash Nagar, Vrindavan`}
+                    alt={roomImageAlt(r.name, r.view)}
                     width={800}
                     height={600}
                     loading="lazy"
@@ -142,9 +143,11 @@ export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
                     </div>
                   )}
                   <div className="absolute inset-x-0 bottom-0 p-5 text-ivory">
-                    <div className="font-display text-xs uppercase tracking-[0.28em] text-gold-soft">
-                      {r.view}
-                    </div>
+                    {sanitizeRoomView(r.view) && (
+                      <div className="font-display text-xs uppercase tracking-[0.28em] text-gold-soft">
+                        {sanitizeRoomView(r.view)}
+                      </div>
+                    )}
                     <h3 className="mt-1 font-serif text-2xl font-semibold">{r.name}</h3>
                     <p className="font-display text-sm text-ivory/80">{r.tagline}</p>
                   </div>

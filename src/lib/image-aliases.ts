@@ -29,6 +29,13 @@ export const IMAGE_ALIASES: Record<string, string> = {
 
   // Rooms / property
   "rk-residency-vrindavan-heritage-room.webp": "5b87a4725175feac.webp",
+  // Owner-uploaded property photos (used on room pages until per-room photos
+  // are added) — interior, reception, exterior day/night.
+  "rk-residency-vrindavan-deluxe-room.webp": "843253c06bc5fb53.webp",
+  "rk-residency-vrindavan-reception.webp": "74f937ec32c5b7c6.webp",
+  "rk-residency-vrindavan-reception-portrait.webp": "915a052e8236a229.webp",
+  "rk-residency-vrindavan-hotel-exterior.webp": "dd88570b240cc0ef.webp",
+  "rk-residency-vrindavan-hotel-exterior-night.webp": "5b87a4725175feac.webp",
 
   // Dining
   "rk-residency-vrindavan-satvik-thali.webp": "5da7e5a732c7d5e5.webp",

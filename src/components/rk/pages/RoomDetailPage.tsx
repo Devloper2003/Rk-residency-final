@@ -13,6 +13,7 @@ import { Reveal, Lotus, PeacockFeather } from "../Motifs";
 import { AvailabilityCalendar } from "../AvailabilityCalendar";
 import { useRouter } from "@/lib/router";
 import { useContactInfo } from "@/lib/use-contact-info";
+import { sanitizeRoomView } from "@/lib/room-display";
 import { useContentValue } from "@/lib/site-content";
 
 type Room = {
@@ -166,10 +167,12 @@ export function RoomDetailPage({
           <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
             <div className="flex items-end justify-between gap-4">
               <div>
-                <div className="mb-1 flex items-center gap-2 text-gold-soft">
-                  <MapPin className="h-4 w-4" />
-                  <span className="font-display text-xs uppercase tracking-[0.2em]">{room.view}</span>
-                </div>
+                {sanitizeRoomView(room.view) && (
+                  <div className="mb-1 flex items-center gap-2 text-gold-soft">
+                    <MapPin className="h-4 w-4" />
+                    <span className="font-display text-xs uppercase tracking-[0.2em]">{sanitizeRoomView(room.view)}</span>
+                  </div>
+                )}
                 <h1 className="font-serif text-3xl font-bold text-ivory sm:text-4xl lg:text-5xl">{room.name}</h1>
                 <p className="mt-1 font-display text-sm text-ivory/80">{room.tagline}</p>
               </div>
@@ -205,7 +208,9 @@ export function RoomDetailPage({
           { icon: Users, label: "Guests", value: `${room.maxGuests}` },
           { icon: Maximize, label: "Size", value: `${room.sizeSqft} sq.ft` },
           { icon: BedDouble, label: "Bed", value: room.bedType },
-          { icon: Eye, label: "View", value: room.view },
+          ...(sanitizeRoomView(room.view)
+            ? [{ icon: Eye, label: "View", value: sanitizeRoomView(room.view) }]
+            : []),
           { icon: Star, label: "Available", value: `${room.totalCount} rooms` },
         ].map((s) => (
           <div key={s.label} className="flex items-center gap-3 rounded-2xl border border-charcoal/10 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
@@ -374,7 +379,9 @@ export function RoomDetailPage({
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-charcoal/85 via-transparent to-transparent" />
                       <div className="absolute inset-x-0 bottom-0 p-4">
-                        <div className="font-display text-[10px] uppercase tracking-wider text-gold-soft">{r.view}</div>
+                        {sanitizeRoomView(r.view) && (
+                          <div className="font-display text-[10px] uppercase tracking-wider text-gold-soft">{sanitizeRoomView(r.view)}</div>
+                        )}
                         <div className="font-serif text-lg font-semibold text-ivory">{r.name}</div>
                       </div>
                     </div>
