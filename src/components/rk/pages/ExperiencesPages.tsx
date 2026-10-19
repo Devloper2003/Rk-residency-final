@@ -134,7 +134,7 @@ export function ExperienceDetailPage({ slug }: { slug: string }) {
     >
       {/* Hero image */}
       <div className="relative mb-10 aspect-[16/9] overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
-        <img src={exp.image} alt={exp.name} className="h-full w-full object-cover" />
+        <img src={exp.image} alt={exp.name} width={1600} height={900} loading="eager" className="h-full w-full object-cover" />
         <div className={`absolute inset-0 bg-gradient-to-tr ${exp.accent} mix-blend-multiply opacity-50`} />
         <div className="absolute inset-0 bg-gradient-to-t from-charcoal/85 via-transparent to-transparent" />
         <div className="absolute right-4 top-4 rounded-full border border-gold/40 bg-charcoal/70 px-4 py-2 text-sm font-medium text-ivory backdrop-blur-sm">

@@ -63,14 +63,22 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* Layer 1 — sky / background image slider */}
+      {/* Layer 1 — sky / background image slider.
+          Real <img> tags (not CSS backgrounds) so the hero has alt text,
+          intrinsic width/height, and the LCP image is eager + high priority. */}
       <motion.div style={{ y: skyY }} className="absolute inset-0 z-0">
         <div className="relative h-[120%] w-full" aria-hidden="true">
           {allImages.map((img, i) => (
-            <div
+            <img
               key={i}
-              className="absolute inset-0 bg-cover bg-center transition-opacity duration-[1500ms] ease-in-out"
-              style={{ backgroundImage: `url('${img}')`, opacity: i === currentSlide ? 1 : 0 }}
+              src={img}
+              alt={i === currentSlide ? bgImageAlt : ""}
+              width={1600}
+              height={900}
+              loading={i === 0 ? "eager" : "lazy"}
+              fetchPriority={i === 0 ? "high" : undefined}
+              className="absolute inset-0 h-full w-full bg-cover bg-center object-cover transition-opacity duration-[1500ms] ease-in-out"
+              style={{ opacity: i === currentSlide ? 1 : 0 }}
             />
           ))}
         </div>

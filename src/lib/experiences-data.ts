@@ -39,7 +39,7 @@ export const EXPERIENCES: Experience[] = [
       "Dress modestly — shoulders and knees covered",
       "Avoid Saturdays and Janmashtami week unless pre-booked",
     ],
-    image: "/uploads/a78f283997ee8a40.webp?auto=format&fit=crop&w=1400&q=80",
+    image: "/uploads/rk-residency-vrindavan-banke-bihari-mandir.webp?auto=format&fit=crop&w=1400&q=80",
     accent: "from-marsala/85 to-marsala/30",
   },
   {
@@ -66,7 +66,7 @@ export const EXPERIENCES: Experience[] = [
       "Photography allowed in the courtyard, not inside the sanctum",
       "International visitors can request an English guide at the office",
     ],
-    image: "/uploads/d8278639f939d1d5.webp?auto=format&fit=crop&w=1400&q=80",
+    image: "/uploads/rk-residency-vrindavan-iskcon-temple.webp?auto=format&fit=crop&w=1400&q=80",
     accent: "from-teal/85 to-teal/30",
   },
   {
@@ -93,7 +93,7 @@ export const EXPERIENCES: Experience[] = [
       "Photography is permitted throughout the complex",
       "The temple is wheelchair accessible",
     ],
-    image: "/uploads/d624900c0a75cde5.webp?auto=format&fit=crop&w=1400&q=80",
+    image: "/uploads/rk-residency-vrindavan-prem-mandir.webp?auto=format&fit=crop&w=1400&q=80",
     accent: "from-gold/85 to-gold/30",
   },
   {
@@ -120,7 +120,7 @@ export const EXPERIENCES: Experience[] = [
       "Do not attempt to stay after closing — tradition is strictly enforced",
       "Photography is allowed in the outer courtyard, not inside Rang Mahal",
     ],
-    image: "/uploads/cd5954906d1083df.webp?auto=format&fit=crop&w=1400&q=80",
+    image: "/uploads/rk-residency-vrindavan-nidhivan.webp?auto=format&fit=crop&w=1400&q=80",
     accent: "from-marsala/85 to-teal/40",
   },
   {
@@ -147,7 +147,7 @@ export const EXPERIENCES: Experience[] = [
       "Be respectful of the river — do not throw plastic in the Yamuna",
       "Wear warm layers in winter — the ghat gets cold after sunset",
     ],
-    image: "/uploads/63e4076580ba26bc.webp",
+    image: "/uploads/rk-residency-vrindavan-yamuna-aarti-keshi-ghat.webp",
     accent: "from-teal-deep/85 to-marsala/40",
   },
 ];

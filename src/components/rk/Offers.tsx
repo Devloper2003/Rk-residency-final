@@ -100,6 +100,8 @@ export function Offers({ onBookClick, limit }: { onBookClick: () => void; limit?
                     <img
                       src={o.imageUrl || "/images/marigold-garland.webp"}
                       alt={o.title}
+                      width={800}
+                      height={450}
                       className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                       loading="lazy"
                     />

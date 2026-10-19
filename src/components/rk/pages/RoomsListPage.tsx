@@ -103,9 +103,13 @@ export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
                 className="group block w-full overflow-hidden rounded-3xl border border-charcoal/10 bg-white text-left shadow-sm transition-all hover:shadow-xl focus-ring"
               >
                 <div className="relative h-64 overflow-hidden">
-                  <div
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                    style={{ backgroundImage: `url(${imgs[0] || "/images/heritage-room.webp"})` }}
+                  <img
+                    src={imgs[0] || "/images/heritage-room.webp"}
+                    alt={`${r.name} — ${r.view} room at RK Residency Vrindavan`}
+                    width={800}
+                    height={600}
+                    loading="lazy"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-charcoal/85 via-charcoal/20 to-transparent" />
                   {r.badge && (

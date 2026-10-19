@@ -25,7 +25,7 @@ const EXPERIENCES: Experience[] = [
     timings: "Mangala 7:45 AM · Evening 7:00 PM",
     description:
       "The most beloved temple of Vrindavan, home to the original Banke Bihari idol discovered by Swami Haridas. The deity's eyes are covered with a curtain — pulled aside every few minutes because it is said that gazing too long would make Krishna irresistible. Our concierge arranges reserved darshan passes for the morning mangala aarti.",
-    image: "/uploads/a78f283997ee8a40.webp?auto=format&fit=crop&w=1200&q=80",
+    image: "/uploads/rk-residency-vrindavan-banke-bihari-mandir.webp?auto=format&fit=crop&w=1200&q=80",
     accent: "from-marsala/85 to-marsala/30",
   },
   {
@@ -36,7 +36,7 @@ const EXPERIENCES: Experience[] = [
     timings: "Sandhya Aarti 7:00 PM · Kirtan till 8:30 PM",
     description:
       "Founded by Srila Prabhupada in 1975, ISKCON Vrindavan is the international heart of Gaudiya Vaishnavism. The evening sandhya aarti here is a transcendent experience — kartals, mridanga, and a kirtan that often runs past 8:30 PM. International devotees will find English-speaking guides and a full prasadam hall.",
-    image: "/uploads/d8278639f939d1d5.webp?auto=format&fit=crop&w=1200&q=80",
+    image: "/uploads/rk-residency-vrindavan-iskcon-temple.webp?auto=format&fit=crop&w=1200&q=80",
     accent: "from-teal/85 to-teal/30",
   },
   {
@@ -47,7 +47,7 @@ const EXPERIENCES: Experience[] = [
     timings: "Illumination 7:30 PM · Closes 9:00 PM",
     description:
       "A white-marble wonder built by Jagadguru Kripalu Maharaj in 2012. By day it is intricate carvings of Krishna's leelas; by night it transforms into a multi-coloured light spectacle that draws thousands. Our Prem Mandir View Rooms offer a private balcony vantage — the show is best watched without the crowds below.",
-    image: "/uploads/d624900c0a75cde5.webp?auto=format&fit=crop&w=1200&q=80",
+    image: "/uploads/rk-residency-vrindavan-prem-mandir.webp?auto=format&fit=crop&w=1200&q=80",
     accent: "from-gold/85 to-gold/30",
   },
   {
@@ -58,7 +58,7 @@ const EXPERIENCES: Experience[] = [
     timings: "Open till 6:00 PM · Closed after dusk",
     description:
       "The sacred grove where, it is believed, Krishna performs the Raas Leela every night with Radha and the gopis. No one — not even the resident priests — stays inside after sunset. A small Rang Mahal temple within the grove displays the bed prepared each night for Krishna and Radha, found disturbed by morning.",
-    image: "/uploads/cd5954906d1083df.webp?auto=format&fit=crop&w=1200&q=80",
+    image: "/uploads/rk-residency-vrindavan-nidhivan.webp?auto=format&fit=crop&w=1200&q=80",
     accent: "from-marsala/85 to-teal/40",
   },
   {
@@ -69,7 +69,7 @@ const EXPERIENCES: Experience[] = [
     timings: "Sunset Aarti · Daily (varies by season)",
     description:
       "Each evening at sunset, priests at Keshi Ghat perform the Yamuna Aarti — large brass lamps, conch shells, and the ancient chant of Yami-Krishna stotram. Pilgrims float small leaf-boats with marigold and diya onto the river. We arrange private boat access for our guests so you can witness the aarti from the water itself.",
-    image: "/uploads/63e4076580ba26bc.webp",
+    image: "/uploads/rk-residency-vrindavan-yamuna-aarti-keshi-ghat.webp",
     accent: "from-teal-deep/85 to-marsala/40",
   },
 ];
@@ -153,6 +153,8 @@ export function Experiences({ limit }: { limit?: number }) {
                         <img
                           src={exp.image}
                           alt={`${exp.name} in Vrindavan`}
+                          width={1200}
+                          height={900}
                           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                           loading="lazy"
                         />

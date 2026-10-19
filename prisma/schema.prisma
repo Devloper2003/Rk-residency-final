@@ -252,12 +252,14 @@ model ThemeSetting {
 // Uploaded media files — stored as binary in the DB so they work on
 // Vercel's read-only filesystem. Served via /uploads/[filename] route.
 model MediaAsset {
-  id        String   @id @default(cuid())
-  filename  String   @unique // e.g. "abc123.webp" — used in /uploads/abc123.webp URLs
-  mimeType  String   // e.g. "image/webp"
-  data      Bytes    // the actual image bytes
-  size      Int      // file size in bytes
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  filename    String   @unique // descriptive slug, e.g. "rk-residency-vrindavan-deluxe-room.webp" — used in /uploads/... URLs
+  alt         String?  // accessibility + SEO alt text (required for new uploads)
+  contentHash String?  @unique // sha256 of the processed bytes — used to dedupe identical uploads
+  mimeType    String   // e.g. "image/webp"
+  data        Bytes    // the actual image bytes
+  size        Int      // file size in bytes
+  createdAt   DateTime @default(now())
 }
 
 

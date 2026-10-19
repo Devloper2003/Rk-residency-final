@@ -194,6 +194,9 @@ export function OfferDetailPage({ slug, onBookClick }: { slug: string; onBookCli
       <div className="relative mb-10 aspect-[16/9] overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
         <img
           src={offer.imageUrl || "/images/marigold-garland.webp"}
+          width={1600}
+          height={900}
+          loading="eager"
           alt={offer.title}
           className="h-full w-full object-cover"
         />

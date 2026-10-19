@@ -72,11 +72,13 @@ function TiltCard({
       >
         {/* Image with arch mask on top */}
         <div className="relative h-60 overflow-hidden sm:h-72">
-          <div
-            className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-            style={{ backgroundImage: `url(${cover})` }}
-            role="img"
-            aria-label={room.name}
+          <img
+            src={cover}
+            alt={`${room.name} — ${room.view} room at RK Residency Vrindavan`}
+            width={800}
+            height={600}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-charcoal/85 via-charcoal/30 to-transparent" />
 

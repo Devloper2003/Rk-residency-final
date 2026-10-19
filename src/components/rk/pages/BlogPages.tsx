@@ -108,6 +108,8 @@ export function BlogListPage({ initialPosts }: { initialPosts?: BlogPost[] }) {
                   <img
                     src={p.imageUrl || "/images/marigold-garland.webp"}
                     alt={p.title}
+                    width={800}
+                    height={450}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                     loading="lazy"
                   />
@@ -211,11 +213,15 @@ export function BlogDetailPage({ slug, initialPost }: { slug: string; initialPos
         { name: post.title, path: `/blog/${post.slug}` },
       ]}
     >
-      {/* Hero */}
+      {/* Hero — above the fold: eager-loaded with intrinsic dimensions */}
       <div className="relative mb-8 aspect-[16/9] overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
         <img
           src={post.imageUrl || "/images/marigold-garland.webp"}
           alt={post.title}
+          width={1600}
+          height={900}
+          loading="eager"
+          fetchPriority="high"
           className="h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-charcoal/40 to-transparent" />

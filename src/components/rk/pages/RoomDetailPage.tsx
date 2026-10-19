@@ -124,6 +124,9 @@ export function RoomDetailPage({
             key={activeImage}
             src={gallery[activeImage]}
             alt={`${room.name} — view ${activeImage + 1}`}
+            width={1600}
+            height={900}
+            loading={activeImage === 0 ? "eager" : "lazy"}
             initial={{ opacity: 0.5, scale: 1.03 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7 }}

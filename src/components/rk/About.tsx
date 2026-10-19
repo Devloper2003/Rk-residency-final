@@ -22,7 +22,7 @@ export function About() {
   const bodyP2 = useContentValue("about.body_p2", "");
   const founderQuote = useContentValue("about.founder_quote", "");
   const founderName = useContentValue("about.founder_name", "");
-  const image = useContentValue("about.image", "/uploads/5b87a4725175feac.webp");
+  const image = useContentValue("about.image", "/uploads/rk-residency-vrindavan-heritage-room.webp");
   const imageAlt = useContentValue("about.image_alt", "Heritage room");
   const imageCaptionLabel = useContentValue("about.image_caption_label", "Heart of Vrindavan");
   const imageCaptionSub = useContentValue("about.image_caption_sub", "Heart of Vrindavan");
@@ -80,8 +80,10 @@ export function About() {
               <div className="relative overflow-hidden rounded-t-[180px] rounded-b-3xl border-4 border-gold/30 shadow-2xl">
                 <div className="aspect-[4/5] w-full overflow-hidden">
                   <img
-                    src="/uploads/5b87a4725175feac.webp"
-                    alt="A Peaceful Retreat in the Heart of Vrindavan."
+                    src={image}
+                    alt={imageAlt}
+                    width={1200}
+                    height={1500}
                     className="h-full w-full object-cover"
                     loading="lazy"
                   />

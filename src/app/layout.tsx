@@ -76,8 +76,8 @@ export const metadata: Metadata = {
     },
   },
     icons: {
-    icon: "/uploads/4554e352db41d79f.webp",
-    apple: "/uploads/4554e352db41d79f.webp",
+    icon: "/uploads/rk-residency-vrindavan-logo.webp",
+    apple: "/uploads/rk-residency-vrindavan-logo.webp",
   },
 };
 
