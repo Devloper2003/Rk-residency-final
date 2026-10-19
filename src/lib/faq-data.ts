@@ -32,7 +32,7 @@ export const FAQS: FAQ[] = [
   {
     category: "Booking",
     q: "Do I need to pay a deposit or full amount at booking?",
-    a: "For Pay-at-Hotel bookings, no deposit is required — we hold a valid card on file. For Razorpay/Stripe bookings, the full amount is charged at confirmation. All rates include 12% GST and a ₹250/night service fee — no hidden charges.",
+    a: "For Pay-at-Hotel bookings, no deposit is required — we hold a valid card on file. For Razorpay/Stripe bookings, the full amount is charged at confirmation. Rates are shown per night; a 5% GST and a ₹250/night service fee are added at checkout — you always see the full itemised total before you pay.",
   },
   {
     category: "Booking",
@@ -42,7 +42,7 @@ export const FAQS: FAQ[] = [
   {
     category: "Rooms",
     q: "What time is check-in and check-out?",
-    a: "Check-in is from 2:00 PM. Check-out is by 11:00 AM. Early check-in (from 10 AM) is complimentary subject to availability — please request at booking. Late check-out till 2 PM is available on request at no extra charge.",
+    a: "Check-in is from 2:00 PM. Check-out is by 11:00 AM. Early check-in (from 10 AM) is complimentary subject to availability — please request at booking. Late check-out till 1 PM is available on request, subject to availability.",
   },
   {
     category: "Rooms",

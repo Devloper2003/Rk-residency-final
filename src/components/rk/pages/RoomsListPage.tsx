@@ -24,7 +24,8 @@ const FILTERS = [
   { id: "all", label: "All" },
   { id: "suite", label: "Suites" },
   { id: "deluxe", label: "Deluxe" },
-  { id: "family", label: "Fammily" },
+  { id: "family", label: "Family" },
+  { id: "villa", label: "Villa" },
   { id: "view", label: "View Rooms" },
 ];
 
@@ -32,7 +33,11 @@ function matchFilter(room: Room, filter: string) {
   if (filter === "all") return true;
   if (filter === "suite") return /suite/i.test(room.name);
   if (filter === "deluxe") return /deluxe/i.test(room.name);
-  if (filter === "family") return /family/i.test(room.name);
+  // Family rooms are tagged by badge ("Family") — match badge OR name so the
+  // tab never shows an empty list.
+  if (filter === "family") return /family/i.test(room.name) || room.badge === "Family";
+  // Villas (e.g. Gokul Royal Villa) — matches the /rooms meta description.
+  if (filter === "villa") return /villa/i.test(room.name) || room.badge === "Villa";
   if (filter === "view") return room.badge === "View" || room.badge === "Signature";
   return true;
 }
@@ -123,7 +128,7 @@ export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
                 <div className="relative h-64 overflow-hidden">
                   <img
                     src={imgs[0] || "/images/heritage-room.webp"}
-                    alt={`${r.name} — ${r.view} room at RK Residency Vrindavan`}
+                    alt={`${r.name} — ${r.view} room at RK Residency, Kailash Nagar, Vrindavan`}
                     width={800}
                     height={600}
                     loading="lazy"

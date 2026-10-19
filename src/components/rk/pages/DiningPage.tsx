@@ -162,7 +162,7 @@ export function DiningPage() {
       {/* In-room dining */}
       <div className="mt-12 grid gap-6 lg:grid-cols-3">
         {[
-          { icon: HandPlatter, title: "In-room dining", body: "7 AM – 10 PM. Full menu available. Hot food delivered on heritage brass thalis." },
+          { icon: HandPlatter, title: "In-room dining", body: "7 AM – 10:30 PM. Full menu available. Hot food delivered on heritage brass thalis." },
           { icon: Sparkles, title: "Private satsang catering", body: "Up to 20 guests. Custom satvik menu prepared by the head chef. Book 48 hours in advance." },
           { icon: Flower2, title: "Festival feasts", body: "Janmashtami midnight bhog, Holi gujiya-thandai, Radhashtami chhappan bhog — by reservation only." },
         ].map((c) => (

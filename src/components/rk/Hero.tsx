@@ -28,7 +28,11 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
   const subheadline = useContentValue("hero.subheadline", "A heritage-luxury residency minutes from Banke Bihari Mandir & ISKCON Vrindavan. Calm, dignified comfort for pilgrims, devotee families and cultural travellers.");
   const ctaPrimary = useContentValue("hero.cta_primary", "Check Availability");
   const ctaSecondary = useContentValue("hero.cta_secondary", "Explore Rooms");
-  const ratingText = useContentValue("hero.rating_text", "4.9 · 1,240+ verified stays");
+  // Rating claim (e.g. "4.9 · 1,240+ verified stays") is HIDDEN unless the
+  // owner sets a verifiable source: the DB value was cleared and stays empty
+  // until a real Google/TripAdvisor link exists. Never shown unsourced, and
+  // it is never emitted in JSON-LD schema either.
+  const ratingText = useContentValue("hero.rating_text", "");
   const featuredOnText = useContentValue("hero.featured_on_text", "Featured on Google · TripAdvisor");
 
   // Slider
@@ -195,14 +199,18 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
           className="mt-12 flex flex-col items-center gap-2 sm:flex-row sm:gap-6"
         >
           <div className="flex items-center gap-2">
-            <div className="flex">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className="h-4 w-4 fill-gold text-gold" />
-              ))}
-            </div>
-            <span className="text-sm font-medium text-ivory/90">
-              {ratingText}
-            </span>
+            {ratingText && (
+              <>
+                <div className="flex">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-gold text-gold" />
+                  ))}
+                </div>
+                <span className="text-sm font-medium text-ivory/90">
+                  {ratingText}
+                </span>
+              </>
+            )}
           </div>
           <div className="hidden h-4 w-px bg-ivory/30 sm:block" />
           <div className="text-xs uppercase tracking-wider text-ivory/70">

@@ -123,7 +123,7 @@ export function RoomDetailPage({
           <motion.img
             key={activeImage}
             src={gallery[activeImage]}
-            alt={`${room.name} — view ${activeImage + 1}`}
+            alt={`${room.name} at RK Residency, Kailash Nagar, Vrindavan — view ${activeImage + 1}`}
             width={1600}
             height={900}
             loading={activeImage === 0 ? "eager" : "lazy"}
@@ -369,7 +369,7 @@ export function RoomDetailPage({
                     <div className="relative h-56 overflow-hidden">
                       <img
                         src={relImgs[0] || "/images/heritage-room.webp"}
-                        alt={r.name}
+                        alt={`${r.name} at RK Residency, Kailash Nagar, Vrindavan`}
                         className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-charcoal/85 via-transparent to-transparent" />
