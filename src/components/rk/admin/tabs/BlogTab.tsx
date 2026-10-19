@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { Plus, Edit, Trash2, X, Save, Calendar, Wand2, Clock, ListChecks, CheckCircle2, XCircle, Timer, PlayCircle, Sparkles, AlertTriangle, ShieldAlert } from "lucide-react";
+import { Plus, Edit, Trash2, X, Save, Calendar, Wand2, Clock, ListChecks, CheckCircle2, XCircle, Timer, PlayCircle, Sparkles, AlertTriangle, ShieldAlert, ListTree } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -398,6 +398,9 @@ function BlogEditor({ post, onClose, onSave }: { post: any; onClose: () => void;
               <button type="button" onClick={() => insertIntoBody("\n\n## New section\n\n")} className="text-teal hover:underline">+ Insert ## heading</button>
             </div>
 
+            {/* Internal link suggester (Task 6) — real page titles + URLs */}
+            <InternalLinkSuggester onInsert={insertIntoBody} />
+
             {/* [VERIFY] review panel (Task 5) — highlighted while unresolved */}
             {verifyCount > 0 && (
               <div className="mt-3 rounded-2xl border border-marsala/40 bg-marsala/5 p-4">
@@ -503,6 +506,92 @@ function useImageSize(url: string | null | undefined): { width: number; height: 
     return () => { alive = false; };
   }, [url]);
   return size;
+}
+
+/** Static site pages offered by the internal-link suggester. */
+const LINK_MENU = [
+  { title: "Rooms & Suites — RK Residency Vrindavan", url: "/rooms" },
+  { title: "Offers & Festival Packages", url: "/offers" },
+  { title: "Satvik Dining", url: "/dining" },
+  { title: "Temple Experiences", url: "/experiences" },
+  { title: "Banke Bihari Mandir Darshan Guide", url: "/experiences/banke-bihari-mandir" },
+  { title: "ISKCON Krishna Balaram Mandir", url: "/experiences/iskcon-krishna-balaram" },
+  { title: "Prem Mandir", url: "/experiences/prem-mandir" },
+  { title: "Nidhivan", url: "/experiences/nidhivan" },
+  { title: "Yamuna Aarti at Keshi Ghat", url: "/experiences/yamuna-aarti-keshi-ghat" },
+  { title: "Braj Festival Calendar", url: "/festivals" },
+  { title: "Gallery", url: "/gallery" },
+  { title: "About RK Residency", url: "/about" },
+  { title: "Contact & Directions", url: "/contact" },
+  { title: "The Braj Journal (blog)", url: "/blog" },
+];
+
+/**
+ * Internal link suggester (Task 6) — as the author writes, search the site's
+ * existing pages and insert a markdown link with descriptive anchor text at
+ * the cursor. Also suggests the room detail pages (fetched live).
+ */
+function InternalLinkSuggester({ onInsert }: { onInsert: (text: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [roomPages, setRoomPages] = useState<{ title: string; url: string }[]>([]);
+
+  // Room detail pages are dynamic — fetch them once when the panel opens.
+  useEffect(() => {
+    if (!open || roomPages.length > 0) return;
+    fetch("/api/rooms")
+      .then((r) => r.json())
+      .then((d) => {
+        const rooms = (d.rooms || []).map((r: any) => ({ title: `${r.name} — room details`, url: `/rooms/${r.slug}` }));
+        setRoomPages(rooms);
+      })
+      .catch(() => {});
+  }, [open, roomPages.length]);
+
+  const all = [...roomPages, ...LINK_MENU];
+  const q = query.trim().toLowerCase();
+  const filtered = q ? all.filter((p) => p.title.toLowerCase().includes(q) || p.url.toLowerCase().includes(q)) : all;
+
+  return (
+    <div className="mt-2 rounded-xl border border-charcoal/10 bg-white p-3">
+      <button type="button" onClick={() => setOpen((s) => !s)} className="inline-flex items-center gap-1.5 font-display text-[11px] font-semibold text-teal hover:underline">
+        <ListTree className="h-3.5 w-3.5" /> Insert internal link {open ? "−" : "+"}
+        <span className="font-normal text-charcoal-soft">(descriptive anchors — never "click here")</span>
+      </button>
+      {open && (
+        <div className="mt-2">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search pages… (e.g. rooms, offers, Banke Bihari)"
+            className="mb-2 w-full rounded-md border border-charcoal/15 bg-ivory-deep/30 px-3 py-2 font-display text-xs text-charcoal focus:border-teal focus:outline-none"
+          />
+          <ul className="scrollbar-thin max-h-44 space-y-1 overflow-y-auto">
+            {filtered.map((p) => (
+              <li key={p.url}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onInsert(`[${p.title}](${p.url})`);
+                    setOpen(false);
+                    setQuery("");
+                  }}
+                  className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-teal/5"
+                >
+                  <span className="truncate font-display text-xs text-charcoal">{p.title}</span>
+                  <span className="shrink-0 font-mono text-[10px] text-charcoal-soft">{p.url}</span>
+                </button>
+              </li>
+            ))}
+            {filtered.length === 0 && (
+              <li className="px-2 py-1 font-display text-xs text-charcoal-soft">No pages match “{query}”.</li>
+            )}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
 }
 
 /** Live pass/fail SEO checklist panel shown inside the blog editor. */
