@@ -259,13 +259,6 @@ export function Footer() {
             <a href={privacyUrl} className="transition-colors hover:text-gold-soft">Privacy</a>
             <a href={termsUrl} className="transition-colors hover:text-gold-soft">Terms</a>
             <a href={cancellationUrl} className="transition-colors hover:text-gold-soft">Cancellation policy</a>
-            <a
-              href="/admin"
-              className="transition-colors hover:text-gold-soft"
-              aria-label="Staff admin login"
-            >
-              Staff
-            </a>
             {gstin && <span className="hidden sm:inline">· GSTIN {gstin}</span>}
           </div>
         </div>
