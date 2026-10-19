@@ -261,7 +261,7 @@ const settings = [
   // ===== SEO =====
   { key: "meta_title", value: "RK Residency — Heritage Luxury Stay in Vrindavan | Hotel near Banke Bihari Temple", label: "Meta title", category: "seo" },
   { key: "meta_description", value: "RK Residency is a heritage-luxury residency in Vrindavan on the banks of the Yamuna. Spiritual luxury for pilgrims, devotee families and cultural travellers. Steps from Banke Bihari Mandir, ISKCON, Prem Mandir. Direct booking best-price guarantee.", label: "Meta description", category: "seo" },
-  { key: "canonical_base_url", value: "https://rkresidency.in", label: "Canonical base URL (no trailing slash)", category: "seo" },
+  { key: "canonical_base_url", value: "https://www.rkresidencyvrindavan.in", label: "Canonical base URL (no trailing slash)", category: "seo" },
   { key: "og_image_url", value: "/images/hero-vrindavan.webp", label: "Default Open Graph image", category: "seo" },
 
   // ===== ANALYTICS =====

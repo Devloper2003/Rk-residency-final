@@ -26,6 +26,19 @@ export const SITE_URL: string = (
   process.env.SITE_URL || "https://www.rkresidencyvrindavan.in"
 ).replace(/\/+$/, "");
 
+/**
+ * Runtime SEO guard: warn loudly if SITE_URL points to the legacy domain
+ * (rkresidency.in) instead of the canonical production domain. This catches
+ * a misconfigured Vercel env var before users and crawlers see wrong URLs.
+ */
+if (typeof SITE_URL === "string" && SITE_URL.includes("rkresidency.in") && !SITE_URL.includes("rkresidencyvrindavan.in")) {
+  console.error(
+    `[SEO] ⚠️ SITE_URL is set to "${SITE_URL}" which is the LEGACY domain.\n` +
+    `  Every canonical, og:url, and sitemap URL will point to the wrong domain.\n` +
+    `  Fix: Set SITE_URL=https://www.rkresidencyvrindavan.in in Vercel → Settings → Environment Variables.`
+  );
+}
+
 /** Site name used across metadata. */
 export const SITE_NAME = "RK Residency";
 

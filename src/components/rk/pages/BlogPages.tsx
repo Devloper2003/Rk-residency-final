@@ -55,7 +55,7 @@ export function BlogListPage({ initialPosts }: { initialPosts?: BlogPost[] }) {
   return (
     <PageShell
       title="The Braj Journal — Vrindavan Blog"
-      subtitle="Temple guides, festival calendars, local tips and stories from Vrindavan — written by our resident scholars and concierge team."
+      subtitle="Temple guides, festival calendars aur local tips, hamare resident scholars aur concierge team ki taraf se."
       accent="gold"
       breadcrumbs={[
         { name: "Home", path: "/" },

@@ -7,7 +7,7 @@ import { publicPostWhere } from "@/lib/blog-utils";
 export const dynamic = "force-dynamic";
 
 const pageTitle = "The Braj Journal — RK Residency Vrindavan";
-const pageDescription = "Temple guides, festival calendars, local tips and stories from Vrindavan by our resident team. Plan your Braj pilgrimage with us.";
+const pageDescription = "Temple guides, festival calendars aur local tips, hamare resident scholars aur concierge team ki taraf se.";
 
 export const metadata: Metadata = {
   title: pageTitle,
