@@ -1,14 +1,24 @@
 import { BlogDetailPage } from "@/components/rk/pages/BlogPages";
 import { db } from "@/lib/db";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { absUrl, pageOpenGraph, pageTwitter, seoTitle, seoDescription } from "@/lib/seo";
 import { blogPostingJsonLd } from "@/lib/schema-org";
-import { tocFromBody } from "@/lib/blog-utils";
+import { tocFromBody, publicPostWhere } from "@/lib/blog-utils";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const post = await db.blogPost.findUnique({ where: { slug } });
+
+  // Drafts and scheduled (future) posts are not public — no metadata leaks.
+  const isPublic = post
+    ? post.published && (!post.publishedAt || post.publishedAt <= new Date())
+    : false;
+  if (!isPublic) {
+    return { title: "Blog Post — RK Residency", robots: { index: false, follow: false } };
+  }
 
   // Auto-SEO: the post's own metaTitle (≤60) and metaDescription (≤155) are
   // generated on save; legacy posts fall back to title/excerpt. A blog post
@@ -37,13 +47,20 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function BlogDetailRoute({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
+  // Drafts and scheduled posts must not render on the public site.
+  const gate = await db.blogPost.findFirst({
+    where: { ...publicPostWhere(), slug },
+    select: { id: true },
+  });
+  if (!gate) notFound();
+
   // SSR: the post is fetched once on the server and used BOTH for JSON-LD
   // and for the rendered article body, so the full text is in the initial HTML.
   // Related posts (same category or shared tags first) are also fetched
   // server-side so the internal links are crawlable.
   const [post, allPublished] = await Promise.all([
     db.blogPost.findUnique({ where: { slug } }),
-    db.blogPost.findMany({ where: { published: true }, orderBy: [{ publishedAt: "desc" }] }),
+    db.blogPost.findMany({ where: publicPostWhere(), orderBy: [{ publishedAt: "desc" }] }),
   ]);
 
   const others = allPublished.filter((p) => p.slug !== slug);

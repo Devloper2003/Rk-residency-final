@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { db } from "@/lib/db";
 import { SITE_URL } from "@/lib/site.config";
+import { publicPostWhere } from "@/lib/blog-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -48,9 +49,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  // Dynamic pages — blog posts (only published), lastmod = latest edit
+  // Dynamic pages — blog posts (only live posts — scheduled/future posts are
+  // excluded via publicPostWhere), lastmod = latest edit
   const posts = await db.blogPost.findMany({
-    where: { published: true },
+    where: publicPostWhere(),
     select: { slug: true, publishedAt: true, updatedAt: true },
   });
   const blogUrls: MetadataRoute.Sitemap = posts.map((p) => ({

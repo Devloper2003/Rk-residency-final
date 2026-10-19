@@ -45,7 +45,31 @@ const blogSchema = z.object({
   coverAlt: z.string().nullable().optional(),
   targetKeyword: z.string().nullable().optional(),
   readingMinsAuto: z.boolean().optional(),
+  // Scheduling (Task 3)
+  status: z.enum(["DRAFT", "SCHEDULED", "PUBLISHED"]).optional(),
+  publishOn: z.string().nullable().optional(),
 });
+
+/**
+ * Derive the scheduling fields from the incoming payload.
+ * `published` (legacy boolean) stays in sync with status so every existing
+ * query/keep working unchanged:
+ *   DRAFT     → published=false, publishedAt=null
+ *   SCHEDULED → published=false (goes live ONLY when the cron publishes it)
+ *   PUBLISHED → published=true, publishedAt=now (or an explicit value)
+ */
+function deriveScheduling(d: z.infer<typeof blogSchema>) {
+  const status = d.status || (d.published ? "PUBLISHED" : "DRAFT");
+  const publishOn = d.publishOn ? new Date(d.publishOn) : null;
+  if (status === "PUBLISHED") {
+    return { status, publishOn: null, published: true, publishedAt: d.publishedAt ? new Date(d.publishedAt) : new Date() };
+  }
+  if (status === "SCHEDULED") {
+    if (!publishOn) throw new Error("SCHEDULED posts need a 'Publish on' date/time.");
+    return { status, publishOn, published: false, publishedAt: null };
+  }
+  return { status: "DRAFT", publishOn: null, published: false, publishedAt: null };
+}
 
 /** Normalize any incoming slug into a safe, URL-friendly form. */
 function normalizeSlug(raw: string, title: string): string {
@@ -96,12 +120,14 @@ export async function POST(req: Request) {
     }
     const d = parsed.data;
     const auto = applyAutoSeo(d);
+    const sched = deriveScheduling(d);
     try {
       const post = await db.blogPost.create({
         data: {
           slug: normalizeSlug(d.slug, d.title), title: d.title, excerpt: d.excerpt, body: d.body,
           category: d.category, tags: d.tags, imageUrl: d.imageUrl,
-          published: d.published, publishedAt: d.publishedAt ? new Date(d.publishedAt) : null,
+          status: sched.status, publishOn: sched.publishOn,
+          published: sched.published, publishedAt: sched.publishedAt,
           metaTitle: auto.metaTitle, metaDescription: auto.metaDescription,
           coverAlt: auto.coverAlt, targetKeyword: auto.targetKeyword,
           readingMins: auto.readingMins,
@@ -109,7 +135,7 @@ export async function POST(req: Request) {
         },
       });
       await db.auditLog.create({
-        data: { adminId: admin.id, action: "BLOG_CREATED", entity: "BlogPost", entityId: post.id, details: `Created post ${post.title}` },
+        data: { adminId: admin.id, action: "BLOG_CREATED", entity: "BlogPost", entityId: post.id, details: `Created post ${post.title} (${post.status})` },
       });
       revalidatePostPaths(post.slug);
       return NextResponse.json({ ok: true, post });
@@ -139,13 +165,20 @@ export async function PATCH(req: Request) {
     if (!d.id) return NextResponse.json({ error: "Post id required for update" }, { status: 400 });
 
     const auto = applyAutoSeo(d);
+    let sched: ReturnType<typeof deriveScheduling>;
+    try {
+      sched = deriveScheduling(d);
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : "Invalid scheduling data" }, { status: 400 });
+    }
     try {
       const post = await db.blogPost.update({
         where: { id: d.id },
         data: {
           slug: normalizeSlug(d.slug, d.title), title: d.title, excerpt: d.excerpt, body: d.body,
           category: d.category, tags: d.tags, imageUrl: d.imageUrl,
-          published: d.published, publishedAt: d.publishedAt ? new Date(d.publishedAt) : null,
+          status: sched.status, publishOn: sched.publishOn,
+          published: sched.published, publishedAt: sched.publishedAt,
           metaTitle: auto.metaTitle, metaDescription: auto.metaDescription,
           coverAlt: auto.coverAlt, targetKeyword: auto.targetKeyword,
           readingMins: auto.readingMins,
@@ -153,7 +186,7 @@ export async function PATCH(req: Request) {
         },
       });
       await db.auditLog.create({
-        data: { adminId: admin.id, action: "BLOG_UPDATED", entity: "BlogPost", entityId: post.id, details: `Updated post ${post.title}` },
+        data: { adminId: admin.id, action: "BLOG_UPDATED", entity: "BlogPost", entityId: post.id, details: `Updated post ${post.title} (${post.status})` },
       });
       revalidatePostPaths(post.slug);
       return NextResponse.json({ ok: true, post });

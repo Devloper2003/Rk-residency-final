@@ -110,6 +110,33 @@ export function clampText(text: string, max: number): string {
   return (lastSpace > max * 0.5 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…";
 }
 
+/**
+ * Public visibility filter (Task 3 / scheduling).
+ *
+ * A post is PUBLIC only when it is actually live:
+ *   - status is PUBLISHED (or, for rows written before the status column
+ *     existed, the legacy `published` boolean is true), AND
+ *   - its publishedAt is not in the future (a scheduled post must never
+ *     appear in the blog list, the sitemap or the public HTML).
+ *
+ * `status` stays in sync with `published` on every write, so filtering on
+ * `published` keeps legacy rows visible with zero regression window while
+ * the status column is the UI/scheduler source of truth.
+ */
+export function publicPostWhere(now: Date = new Date()) {
+  return {
+    published: true,
+    OR: [{ publishedAt: null }, { publishedAt: { lte: now } }],
+  };
+}
+
+/** UI-facing status of a row, tolerating pre-migration rows. */
+export function effectiveStatus(post: { status?: string | null; published: boolean }): "DRAFT" | "SCHEDULED" | "PUBLISHED" {
+  if (post.status === "SCHEDULED") return "SCHEDULED";
+  if (post.status === "PUBLISHED") return "PUBLISHED";
+  return post.published ? "PUBLISHED" : "DRAFT";
+}
+
 // ---------------------------------------------------------------------------
 // SEO checklist (Task 2) — evaluated live in the editor, pure function.
 // ---------------------------------------------------------------------------

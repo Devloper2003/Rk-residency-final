@@ -148,6 +148,12 @@ model BlogPost {
   imageUrl    String?
   published   Boolean  @default(false)
   publishedAt DateTime?
+  // Scheduling (Task 3): status replaces the single Published checkbox.
+  // 'published' is kept in sync (published = status === "PUBLISHED") so all
+  // legacy queries keep working; existing rows are backfilled by
+  // scripts/migrate-blog-status.ts and self-heal on the first cron run.
+  status      String   @default("DRAFT") // DRAFT | SCHEDULED | PUBLISHED
+  publishOn   DateTime? // when a SCHEDULED post goes live (cron publishes it)
   readingMins Int      @default(4)
   // --- Blog automation (Phase 3) — all additions are nullable/defaulted so
   // --- existing rows keep working untouched. ---

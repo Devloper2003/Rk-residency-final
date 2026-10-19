@@ -2,6 +2,7 @@ import { BlogListPage } from "@/components/rk/pages/BlogPages";
 import { db } from "@/lib/db";
 import type { Metadata } from "next";
 import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
+import { publicPostWhere } from "@/lib/blog-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -19,8 +20,10 @@ export const metadata: Metadata = {
 export default async function BlogRoute() {
   // SSR: published posts are fetched on the server so titles, excerpts and
   // cover images are present in the initial HTML (crawlable without JS).
+  // Scheduled posts (future publishOn) never appear here — publicPostWhere
+  // filters on published + publishedAt <= now.
   const posts = await db.blogPost.findMany({
-    where: { published: true },
+    where: publicPostWhere(),
     orderBy: [{ publishedAt: "desc" }],
   });
   return <BlogListPage initialPosts={posts} />;

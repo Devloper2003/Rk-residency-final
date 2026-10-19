@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { Plus, Edit, Trash2, X, Save, Calendar, Wand2, Clock, ListChecks, CheckCircle2, XCircle } from "lucide-react";
+import { Plus, Edit, Trash2, X, Save, Calendar, Wand2, Clock, ListChecks, CheckCircle2, XCircle, Timer, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,7 +8,7 @@ import { adminApi, adminFetch, LoadingSpinner, Field } from "./_shared";
 import { refreshSiteContent } from "@/lib/site-content";
 import { ImageUploader } from "../ImageUploader";
 import { toast } from "sonner";
-import { slugifyTitle, calcReadingMins, countWords, evaluateChecklist } from "@/lib/blog-utils";
+import { slugifyTitle, calcReadingMins, countWords, evaluateChecklist, effectiveStatus } from "@/lib/blog-utils";
 
 const EMPTY = {
   slug: "", title: "", excerpt: "", body: "",
@@ -16,6 +16,14 @@ const EMPTY = {
   published: false, publishedAt: null as string | null, readingMins: 4,
   // Phase 3 — auto-SEO fields (server fills the empty ones on save too)
   metaTitle: "", metaDescription: "", coverAlt: "", targetKeyword: "", readingMinsAuto: true,
+  // Scheduling — status replaces the old Published checkbox
+  status: "DRAFT" as "DRAFT" | "SCHEDULED" | "PUBLISHED", publishOn: "" as string,
+};
+
+const STATUS_CHIP: Record<string, string> = {
+  PUBLISHED: "bg-teal/10 text-teal",
+  SCHEDULED: "bg-gold/20 text-gold-deep",
+  DRAFT: "bg-marsala/10 text-marsala",
 };
 
 export function BlogTab() {
@@ -43,10 +51,14 @@ export function BlogTab() {
   const save = async (p: any) => {
     if (!p.slug.trim()) return toast.error("Slug is required");
     if (!p.title.trim()) return toast.error("Title is required");
+    if (p.status === "SCHEDULED" && !p.publishOn) return toast.error("Pick a 'Publish on' date/time for a scheduled post.");
     const method = p.id ? "PATCH" : "POST";
     const payload = {
       ...p,
-      publishedAt: p.published ? (p.publishedAt || new Date().toISOString()) : null,
+      // Legacy boolean mirrors the status for backward compatibility.
+      published: p.status === "PUBLISHED",
+      publishedAt: p.status === "PUBLISHED" ? (p.publishedAt || new Date().toISOString()) : null,
+      publishOn: p.publishOn || null,
     };
     const r = await adminFetch("/api/admin/blog", { method, body: JSON.stringify(payload) });
     if (r) {
@@ -55,6 +67,19 @@ export function BlogTab() {
       refreshSiteContent();
       setEditing(null);
       reload();
+    }
+  };
+
+  /** Trigger the hourly scheduler manually (same endpoint the cron calls). */
+  const runScheduler = async () => {
+    try {
+      const r = await adminFetch("/api/cron/publish-posts", { method: "POST" });
+      if (r) {
+        toast.success(`Scheduler run: ${r.publishedNow ?? 0} post(s) published${r.healedLegacy ? `, ${r.healedLegacy} legacy row(s) healed` : ""}`);
+        reload();
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Scheduler failed");
     }
   };
 
@@ -73,10 +98,17 @@ export function BlogTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="font-display text-sm text-charcoal-soft">{posts.length} post{posts.length === 1 ? "" : "s"} · {posts.filter((p) => p.published).length} published</p>
-        <Button onClick={() => setEditing({ ...EMPTY })} className="rounded-full bg-teal px-4 py-2 text-sm text-ivory hover:bg-teal-deep">
-          <Plus className="mr-1 h-4 w-4" /> New post
-        </Button>
+        <p className="font-display text-sm text-charcoal-soft">
+          {posts.length} post{posts.length === 1 ? "" : "s"} · {posts.filter((p) => effectiveStatus(p) === "PUBLISHED").length} published · {posts.filter((p) => effectiveStatus(p) === "SCHEDULED").length} scheduled
+        </p>
+        <div className="flex gap-2">
+          <Button onClick={runScheduler} variant="outline" className="rounded-full px-3 py-2 text-xs" title="Publish any scheduled post whose time is due">
+            <PlayCircle className="mr-1 h-4 w-4" /> Run scheduler now
+          </Button>
+          <Button onClick={() => setEditing({ ...EMPTY })} className="rounded-full bg-teal px-4 py-2 text-sm text-ivory hover:bg-teal-deep">
+            <Plus className="mr-1 h-4 w-4" /> New post
+          </Button>
+        </div>
       </div>
 
       {posts.length === 0 ? (
@@ -97,17 +129,23 @@ export function BlogTab() {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${p.published ? "bg-teal/10 text-teal" : "bg-marsala/10 text-marsala"}`}>
-                    {p.published ? "Published" : "Draft"}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${STATUS_CHIP[effectiveStatus(p)] || "bg-charcoal/8 text-charcoal"}`}>
+                    {effectiveStatus(p)}
                   </span>
+                  {effectiveStatus(p) === "SCHEDULED" && p.publishOn && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-ivory-deep px-2 py-0.5 text-[10px] font-medium text-charcoal-soft">
+                      <Timer className="h-3 w-3" />
+                      {new Date(p.publishOn).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  )}
                   <span className="rounded-full bg-ivory-deep px-2 py-0.5 text-[10px] font-medium text-charcoal-soft">{p.category.replace("_", " ")}</span>
                   <span className="font-display text-[10px] text-charcoal-soft">{p.readingMins} min read</span>
                 </div>
                 <h3 className="mt-1 truncate font-serif text-base font-semibold text-charcoal">{p.title || "(untitled)"}</h3>
                 <p className="truncate font-display text-xs text-charcoal-soft">/{p.slug}</p>
                 <div className="mt-2 flex gap-1">
-                  <button onClick={() => setEditing(p)} className="grid h-7 w-7 place-items-center rounded-full border border-charcoal/15 text-charcoal-soft hover:bg-teal hover:text-ivory" title="Edit">
+                  <button onClick={() => setEditing(normalizeForEditor(p))} className="grid h-7 w-7 place-items-center rounded-full border border-charcoal/15 text-charcoal-soft hover:bg-teal hover:text-ivory" title="Edit">
                     <Edit className="h-3 w-3" />
                   </button>
                   <button onClick={() => del(p.id)} className="grid h-7 w-7 place-items-center rounded-full border border-charcoal/15 text-charcoal-soft hover:bg-marsala hover:text-ivory" title="Delete">
@@ -123,6 +161,20 @@ export function BlogTab() {
       {editing && <BlogEditor post={editing} onClose={() => setEditing(null)} onSave={save} />}
     </div>
   );
+}
+
+/** Map a stored row into editor state, deriving status for legacy rows. */
+function normalizeForEditor(p: any) {
+  return {
+    ...EMPTY,
+    ...p,
+    status: effectiveStatus(p),
+    publishOn: p.publishOn ? new Date(p.publishOn).toISOString().slice(0, 16) : "",
+    metaTitle: p.metaTitle || "",
+    metaDescription: p.metaDescription || "",
+    coverAlt: p.coverAlt || "",
+    targetKeyword: p.targetKeyword || "",
+  };
 }
 
 function BlogEditor({ post, onClose, onSave }: { post: any; onClose: () => void; onSave: (p: any) => void }) {
@@ -327,12 +379,36 @@ function BlogEditor({ post, onClose, onSave }: { post: any; onClose: () => void;
             </div>
           </div>
 
-          <div className="flex items-center gap-3 rounded-xl border border-charcoal/10 bg-white p-3">
-            <input type="checkbox" id="pub" checked={!!form.published} onChange={(e) => set("published", e.target.checked)} className="h-4 w-4 rounded border-charcoal/30" />
-            <Label htmlFor="pub" className="cursor-pointer font-display text-sm text-charcoal">
-              Published
-              <span className="block font-display text-[10px] font-normal text-charcoal-soft">Tick to make this post visible on the website.</span>
-            </Label>
+          {/* Status — replaces the old single Published checkbox (Task 3) */}
+          <div className="rounded-xl border border-charcoal/10 bg-white p-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <Label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Status</Label>
+                <Select value={form.status || "DRAFT"} onValueChange={(v) => set("status", v)}>
+                  <SelectTrigger className="bg-ivory-deep/30"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="DRAFT">Draft — only visible in the admin</SelectItem>
+                    <SelectItem value="SCHEDULED">Scheduled — goes live at the set time</SelectItem>
+                    <SelectItem value="PUBLISHED">Published — live on the website</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">
+                  Publish on <span className="normal-case text-teal">· used when Scheduled</span>
+                </Label>
+                <input
+                  type="datetime-local"
+                  value={(form.publishOn || "").slice(0, 16)}
+                  onChange={(e) => set("publishOn", e.target.value)}
+                  disabled={form.status !== "SCHEDULED"}
+                  className="w-full rounded-md border border-charcoal/15 bg-ivory-deep/30 px-3 py-2 font-display text-xs text-charcoal focus:border-teal focus:outline-none disabled:opacity-50"
+                />
+                <p className="mt-1 font-display text-[10px] text-charcoal-soft/70">
+                  An hourly scheduler publishes due posts automatically. Scheduled posts stay hidden from the site until then.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
