@@ -60,14 +60,21 @@ export function DiningPage() {
   const dSubtitle = useContentValue("dining.subtitle", "");
   return (
     <PageShell
-      title="Food as prasadam, not just sustenance"
+      title="Satvik Dining in Vrindavan"
       subtitle="Our kitchen follows the strict satvik tradition of Braj — no onion, no garlic, no eggs. Every meal is prepared after a kitchen aarti and served as prasadam."
       accent="marsala"
+      breadcrumbs={[
+        { name: "Home", path: "/" },
+        { name: "Dining", path: "/dining" },
+      ]}
     >
       {/* Hero image */}
       <div className="relative mb-12 aspect-[16/9] overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
         <img
-          src="/uploads/7233f537e89c11fd.webp"
+          src="/uploads/rk-residency-vrindavan-satvik-dining.webp"
+          width={1600}
+          height={900}
+          loading="eager"
           alt="Satvik thali on a heritage crockrey plate at RK Residency"
           className="h-full w-full object-cover"
         />
@@ -155,7 +162,7 @@ export function DiningPage() {
       {/* In-room dining */}
       <div className="mt-12 grid gap-6 lg:grid-cols-3">
         {[
-          { icon: HandPlatter, title: "In-room dining", body: "7 AM – 10 PM. Full menu available. Hot food delivered on heritage brass thalis." },
+          { icon: HandPlatter, title: "In-room dining", body: "7 AM – 10:30 PM. Full menu available. Hot food delivered on heritage brass thalis." },
           { icon: Sparkles, title: "Private satsang catering", body: "Up to 20 guests. Custom satvik menu prepared by the head chef. Book 48 hours in advance." },
           { icon: Flower2, title: "Festival feasts", body: "Janmashtami midnight bhog, Holi gujiya-thandai, Radhashtami chhappan bhog — by reservation only." },
         ].map((c) => (

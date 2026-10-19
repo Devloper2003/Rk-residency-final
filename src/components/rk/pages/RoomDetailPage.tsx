@@ -41,7 +41,15 @@ const AMENITY_ICONS: Record<string, React.ComponentType<{ className?: string }>>
   "Brass diya turn-down ritual": Bell,
 };
 
-export function RoomDetailPage({ slug }: { slug: string }) {
+export function RoomDetailPage({
+  slug,
+  initialRoom,
+  initialRelated,
+}: {
+  slug: string;
+  initialRoom?: Room | null;
+  initialRelated?: Room[];
+}) {
   const navigate = useRouter((s) => s.navigate);
   const openBooking = useRouter((s) => s.openBooking);
   const info = useContactInfo();
@@ -50,13 +58,16 @@ export function RoomDetailPage({ slug }: { slug: string }) {
   // a different API and had a different default ("12:00 PM" vs "2:00 PM").
   const checkinTime = info.checkinTime;
   const checkoutTime = info.checkoutTime;
-  const [room, setRoom] = useState<Room | null>(null);
-  const [related, setRelated] = useState<Room[]>([]);
-  const [loading, setLoading] = useState(true);
+  // SSR: when the server page passes initialRoom, the room name, description,
+  // amenities and gallery are in the initial HTML (crawlable without JS).
+  const [room, setRoom] = useState<Room | null>(initialRoom ?? null);
+  const [related, setRelated] = useState<Room[]>(initialRelated || []);
+  const [loading, setLoading] = useState(initialRoom === undefined);
   const [activeImage, setActiveImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
   useEffect(() => {
+    if (initialRoom !== undefined) return; // rendered server-side
     let cancelled = false;
     fetch("/api/rooms")
       .then((r) => r.json())
@@ -70,7 +81,7 @@ export function RoomDetailPage({ slug }: { slug: string }) {
       })
       .catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [slug]);
+  }, [slug, initialRoom]);
 
   if (loading) {
     return (
@@ -96,14 +107,26 @@ export function RoomDetailPage({ slug }: { slug: string }) {
   const prevImage = () => setActiveImage((i) => (i - 1 + gallery.length) % gallery.length);
 
   return (
-    <PageShell title={room.name} subtitle={room.tagline} accent="teal">
+    <PageShell
+      title={room.name}
+      subtitle={room.tagline}
+      accent="teal"
+      breadcrumbs={[
+        { name: "Home", path: "/" },
+        { name: "Rooms & Suites", path: "/rooms" },
+        { name: room.name, path: `/rooms/${room.slug}` },
+      ]}
+    >
       {/* ===== HERO GALLERY — Full-width immersive ===== */}
       <div className="mb-8 overflow-hidden rounded-3xl shadow-2xl">
         <div className="relative aspect-[21/9] w-full overflow-hidden bg-charcoal sm:aspect-[16/8]">
           <motion.img
             key={activeImage}
             src={gallery[activeImage]}
-            alt={`${room.name} — view ${activeImage + 1}`}
+            alt={`${room.name} at RK Residency, Kailash Nagar, Vrindavan — view ${activeImage + 1}`}
+            width={1600}
+            height={900}
+            loading={activeImage === 0 ? "eager" : "lazy"}
             initial={{ opacity: 0.5, scale: 1.03 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7 }}
@@ -297,21 +320,30 @@ export function RoomDetailPage({ slug }: { slug: string }) {
                 ))}
               </div>
 
-              <a
-                href={info.waUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border border-[#25D366]/40 bg-[#25D366]/5 py-2.5 font-display text-xs font-semibold text-[#1a7d3a] transition-colors hover:bg-[#25D366]/10"
-              >
-                Ask on WhatsApp instead
-              </a>
+              {info.waUrl && (
+                <a
+                  href={info.waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border border-[#25D366]/40 bg-[#25D366]/5 py-2.5 font-display text-xs font-semibold text-[#1a7d3a] transition-colors hover:bg-[#25D366]/10"
+                >
+                  Ask on WhatsApp instead
+                </a>
+              )}
 
-              {/* Contact mini-card */}
-              <div className="mt-5 rounded-2xl bg-ivory-deep/40 p-4 text-center">
-                <div className="font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Need help?</div>
-                <a href={info.telUrl} className="mt-1 block font-serif text-sm font-bold text-teal hover:underline">{info.phoneDisplay}</a>
-                <a href={info.mailtoUrl} className="block font-display text-xs text-charcoal-soft hover:underline">{info.emailPrimary}</a>
-              </div>
+              {/* Contact mini-card — only shows channels that actually have
+                  real values set (never renders dead tel:/mailto: links). */}
+              {(info.phoneDisplay || info.emailPrimary) && (
+                <div className="mt-5 rounded-2xl bg-ivory-deep/40 p-4 text-center">
+                  <div className="font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Need help?</div>
+                  {info.phoneDisplay && (
+                    <a href={info.telUrl} className="mt-1 block font-serif text-sm font-bold text-teal hover:underline">{info.phoneDisplay}</a>
+                  )}
+                  {info.emailPrimary && (
+                    <a href={info.mailtoUrl} className="block font-display text-xs text-charcoal-soft hover:underline">{info.emailPrimary}</a>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -337,7 +369,7 @@ export function RoomDetailPage({ slug }: { slug: string }) {
                     <div className="relative h-56 overflow-hidden">
                       <img
                         src={relImgs[0] || "/images/heritage-room.webp"}
-                        alt={r.name}
+                        alt={`${r.name} at RK Residency, Kailash Nagar, Vrindavan`}
                         className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-charcoal/85 via-transparent to-transparent" />

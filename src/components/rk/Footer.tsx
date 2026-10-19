@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Logo, Lotus } from "./Motifs";
 import { toast } from "sonner";
 import { useSettingValue, useContentValue } from "@/lib/site-content";
+import { BUSINESS, businessAddress } from "@/lib/site.config";
+import { sanitizeContactText, sanitizeSocialUrl } from "@/lib/use-contact-info";
 
 const NAV_GROUPS = [
   {
@@ -52,27 +54,32 @@ export function Footer() {
   // Live editable content + settings
   const brandName = useSettingValue("brand_name", "RK Residency");
   const brandTagline = useSettingValue("brand_tagline", "Vrindavan · Braj");
-  const footerDesc = useContentValue("footer.description", "A heritage-luxury residency on the banks of the Yamuna, welcoming pilgrims and devotee families since 2014. A guest is a visiting deity.");
+  // Founding year from site.config — the footer, about page and years
+  // counter all show the SAME year (TODO: owner confirms 2024 vs 2014).
+  const footerDesc = useContentValue("footer.description", `A heritage-luxury residency on the banks of the Yamuna, welcoming pilgrims and devotee families since ${BUSINESS.establishedYear}. A guest is a visiting deity.`);
   const newsletterHeading = useContentValue("footer.newsletter_heading", "Stay in the circle");
   const newsletterTitle = useContentValue("footer.newsletter_title", "Festival calendars, member offers & Braj stories");
   const newsletterBody = useContentValue("footer.newsletter_body", "One email a fortnight. Never spam. Unsubscribe anytime.");
-  const phoneDisplay = useSettingValue("phone_primary", "+91 565 234 5678");
-  const phoneTel = useSettingValue("phone_primary_tel", "+915652345678");
-  const emailPrimary = useSettingValue("email_primary", "stay@rkresidency.in");
-  const addressFull = useSettingValue("address_full", "RK Residency, Parikrama Marg, Vrindavan, Mathura, UP 281121");
-  const gstin = useSettingValue("gstin", "09AAACK1234R1Z5");
-  const instagramUrl = useSettingValue("instagram_url", "https://instagram.com");
-  const facebookUrl = useSettingValue("facebook_url", "https://facebook.com");
-  const youtubeUrl = useSettingValue("youtube_url", "https://youtube.com");
-  const privacyUrl = useContentValue("footer.privacy_url", "#");
-  const termsUrl = useContentValue("footer.terms_url", "#");
-  const cancellationUrl = useContentValue("footer.cancellation_url", "#");
+  const phoneDisplay = sanitizeContactText(useSettingValue("phone_primary", BUSINESS.phonePrimary));
+  const phoneTel = sanitizeContactText(useSettingValue("phone_primary_tel", BUSINESS.phonePrimaryTel));
+  const emailPrimary = sanitizeContactText(useSettingValue("email_primary", BUSINESS.emailPrimary));
+  // Address from site.config BUSINESS.address — identical everywhere.
+  const addressFull = useSettingValue("address_full", businessAddress().full);
+  const gstin = useSettingValue("gstin", BUSINESS.gstin);
+  const instagramUrl = sanitizeSocialUrl(useSettingValue("instagram_url", BUSINESS.social.instagram));
+  const facebookUrl = sanitizeSocialUrl(useSettingValue("facebook_url", BUSINESS.social.facebook));
+  const youtubeUrl = sanitizeSocialUrl(useSettingValue("youtube_url", BUSINESS.social.youtube));
+  // Legal links are structural routes, not editable content — hardcoded so
+  // they always resolve to the real policy pages (never "#").
+  const privacyUrl = "/privacy-policy";
+  const termsUrl = "/terms-and-conditions";
+  const cancellationUrl = "/cancellation-policy";
 
   const SOCIAL = [
     { icon: Instagram, label: "Instagram", href: instagramUrl },
     { icon: Facebook, label: "Facebook", href: facebookUrl },
     { icon: Youtube, label: "YouTube", href: youtubeUrl },
-  ].filter((s) => s.href); // hide socials with empty URLs
+  ].filter((s) => s.href); // hide socials with empty/placeholder URLs
 
   const onSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -221,18 +228,22 @@ export function Footer() {
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
                 <span>{addressFull}</span>
               </li>
-              <li className="flex items-center gap-2">
-                <Phone className="h-4 w-4 shrink-0 text-gold" />
-                <a href={`tel:${phoneTel}`} className="transition-colors hover:text-gold-soft">
-                  {phoneDisplay}
-                </a>
-              </li>
-              <li className="flex items-center gap-2">
-                <Mail className="h-4 w-4 shrink-0 text-gold" />
-                <a href={`mailto:${emailPrimary}`} className="transition-colors hover:text-gold-soft">
-                  {emailPrimary}
-                </a>
-              </li>
+              {phoneDisplay && (
+                <li className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 shrink-0 text-gold" />
+                  <a href={`tel:${phoneTel}`} className="transition-colors hover:text-gold-soft">
+                    {phoneDisplay}
+                  </a>
+                </li>
+              )}
+              {emailPrimary && (
+                <li className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 shrink-0 text-gold" />
+                  <a href={`mailto:${emailPrimary}`} className="transition-colors hover:text-gold-soft">
+                    {emailPrimary}
+                  </a>
+                </li>
+              )}
             </ul>
             <div className="mt-4 flex flex-wrap gap-2">
               {TRUST.map((t) => (
@@ -259,13 +270,6 @@ export function Footer() {
             <a href={privacyUrl} className="transition-colors hover:text-gold-soft">Privacy</a>
             <a href={termsUrl} className="transition-colors hover:text-gold-soft">Terms</a>
             <a href={cancellationUrl} className="transition-colors hover:text-gold-soft">Cancellation policy</a>
-            <a
-              href="/admin"
-              className="transition-colors hover:text-gold-soft"
-              aria-label="Staff admin login"
-            >
-              Staff
-            </a>
             {gstin && <span className="hidden sm:inline">· GSTIN {gstin}</span>}
           </div>
         </div>

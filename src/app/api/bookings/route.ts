@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { checkRangeAvailability } from "@/lib/inventory";
 
 export const dynamic = "force-dynamic";
 
@@ -71,19 +72,12 @@ export async function POST(req: Request) {
       });
       if (!room) throw new Error("ROOM_NOT_FOUND");
 
-      // 2. Inventory check inside tx
-      const overlapping = await tx.booking.count({
-        where: {
-          roomId: room.id,
-          status: { not: "CANCELLED" },
-          AND: [
-            { checkIn: { lt: checkOut } },
-            { checkOut: { gt: checkIn } },
-          ],
-        },
-      });
-      const roomsLeft = Math.max(0, room.totalCount - overlapping);
-      if (roomsLeft <= 0) {
+      // 2. Inventory check inside tx — per night, honouring admin open/close
+      const range = await checkRangeAvailability(room.id, room.totalCount, checkIn, checkOut, tx);
+      if (!range.available) {
+        if (range.closedDates.length > 0) {
+          throw new Error(`SOLD_OUT:${range.closedDates.join(",")}`);
+        }
         throw new Error("SOLD_OUT");
       }
 
@@ -205,9 +199,14 @@ export async function POST(req: Request) {
     });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Booking failed";
-    if (msg === "SOLD_OUT") {
+    if (msg === "SOLD_OUT" || msg.startsWith("SOLD_OUT:")) {
+      const closed = msg.startsWith("SOLD_OUT:") ? msg.slice("SOLD_OUT:".length) : "";
       return NextResponse.json(
-        { error: "Sorry — this room just sold out for those dates. Please pick another room or dates." },
+        {
+          error: closed
+            ? `Sorry — the hotel is not accepting bookings for ${closed.split(",").join(", ")}. Please pick different dates.`
+            : "Sorry — this room just sold out for those dates. Please pick another room or dates.",
+        },
         { status: 409 }
       );
     }

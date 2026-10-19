@@ -74,7 +74,7 @@ const SIGNATURE_DISHES = [
 
 const AMENITIES = [
   { icon: Sparkles, label: "Daily Satvik Breakfast", group: "Dining" },
-  { icon: HandPlatter, label: "In-room Dining till 10 PM", group: "Dining" },
+  { icon: HandPlatter, label: "In-room Dining till 10:30 PM", group: "Dining" },
   { icon: Wifi, label: "High-speed Wi-Fi", group: "Connectivity" },
   { icon: Car, label: "Airport & Temple Transfers", group: "Transport" },
   { icon: Baby, label: "Family & Kids' Satvik Menu", group: "Family" },
@@ -121,8 +121,10 @@ export function Dining() {
           <Reveal>
             <div className="relative h-full min-h-[420px] overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
               <img
-                src="/uploads/5da7e5a732c7d5e5.webp"
+                src="/uploads/rk-residency-vrindavan-satvik-thali.webp"
                 alt="Satvik thali on a heritage brass plate at RK Residency"
+                width={1200}
+                height={1500}
                 className="h-full w-full object-cover"
                 loading="lazy"
               />

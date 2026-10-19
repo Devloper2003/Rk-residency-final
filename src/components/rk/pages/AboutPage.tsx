@@ -5,6 +5,7 @@ import { Heart, Sparkles, HandHeart, Award, Users, Quote } from "lucide-react";
 import { PageShell } from "../PageShell";
 import { Reveal, Lotus, PeacockFeather, CountUp, SectionDivider } from "../Motifs";
 import { useContentValue, parseJsonArray } from "@/lib/site-content";
+import { BUSINESS } from "@/lib/site.config";
 
 const VALUES = [
   { icon: HandHeart, title: "Atithi Devo Bhava", body: "A guest is a visiting deity. Every interaction — from check-in to turn-down — is conducted as a small act of devotion. We do not have 'customers'. We have guests." },
@@ -14,9 +15,9 @@ const VALUES = [
 ];
 
 const TIMELINE = [
-  { year: "2024", title: "RK Residency Opens Its Doors", body: "Established in the holy city of Vrindavan, RK Residency was founded as a tribute to the legacy of Late Shri Ravi Karan Singh and a humble offering of service to the devotees of Shri Banke Bihari Ji. Every guest was welcomed with warmth, comfort, and heartfelt hospitality." },
-  { year: "2025", title: "A Growing Family of Devotees", body: "Through genuine hospitality and memorable guest experiences, RK Residency earned the trust of pilgrims and travelers from across India. Our commitment to cleanliness, personalized service, and spiritual comfort became the foundation of our growing reputation." },
-  { year: "2026", title: "Continuing a Legacy of Service", body: "Today, RK Residency continues its journey with the same purpose that inspired its beginning—to serve every devotee with excellence, preserve the values of faith and selfless hospitality, and make every stay in Vrindavan truly unforgettable." },
+  { year: String(BUSINESS.establishedYear), title: "RK Residency Opens Its Doors", body: "Established in the holy city of Vrindavan, RK Residency was founded as a tribute to the legacy of Late Shri Ravi Karan Singh and a humble offering of service to the devotees of Shri Banke Bihari Ji. Every guest was welcomed with warmth, comfort, and heartfelt hospitality." },
+  { year: String(BUSINESS.establishedYear + 1), title: "A Growing Family of Devotees", body: "Through genuine hospitality and memorable guest experiences, RK Residency earned the trust of pilgrims and travelers from across India. Our commitment to cleanliness, personalized service, and spiritual comfort became the foundation of our growing reputation." },
+  { year: String(BUSINESS.establishedYear + 2), title: "Continuing a Legacy of Service", body: "Today, RK Residency continues its journey with the same purpose that inspired its beginning—to serve every devotee with excellence, preserve the values of faith and selfless hospitality, and make every stay in Vrindavan truly unforgettable." },
   
 ];
 
@@ -28,7 +29,7 @@ const TEAM = [
 ];
 
 const STATS = [
-  { end: 3, suffix: "", label: "Years of paying hospitality" },
+  { end: new Date().getFullYear() - BUSINESS.establishedYear, suffix: "", label: "Years of paying hospitality" },
   { end: 35, suffix: "", label: "Rooms, suites & villas" },
   { end: 48000, suffix: "+", label: "Devotee guests hosted" },
   { end: 42, suffix: "", label: "Countries guests come from" },
@@ -37,15 +38,15 @@ const STATS = [
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = { HandHeart, Sparkles, Heart, Award, Users, Quote };
 
 export function AboutPage() {
-  const titleLine1 = useContentValue("about.title_line1", "A divine home on the");
-  const titleLine2 = useContentValue("about.title_line2", "Braj bhoomi");
-  const image = useContentValue("about.image", "/uploads/5b87a4725175feac.webp");
+  const titleLine1 = useContentValue("about.title_line1", "A heritage hotel in");
+  const titleLine2 = useContentValue("about.title_line2", "holy Vrindavan");
+  const image = useContentValue("about.image", "/uploads/rk-residency-vrindavan-heritage-room.webp");
   const imageAlt = useContentValue("about.image_alt", "A Peaceful Retreat in the Heart of Vrindavan");
   const imageCaptionLabel = useContentValue("about.image_caption_label", "Heart of Vrindavan");
-  const imageCaptionSub = useContentValue("about.image_caption_sub", "A peaceful retreat on Parikrama Marg");
+  const imageCaptionSub = useContentValue("about.image_caption_sub", "A peaceful retreat in Kailash Nagar");
   const closingQuote = useContentValue("about.closing_quote", "Krishna sends them. We serve them. That is the arrangement.");
   const closingAttribution = useContentValue("about.closing_attribution", "— Shailedra Singh, Founder");
-  const story = parseJsonArray<string>(useContentValue("about.story", "[]"), ["In 1986, Shyam Khandelwal's grandparents built a modest four-room house on Parikrama Marg.", "For twenty-eight years, the house was simply the Khandelwal home.", "In 2014, the family opened the residence to paying guests.", "Today, RK Residency has 35 rooms and the founding principle remains unchanged."]);
+  const story = parseJsonArray<string>(useContentValue("about.story", "[]"), ["In 1986, Shyam Khandelwal's grandparents built a modest four-room house in Kailash Nagar.", "For twenty-eight years, the house was simply the Khandelwal home.", "In 2014, the family opened the residence to paying guests.", "Today, RK Residency has 35 rooms and the founding principle remains unchanged."]);
   const values = parseJsonArray<{ icon: string; title: string; body: string }>(useContentValue("about.values", "[]"), VALUES.map(v => ({ icon: v.icon.name, title: v.title, body: v.body })));
   const timeline = parseJsonArray<{ year: string; title: string; body: string }>(useContentValue("about.timeline", "[]"), TIMELINE);
   const team = parseJsonArray<{ name: string; role: string; bio: string }>(useContentValue("about.team", "[]"), TEAM);
@@ -55,6 +56,10 @@ export function AboutPage() {
       title={`${titleLine1} ${titleLine2}`}
       subtitle="Where the Divine Blessings of Shri Banke Bihari Ji Welcome Every Guest into a World of Peace, Comfort, and Heartfelt Hospitality."
       accent="teal"
+      breadcrumbs={[
+        { name: "Home", path: "/" },
+        { name: "About", path: "/about" },
+      ]}
     >
       <PeacockFeather size={100} className="pointer-events-none absolute right-4 top-24 hidden rotate-12 text-teal/10 lg:block" />
 
@@ -66,8 +71,9 @@ export function AboutPage() {
           </h2>
                  <div className="mt-5 space-y-4 font-display text-base leading-relaxed text-charcoal-soft">
             <p>
-  Founded in <strong>2024</strong>, <span className="text-marsala">RK Residency</span> was established in the
-  sacred city of Vrindavan as a heartfelt tribute to the legacy of
+  Founded in <strong>{BUSINESS.establishedYear}</strong>, <span className="text-marsala">RK Residency</span> was established in the
+  Kailash Nagar area of the sacred city of Vrindavan — near the temples of
+  Shri Banke Bihari Ji and ISKCON — as a heartfelt tribute to the legacy of
   <strong> Late Shri Ravi Karan Singh</strong>, whose supreme sacrifice during
   the <em className="text-teal">Kargil War</em> continues to inspire us.
   Guided by the divine blessings of <strong>Shri Banke Bihari Ji</strong>, our
@@ -128,7 +134,9 @@ export function AboutPage() {
           {stats.map((s, i) => (
             <div key={i} className="text-center">
               <div className="font-serif text-4xl font-bold text-teal sm:text-5xl">
-                {s.value}{s.suffix}
+                {/* en-IN thousands separator for numeric values (48,000+),
+                    owner-entered text passes through unchanged */}
+                {/^\d+$/.test(s.value) ? Number(s.value).toLocaleString("en-IN") : s.value}{s.suffix}
               </div>
               <div className="mt-2 font-display text-xs uppercase tracking-[0.2em] text-charcoal-soft sm:text-sm">
                 {s.label}

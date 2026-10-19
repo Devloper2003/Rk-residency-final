@@ -2,16 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Clock, ArrowRight, ArrowLeft, Calendar, Tag } from "lucide-react";
+import { Clock, ArrowRight, ArrowLeft, Calendar, Tag, ListTree } from "lucide-react";
 import { PageShell } from "../PageShell";
 import { Reveal, Lotus } from "../Motifs";
 import { useRouter } from "@/lib/router";
 import { useContactInfo } from "@/lib/use-contact-info";
+import { tocFromBody } from "@/lib/blog-utils";
 
 type BlogPost = {
   id: string; slug: string; title: string; excerpt: string; body: string;
-  category: string; tags: string; imageUrl: string | null;
-  publishedAt: string | null; readingMins: number;
+  category: string; tags: string; imageUrl: string | null; coverAlt?: string | null;
+  // string when fetched from /api/blog, Date when passed from the server page (SSR)
+  publishedAt: string | Date | null; readingMins: number;
 };
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -28,13 +30,16 @@ const CATEGORY_COLOR: Record<string, string> = {
   EXPERIENCE: "bg-charcoal/8 text-charcoal",
 };
 
-export function BlogListPage() {
+export function BlogListPage({ initialPosts }: { initialPosts?: BlogPost[] }) {
   const navigate = useRouter((s) => s.navigate);
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [loading, setLoading] = useState(true);
+  // SSR: when the server page passes initialPosts, the story cards are part
+  // of the initial HTML (crawlable). The client fetch remains as a fallback.
+  const [posts, setPosts] = useState<BlogPost[]>(initialPosts || []);
+  const [loading, setLoading] = useState(!initialPosts);
   const [filter, setFilter] = useState("ALL");
 
   useEffect(() => {
+    if (initialPosts) return; // data already rendered server-side
     fetch("/api/blog")
       .then((r) => r.json())
       .then((data) => {
@@ -42,17 +47,34 @@ export function BlogListPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [initialPosts]);
 
   const cats = ["ALL", ...Array.from(new Set(posts.map((p) => p.category)))];
   const visible = filter === "ALL" ? posts : posts.filter((p) => p.category === filter);
 
   return (
     <PageShell
-      title="The Braj Journal"
-      subtitle="Temple guides, festival calendars, local tips and stories from Vrindavan — our primary organic-traffic engine. Written by our resident scholars and concierge team."
+      title="The Braj Journal — Vrindavan Blog"
+      subtitle="Temple guides, festival calendars, local tips and stories from Vrindavan — written by our resident scholars and concierge team."
       accent="gold"
+      breadcrumbs={[
+        { name: "Home", path: "/" },
+        { name: "Blog", path: "/blog" },
+      ]}
     >
+      {/* Contextual internal links — descriptive anchors, in the initial HTML */}
+      <p className="mx-auto -mt-4 mb-10 max-w-3xl text-center font-display text-sm leading-relaxed text-charcoal-soft">
+        Reading before your trip? Browse our{" "}
+        <a href="/rooms" className="text-teal underline-offset-2 hover:underline">rooms and suites in Vrindavan</a>,
+        check the current{" "}
+        <a href="/offers" className="text-teal underline-offset-2 hover:underline">festival offers and packages</a>,
+        or plan your darshan with our{" "}
+        <a href="/experiences" className="text-teal underline-offset-2 hover:underline">temple experiences guide</a>,{" "}
+        see what{" "}
+        <a href="/dining" className="text-teal underline-offset-2 hover:underline">satvik dining at RK Residency</a>{" "}
+        tastes like, and time your visit with the{" "}
+        <a href="/festivals" className="text-teal underline-offset-2 hover:underline">Braj festival calendar</a>.
+      </p>
       {/* Filters */}
       <div className="mb-10 flex flex-wrap justify-center gap-2">
         {cats.map((c) => (
@@ -100,6 +122,8 @@ export function BlogListPage() {
                   <img
                     src={p.imageUrl || "/images/marigold-garland.webp"}
                     alt={p.title}
+                    width={800}
+                    height={450}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                     loading="lazy"
                   />
@@ -151,21 +175,41 @@ export function BlogListPage() {
   );
 }
 
-export function BlogDetailPage({ slug }: { slug: string }) {
+export function BlogDetailPage({
+  slug,
+  initialPost,
+  initialRelated = [],
+  initialToc,
+}: {
+  slug: string;
+  initialPost?: BlogPost | null;
+  /** SSR: up to 3 related posts (same category / shared tags first) fetched by
+   *  the server page, so the internal links + images are in the initial HTML. */
+  initialRelated?: BlogPost[];
+  /** SSR: auto table of contents generated from the ## headings. When the
+   *  client falls back to fetching the post itself, the TOC is recomputed. */
+  initialToc?: { id: string; text: string }[];
+}) {
   const navigate = useRouter((s) => s.navigate);
   const info = useContactInfo();
-  const [post, setPost] = useState<BlogPost | null>(null);
-  const [loading, setLoading] = useState(true);
+  // SSR: when the server page passes initialPost, the full article body is in
+  // the initial HTML (crawlable without JS).
+  const [post, setPost] = useState<BlogPost | null>(initialPost ?? null);
+  const [loading, setLoading] = useState(initialPost === undefined);
+  // Table of contents — from the server when provided, recomputed on fallback.
+  const [toc, setToc] = useState<{ id: string; text: string }[]>(initialToc || []);
 
   useEffect(() => {
+    if (initialPost !== undefined) return; // rendered server-side
     fetch(`/api/blog?slug=${slug}`)
       .then((r) => r.json())
       .then((data) => {
         setPost(data.post || null);
+        setToc(tocFromBody(data.post?.body || ""));
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [slug]);
+  }, [slug, initialPost]);
 
   if (loading) {
     return (
@@ -190,12 +234,25 @@ export function BlogDetailPage({ slug }: { slug: string }) {
   const tags: string[] = JSON.parse(post.tags || "[]");
 
   return (
-    <PageShell title={post.title} subtitle={post.excerpt} accent="gold">
-      {/* Hero */}
+    <PageShell
+      title={post.title}
+      subtitle={post.excerpt}
+      accent="gold"
+      breadcrumbs={[
+        { name: "Home", path: "/" },
+        { name: "Blog", path: "/blog" },
+        { name: post.title, path: `/blog/${post.slug}` },
+      ]}
+    >
+      {/* Hero — above the fold: eager-loaded with intrinsic dimensions */}
       <div className="relative mb-8 aspect-[16/9] overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
         <img
           src={post.imageUrl || "/images/marigold-garland.webp"}
-          alt={post.title}
+          alt={post.coverAlt || post.title}
+          width={1600}
+          height={900}
+          loading="eager"
+          fetchPriority="high"
           className="h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-charcoal/40 to-transparent" />
@@ -220,22 +277,77 @@ export function BlogDetailPage({ slug }: { slug: string }) {
 
       {/* Body */}
       <article className="mx-auto max-w-3xl">
+        {/* Auto table of contents — generated from the ## headings */}
+        {toc.length > 0 && (
+          <nav aria-label="Table of contents" className="mb-8 rounded-2xl border border-gold/25 bg-gold/5 p-5">
+            <div className="mb-2 flex items-center gap-2">
+              <ListTree className="h-4 w-4 text-gold-deep" />
+              <span className="font-serif text-base font-semibold text-charcoal">In this story</span>
+            </div>
+            <ol className="ml-1 list-decimal space-y-1 pl-4 font-display text-sm text-charcoal-soft">
+              {toc.map((t) => (
+                <li key={t.id}>
+                  <a href={`#${t.id}`} className="transition-colors hover:text-teal hover:underline">{t.text}</a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
         <div className="prose prose-lg max-w-none font-display text-base leading-[1.85] text-charcoal-soft [&_h2]:font-serif [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-charcoal [&_h2]:mt-8 [&_h2]:mb-3 [&_p]:mb-4 [&_ul]:my-4 [&_ul]:list-disc [&_ul]:pl-6 [&_li]:mb-2 [&_strong]:text-charcoal [&_strong]:font-semibold">
-          {post.body.split("\n\n").map((para, i) => {
-            // Simple paragraph rendering
-            if (para.startsWith("## ")) {
-              return <h2 key={i}>{para.replace(/^##\s+/, "")}</h2>;
-            }
-            if (para.startsWith("- ")) {
-              const items = para.split("\n").filter((l) => l.startsWith("- ")).map((l) => l.replace(/^-\s+/, ""));
-              return (
-                <ul key={i}>
-                  {items.map((it, j) => <li key={j}>{it}</li>)}
-                </ul>
-              );
-            }
-            return <p key={i}>{para}</p>;
-          })}
+          {(() => {
+            // Render ## headings with anchor ids matching the TOC entries.
+            let headingIdx = 0;
+            return post.body.split("\n\n").map((para, i) => {
+              if (para.startsWith("## ")) {
+                const entry = toc[headingIdx];
+                headingIdx++;
+                return <h2 key={i} id={entry ? entry.id : undefined}>{para.replace(/^##\s+/, "")}</h2>;
+              }
+              if (para.startsWith("- ")) {
+                const items = para.split("\n").filter((l) => l.startsWith("- ")).map((l) => l.replace(/^-\s+/, ""));
+                return (
+                  <ul key={i}>
+                    {items.map((it, j) => <li key={j}>{it}</li>)}
+                  </ul>
+                );
+              }
+              return <p key={i}>{para}</p>;
+            });
+          })()}
+        </div>
+
+        {/* Auto CTA block — internal links to /rooms and /offers on every post */}
+        <div className="mt-10 grid gap-4 sm:grid-cols-2">
+          <a
+            href="/rooms"
+            className="group rounded-2xl border border-teal/25 bg-teal/5 p-5 transition-all hover:border-teal hover:shadow-md"
+          >
+            <h3 className="font-serif text-base font-semibold text-charcoal group-hover:text-teal">
+              Stay where your darshan begins
+            </h3>
+            <p className="mt-1 font-display text-xs leading-relaxed text-charcoal-soft">
+              Browse our rooms and suites in Vrindavan — a short walk from Banke Bihari Mandir, with satvik meals included.
+            </p>
+            <div className="mt-2 inline-flex items-center gap-1 font-display text-xs font-semibold text-teal">
+              See rooms &amp; suites
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+            </div>
+          </a>
+          <a
+            href="/offers"
+            className="group rounded-2xl border border-gold/30 bg-gold/5 p-5 transition-all hover:border-gold hover:shadow-md"
+          >
+            <h3 className="font-serif text-base font-semibold text-charcoal group-hover:text-gold-deep">
+              Planning around a festival?
+            </h3>
+            <p className="mt-1 font-display text-xs leading-relaxed text-charcoal-soft">
+              Check our current offers and festival packages — Janmashtami, Holi and Kartik month stays book early.
+            </p>
+            <div className="mt-2 inline-flex items-center gap-1 font-display text-xs font-semibold text-gold-deep">
+              View offers &amp; packages
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+            </div>
+          </a>
         </div>
 
         {/* Tags */}
@@ -263,11 +375,66 @@ export function BlogDetailPage({ slug }: { slug: string }) {
               <p className="mt-1 font-display text-sm text-charcoal-soft">
                 Our concierge team writes the Braj Journal from first-hand experience —
                 most have lived in Vrindavan for over a decade. Questions about this story?
-                Write to <a href={info.mailtoUrl} className="text-teal underline-offset-2 hover:underline">{info.emailPrimary}</a>.
+                {info.emailPrimary ? (
+                  <>
+                    {" "}Write to <a href={info.mailtoUrl} className="text-teal underline-offset-2 hover:underline">{info.emailPrimary}</a>.
+                  </>
+                ) : (
+                  " Use the contact form and we'll reply within 4 hours."
+                )}
               </p>
             </div>
           </div>
         </div>
+
+        {/* Related posts — internal linking, server-rendered */}
+        {initialRelated.length > 0 && (
+          <div className="mt-12">
+            <div className="mb-6 flex items-center gap-3">
+              <Lotus size={18} className="text-gold" />
+              <h2 className="font-serif text-2xl font-semibold text-charcoal">
+                Related stories from the Braj Journal
+              </h2>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-3">
+              {initialRelated.map((rp) => {
+                return (
+                  <a
+                    key={rp.id}
+                    href={`/blog/${rp.slug}`}
+                    className="group flex flex-col overflow-hidden rounded-2xl border border-charcoal/10 bg-white shadow-sm transition-all hover:shadow-lg"
+                  >
+                    <div className="relative h-36 overflow-hidden">
+                      <img
+                        src={rp.imageUrl || "/images/marigold-garland.webp"}
+                        alt={rp.title}
+                        width={800}
+                        height={450}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                      <div className={`absolute left-3 top-3 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${CATEGORY_COLOR[rp.category] || "bg-charcoal/8 text-charcoal"}`}>
+                        {CATEGORY_LABEL[rp.category] || rp.category}
+                      </div>
+                    </div>
+                    <div className="flex flex-1 flex-col p-4">
+                      <h3 className="font-serif text-base font-semibold leading-snug text-charcoal group-hover:text-teal">
+                        {rp.title}
+                      </h3>
+                      <p className="mt-1.5 line-clamp-2 font-display text-xs leading-relaxed text-charcoal-soft">
+                        {rp.excerpt}
+                      </p>
+                      <div className="mt-auto pt-3 inline-flex items-center gap-1 font-display text-xs font-semibold text-teal">
+                        Read story
+                        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                      </div>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Back */}
         <div className="mt-10">

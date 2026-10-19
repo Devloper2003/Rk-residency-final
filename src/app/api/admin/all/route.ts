@@ -173,9 +173,25 @@ export async function GET(req: Request) {
           where: { status: { not: "CANCELLED" }, checkIn: { lt: nextDay }, checkOut: { gt: viewDate } },
           select: { id: true, referenceCode: true, guestName: true, checkIn: true, checkOut: true, nights: true, status: true, totalAmount: true, roomId: true },
         });
+        // Per-day inventory control rows (open/close/override) for the viewed day
+        const dayControls = await db.roomInventoryDay.findMany({
+          where: { date: new Date(`${dateStr}T00:00:00.000Z`) },
+          select: { roomId: true, isClosed: true, sellableOverride: true },
+        });
+        const controlByRoom = new Map(dayControls.map((c) => [c.roomId, c]));
         const rooms = allRooms.map((room) => {
           const roomBookings = activeBookings.filter((b) => b.roomId === room.id);
-          return { id: room.id, name: room.name, slug: room.slug, basePrice: room.basePrice, totalCount: room.totalCount, maxGuests: room.maxGuests, badge: room.badge, bookedCount: roomBookings.length, availableCount: room.totalCount - roomBookings.length, activeBookings: roomBookings };
+          const control = controlByRoom.get(room.id);
+          // Effective sellable honours admin open/close for this day
+          const sellable = control?.isClosed ? 0 : (control?.sellableOverride ?? room.totalCount);
+          return {
+            id: room.id, name: room.name, slug: room.slug, basePrice: room.basePrice, totalCount: room.totalCount, maxGuests: room.maxGuests, badge: room.badge,
+            bookedCount: roomBookings.length,
+            availableCount: Math.max(0, sellable - roomBookings.length),
+            closed: control?.isClosed ?? false,
+            sellableOverride: control?.sellableOverride ?? null,
+            activeBookings: roomBookings,
+          };
         });
         return NextResponse.json({ rooms, date: dateStr });
       }
@@ -193,6 +209,16 @@ export async function GET(req: Request) {
       case "blog": {
         const posts = await db.blogPost.findMany({ orderBy: [{ publishedAt: "desc" }] });
         return NextResponse.json({ posts });
+      }
+
+      case "calendar": {
+        const rows = await db.contentCalendar.findMany({
+          orderBy: [{ month: "asc" }, { event: "asc" }],
+          include: { linkedPost: { select: { id: true, slug: true, title: true, status: true } } },
+        });
+        return NextResponse.json({
+          rows: rows.map((r) => ({ ...r, post: r.linkedPost })),
+        });
       }
 
       case "reviews": {

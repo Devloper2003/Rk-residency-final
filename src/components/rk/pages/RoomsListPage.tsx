@@ -6,6 +6,12 @@ import { Users, Maximize, BedDouble, Sparkles, ArrowRight } from "lucide-react";
 import { PageShell } from "../PageShell";
 import { Reveal, Lotus } from "../Motifs";
 import { useRouter } from "@/lib/router";
+import { BUSINESS } from "@/lib/site.config";
+
+const BREADCRUMBS = [
+  { name: "Home", path: "/" },
+  { name: "Rooms & Suites", path: "/rooms" },
+];
 
 type Room = {
   id: string; slug: string; name: string; tagline: string; description: string;
@@ -18,7 +24,8 @@ const FILTERS = [
   { id: "all", label: "All" },
   { id: "suite", label: "Suites" },
   { id: "deluxe", label: "Deluxe" },
-  { id: "family", label: "Fammily" },
+  { id: "family", label: "Family" },
+  { id: "villa", label: "Villa" },
   { id: "view", label: "View Rooms" },
 ];
 
@@ -26,18 +33,25 @@ function matchFilter(room: Room, filter: string) {
   if (filter === "all") return true;
   if (filter === "suite") return /suite/i.test(room.name);
   if (filter === "deluxe") return /deluxe/i.test(room.name);
-  if (filter === "family") return /family/i.test(room.name);
+  // Family rooms are tagged by badge ("Family") — match badge OR name so the
+  // tab never shows an empty list.
+  if (filter === "family") return /family/i.test(room.name) || room.badge === "Family";
+  // Villas (e.g. Gokul Royal Villa) — matches the /rooms meta description.
+  if (filter === "villa") return /villa/i.test(room.name) || room.badge === "Villa";
   if (filter === "view") return room.badge === "View" || room.badge === "Signature";
   return true;
 }
 
-export function RoomsListPage() {
+export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
   const navigate = useRouter((s) => s.navigate);
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [loading, setLoading] = useState(true);
+  // SSR: when the server page passes initialRooms, the room cards are part of
+  // the initial HTML (crawlable). The client fetch remains only as a fallback.
+  const [rooms, setRooms] = useState<Room[]>(initialRooms || []);
+  const [loading, setLoading] = useState(!initialRooms);
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
+    if (initialRooms) return; // data already rendered server-side
     fetch("/api/rooms")
       .then((r) => r.json())
       .then((data) => {
@@ -45,16 +59,34 @@ export function RoomsListPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [initialRooms]);
 
   const visible = rooms.filter((r) => matchFilter(r, filter));
 
+  // "Starting from ₹X per night" — real price from the SSR room data unless
+  // the owner pins one in site.config. Rendered in the initial HTML.
+  const startingFrom =
+    BUSINESS.startingFromPrice ||
+    (rooms.length ? Math.min(...rooms.map((r) => r.basePrice)) : 0);
+
   return (
     <PageShell
-      title="Rooms & suites "
+      title="Rooms & Suites in Vrindavan"
       subtitle="Every room at RK Residency is thoughtfully curated to provide comfort, elegance, and a peaceful escape in the sacred city of Vrindavan. Explore each room category to view detailed amenities, photo galleries, and seamless booking options."
       accent="teal"
+      breadcrumbs={BREADCRUMBS}
     >
+      {/* Starting price — visible in the initial HTML (SEO + conversion) */}
+      {startingFrom > 0 && (
+        <p className="mb-8 text-center font-display text-base text-charcoal sm:text-lg">
+          Starting from{" "}
+          <span className="font-serif text-2xl font-bold text-teal">
+            ₹{startingFrom.toLocaleString("en-IN")}
+          </span>{" "}
+          <span className="text-charcoal-soft">per night</span>
+        </p>
+      )}
+
       {/* Filters */}
       <div className="mb-10 flex flex-wrap justify-center gap-2">
         {FILTERS.map((f) => (
@@ -94,9 +126,13 @@ export function RoomsListPage() {
                 className="group block w-full overflow-hidden rounded-3xl border border-charcoal/10 bg-white text-left shadow-sm transition-all hover:shadow-xl focus-ring"
               >
                 <div className="relative h-64 overflow-hidden">
-                  <div
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                    style={{ backgroundImage: `url(${imgs[0] || "/images/heritage-room.webp"})` }}
+                  <img
+                    src={imgs[0] || "/images/heritage-room.webp"}
+                    alt={`${r.name} — ${r.view} room at RK Residency, Kailash Nagar, Vrindavan`}
+                    width={800}
+                    height={600}
+                    loading="lazy"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-charcoal/85 via-charcoal/20 to-transparent" />
                   {r.badge && (
@@ -164,7 +200,9 @@ export function RoomsListPage() {
       <div className="mt-12 flex items-center justify-center">
         <Lotus size={18} className="text-gold" />
         <span className="mx-3 font-display text-xs text-charcoal-soft">
-          All rates exclude daily satvik breakfast.
+          {BUSINESS.breakfastIncluded
+            ? "Daily satvik breakfast included in all rates."
+            : "All rates exclude daily satvik breakfast."}
         </span>
         <Lotus size={18} className="text-gold" />
       </div>

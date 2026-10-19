@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 
 
 export const dynamic = "force-dynamic";
@@ -31,7 +32,23 @@ export async function POST(req: Request) {
       where: { email: parsed.data.email.toLowerCase() },
     });
 
-          if (!admin || admin.passwordHash !== parsed.data.password) {
+    if (!admin) {
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    }
+
+    // Password verification.
+    // The seed script stores a bcrypt hash ($2a$12$…), so the stored value
+    // MUST be verified with bcrypt.compare — comparing the plaintext input
+    // directly against the hash always fails and locked every admin out.
+    // Legacy fallback: rows whose stored value is not a bcrypt hash (no $2…
+    // prefix) are compared as plaintext so existing sandbox installs that
+    // seeded a plain string keep working.
+    const stored = admin.passwordHash || "";
+    const isBcrypt = /^\$2[aby]\$/.test(stored);
+    const passwordOk = isBcrypt
+      ? await bcrypt.compare(parsed.data.password, stored)
+      : stored === parsed.data.password;
+    if (!passwordOk) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 

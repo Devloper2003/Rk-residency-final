@@ -6,10 +6,13 @@ export const dynamic = "force-dynamic";
 /**
  * GET /api/rooms/availability?roomId=...&startDate=...&endDate=...
  *
- * Returns a map of { "YYYY-MM-DD": bookedCount } for each date in the range
- * that has at least one overlapping booking.
+ * Returns:
+ *   availability: { "YYYY-MM-DD": bookedCount } — rooms booked each night
+ *   closed:       { "YYYY-MM-DD": true }       — days the admin closed sales
+ *   overrides:    { "YYYY-MM-DD": n }           — admin sellable overrides
  *
- * Used by the AvailabilityCalendar component on the room detail page.
+ * Used by the AvailabilityCalendar component on the room detail page;
+ * effective rooms-left = (closed ? 0 : override ?? totalCount) − booked.
  */
 export async function GET(req: Request) {
   try {
@@ -26,17 +29,27 @@ export async function GET(req: Request) {
     const endDate = new Date(endDateStr);
 
     // Find all non-cancelled bookings that overlap the date range
-    const bookings = await db.booking.findMany({
-      where: {
-        roomId,
-        status: { not: "CANCELLED" },
-        AND: [
-          { checkIn: { lt: endDate } },
-          { checkOut: { gt: startDate } },
-        ],
-      },
-      select: { checkIn: true, checkOut: true },
-    });
+    const [bookings, inventoryDays, room] = await Promise.all([
+      db.booking.findMany({
+        where: {
+          roomId,
+          status: { not: "CANCELLED" },
+          AND: [
+            { checkIn: { lt: endDate } },
+            { checkOut: { gt: startDate } },
+          ],
+        },
+        select: { checkIn: true, checkOut: true },
+      }),
+      db.roomInventoryDay.findMany({
+        where: {
+          roomId,
+          date: { gte: startDate, lt: endDate },
+        },
+        select: { date: true, isClosed: true, sellableOverride: true },
+      }),
+      db.room.findUnique({ where: { id: roomId }, select: { totalCount: true } }),
+    ]);
 
     // Build a map of date -> booked count
     const availability: Record<string, number> = {};
@@ -52,9 +65,21 @@ export async function GET(req: Request) {
       }
     }
 
-    return NextResponse.json({ availability });
+    // Admin per-day inventory control
+    const closed: Record<string, boolean> = {};
+    const overrides: Record<string, number> = {};
+    for (const row of inventoryDays) {
+      const key = row.date.toISOString().slice(0, 10);
+      if (row.isClosed) closed[key] = true;
+      if (row.sellableOverride !== null && row.sellableOverride !== undefined) {
+        overrides[key] = row.sellableOverride;
+      }
+    }
+    void room; // totalCount is passed to the calendar client-side (unchanged)
+
+    return NextResponse.json({ availability, closed, overrides });
   } catch (e) {
     console.error("[/api/rooms/availability] error:", e);
-    return NextResponse.json({ availability: {}, error: "Failed" }, { status: 500 });
+    return NextResponse.json({ availability: {}, closed: {}, overrides: {}, error: "Failed" }, { status: 500 });
   }
 }

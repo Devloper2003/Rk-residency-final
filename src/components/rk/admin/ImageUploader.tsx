@@ -35,6 +35,8 @@ export function ImageUploader({ value, multiple = false, onChange, label, hint, 
   const [uploading, setUploading] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [urlDraft, setUrlDraft] = useState("");
+  // SEO/accessibility: alt text is REQUIRED for every upload.
+  const [altDraft, setAltDraft] = useState("");
 
   const list: string[] = Array.isArray(value)
     ? value
@@ -48,10 +50,17 @@ export function ImageUploader({ value, multiple = false, onChange, label, hint, 
       toast.error("Please select an image file (PNG, JPG, WebP, GIF, SVG, etc.)");
       return;
     }
+    if (!altDraft.trim()) {
+      toast.error("Alt text is required", {
+        description: "Describe what the image shows (e.g. 'Deluxe room at RK Residency Vrindavan with king bed'). Used by Google Images and screen readers.",
+      });
+      return;
+    }
     setUploading(true);
     try {
       const fd = new FormData();
       arr.forEach((f) => fd.append("files", f, f.name));
+      fd.append("alt", altDraft.trim());
       const token = getAdminToken();
       const res = await fetch("/api/admin/upload", {
         method: "POST",
@@ -104,13 +113,14 @@ export function ImageUploader({ value, multiple = false, onChange, label, hint, 
       }
       if (data.errors?.length) toast.warning(data.errors.join("; "));
       else toast.success(`${got.length} image${got.length === 1 ? "" : "s"} uploaded`);
+      setAltDraft(""); // uploaded — clear the alt field for the next batch
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Upload failed";
       toast.error(msg);
     } finally {
       setUploading(false);
     }
-  }, [list, multiple, onChange]);
+  }, [list, multiple, onChange, altDraft]);
 
   const removeAt = (idx: number) => {
     if (multiple) {
@@ -169,6 +179,24 @@ export function ImageUploader({ value, multiple = false, onChange, label, hint, 
           </button>
         </div>
       )}
+
+      {/* Required alt text — SEO + accessibility (server also enforces this) */}
+      <div className="mb-2">
+        <label className="mb-1 flex items-center gap-1 font-display text-[10px] uppercase tracking-wider text-charcoal-soft">
+          Alt text <span className="text-marsala">*required</span>
+        </label>
+        <input
+          type="text"
+          value={altDraft}
+          onChange={(e) => setAltDraft(e.target.value)}
+          placeholder={multiple ? "Describe these images, e.g. Deluxe room at RK Residency Vrindavan with king bed" : "Describe this image, e.g. Deluxe room at RK Residency Vrindavan with king bed"}
+          className="w-full rounded-md border border-charcoal/15 bg-ivory-deep/30 px-3 py-2 font-display text-xs text-charcoal focus:border-teal focus:outline-none"
+          maxLength={300}
+        />
+        <p className="mt-1 font-display text-[10px] text-charcoal-soft/70">
+          {multiple ? "Applied to every image in this batch — describe what they show (Google Images + screen readers)." : "Describe what the image shows (Google Images + screen readers)."}
+        </p>
+      </div>
 
       <div
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}

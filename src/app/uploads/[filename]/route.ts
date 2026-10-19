@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { IMAGE_ALIASES } from "@/lib/image-aliases";
 
 export const dynamic = "force-dynamic";
 
@@ -27,10 +28,26 @@ export async function GET(
   }
 
   try {
-    const asset = await db.mediaAsset.findUnique({
+    let asset = await db.mediaAsset.findUnique({
       where: { filename },
       select: { data: true, mimeType: true, size: true },
     });
+
+    // Read-only fallback: the code references descriptive, SEO-friendly
+    // filenames, but the DB rows may still carry the legacy content-hash
+    // names until scripts/rename-existing-uploads.ts is run against this
+    // database. In that case, serve the legacy row UNDER the requested
+    // descriptive name. Nothing is written or renamed — once the migration
+    // runs, the direct lookup above always succeeds and this never fires.
+    if (!asset) {
+      const legacyName = IMAGE_ALIASES[filename];
+      if (legacyName) {
+        asset = await db.mediaAsset.findUnique({
+          where: { filename: legacyName },
+          select: { data: true, mimeType: true, size: true },
+        });
+      }
+    }
 
     if (!asset) {
       return new Response("Not found", { status: 404 });

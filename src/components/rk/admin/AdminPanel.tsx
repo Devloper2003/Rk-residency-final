@@ -22,7 +22,7 @@ import { toast } from "sonner";
 type AdminUser = { id: string; email: string; name: string; role: string };
 type Tab =
   | "dashboard" | "analytics" | "bookings" | "rooms" | "offers"
-  | "blog" | "reviews" | "content" | "theme"
+  | "blog" | "calendar" | "reviews" | "content" | "theme"
   | "experiences" | "dining" | "gallery" | "payment" | "hero"
   | "settings" | "users" | "leads" | "audit" | "media" | "inventory" | "coupons";
 
@@ -41,6 +41,7 @@ const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: st
   { id: "hero", label: "Hero Section", icon: Sparkles, group: "Content" },
   { id: "content", label: "Page Editor", icon: Edit, group: "Content" },
   { id: "blog", label: "Blog", icon: FileText, group: "Content" },
+  { id: "calendar", label: "Content Calendar", icon: CalendarDays, group: "Content" },
   { id: "media", label: "Media Library", icon: ImageIcon, group: "Content" },
   { id: "theme", label: "Theme & Colors", icon: Sparkles, group: "Settings" },
   { id: "payment", label: "Payment Settings", icon: CreditCard, group: "Settings" },
@@ -59,6 +60,7 @@ const BookingsTab = lazy(() => import("./tabs/BookingsTab").then(m => ({ default
 const RoomsTab = lazy(() => import("./tabs/RoomsTab").then(m => ({ default: m.RoomsTab })));
 const OffersTab = lazy(() => import("./tabs/OffersTab").then(m => ({ default: m.OffersTab })));
 const BlogTab = lazy(() => import("./tabs/BlogTab").then(m => ({ default: m.BlogTab })));
+const CalendarTab = lazy(() => import("./tabs/CalendarTab").then(m => ({ default: m.CalendarTab })));
 const ReviewsTab = lazy(() => import("./tabs/ReviewsTab").then(m => ({ default: m.ReviewsTab })));
 const ContentTab = lazy(() => import("./tabs/ContentTab").then(m => ({ default: m.ContentTab })));
 const ThemeTab = lazy(() => import("./tabs/ThemeTab").then(m => ({ default: m.ThemeTab })));
@@ -291,12 +293,13 @@ export function AdminPanel() {
                 {tab === "analytics" && <AnalyticsTab />}
                 {tab === "bookings" && <BookingsTab />}
                 {tab === "inventory" && <InventoryTab />}
-                {tab === "rooms" && <RoomsTab />}
+                {tab === "rooms" && <RoomsTab onOpenInventory={() => setTab("inventory")} />}
                 {tab === "offers" && <OffersTab />}
                 {tab === "experiences" && <ExperiencesTab />}
                 {tab === "dining" && <DiningTab />}
                 {tab === "gallery" && <GalleryTab />}
                 {tab === "blog" && <BlogTab />}
+                {tab === "calendar" && <CalendarTab />}
                 {tab === "reviews" && <ReviewsTab />}
                 {tab === "hero" && <HeroTab />}
                 {tab === "content" && <ContentTab />}

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { publicPostWhere } from "@/lib/blog-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -16,8 +17,9 @@ export async function GET(req: Request) {
       return NextResponse.json({ post });
     }
 
+    // Public list — scheduled/future posts never appear (publicPostWhere).
     const posts = await db.blogPost.findMany({
-      where: { published: true },
+      where: publicPostWhere(),
       orderBy: [{ publishedAt: "desc" }],
     });
     return NextResponse.json({ posts });

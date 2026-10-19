@@ -8,35 +8,43 @@ import { PageShell } from "../PageShell";
 import { Reveal, Lotus } from "../Motifs";
 import { useContactInfo } from "@/lib/use-contact-info";
 import { useContentValue, parseJsonArray } from "@/lib/site-content";
-
-const NEARBY_FALLBACK = [
-  { name: "Banke Bihari Mandir", dist: "0.6 km", time: "8 min walk" },
-  { name: "ISKCON Sri Krishna Balaram", dist: "1.4 km", time: "18 min walk" },
-  { name: "Prem Mandir", dist: "2.1 km", time: "25 min walk" },
-  { name: "Nidhivan", dist: "0.9 km", time: "12 min walk" },
-  { name: "Keshi Ghat (Yamuna Aarti)", dist: "1.1 km", time: "15 min walk" },
-  { name: "Mathura Junction (railway)", dist: "12 km", time: "30 min drive" },
-  { name: "Agra Airport (Kheria)", dist: "65 km", time: "1.5 hr drive" },
-  { name: "Indira Gandhi Intl. (DEL)", dist: "150 km", time: "3 hr drive" },
-];
-
+import { BUSINESS } from "@/lib/site.config";
 export function ContactPage() {
   const info = useContactInfo();
-  const nearbyRaw = useContentValue("contact.nearby", "[]");
-  const nearby = parseJsonArray<{ name: string; distance: string; time: string }>(nearbyRaw, NEARBY_FALLBACK.map((n) => ({ ...n, distance: n.dist, time2: n.time })));
+  // Distances come from site.config BUSINESS.distances — the SAME single
+  // source as the homepage distances section (replaces the old hardcoded
+  // per-page list that contradicted it).
+  const nearby = Object.values(BUSINESS.distances)
+    .filter((d) => d && d.km && d.time)
+    .map((d) => ({ name: d.label, distance: `${d.km} km`, time: d.time }));
 
   const CONTACT_INFO = [
     { icon: MapPin, label: "Address", lines: [info.addrLine1, info.addrLine2, info.addrLine3] },
-    { icon: Phone, label: "Phone & WhatsApp", lines: [`${info.phoneDisplay} (Front desk)`, `${info.phoneReservations} (Reservations)`] },
-    { icon: Mail, label: "Email", lines: [info.emailPrimary, `${info.emailEvents} (satsang & weddings)`] },
+    {
+      icon: Phone,
+      label: "Phone & WhatsApp",
+      lines: [
+        info.phoneDisplay ? `${info.phoneDisplay} (Front desk)` : "",
+        info.phoneReservations ? `${info.phoneReservations} (Reservations)` : "",
+      ].filter(Boolean),
+    },
+    {
+      icon: Mail,
+      label: "Email",
+      lines: [info.emailPrimary, info.emailEvents ? `${info.emailEvents} (satsang & weddings)` : ""].filter(Boolean),
+    },
     { icon: Clock, label: "Reception", lines: ["Open 24 hours, 7 days", `Check-in ${info.checkinTime} · Check-out ${info.checkoutTime}`] },
-  ];
+  ].filter((c) => c.lines.length > 0);
 
   return (
     <PageShell
-      title="Begin your Braj journey"
+      title="Contact & Location — Hotel in Vrindavan"
       subtitle={`Whether you are planning a pilgrimage, a satsang retreat or a small wedding — write to us. Our concierge replies within four hours, ${info.conciergeHours}.`}
       accent="teal"
+      breadcrumbs={[
+        { name: "Home", path: "/" },
+        { name: "Contact", path: "/contact" },
+      ]}
     >
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Left: contact info + map */}
@@ -69,15 +77,29 @@ export function ContactPage() {
               <div className="font-display text-xs text-charcoal-soft">
                 {info.addrLine1} · {info.addrLine2} · {info.addrLine3}
               </div>
-              <a
-                href={info.mapDirectionsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full bg-teal px-3 py-1.5 font-display text-xs font-semibold text-ivory transition-colors hover:bg-teal-deep"
-              >
-                <Navigation className="h-3.5 w-3.5" />
-                Get directions
-              </a>
+              <div className="flex flex-wrap items-center gap-2">
+                {(BUSINESS.maps.googleBusinessProfile || BUSINESS.reviews.google) && (
+                  <a
+                    href={BUSINESS.maps.googleBusinessProfile || BUSINESS.reviews.google}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-white px-3 py-1.5 font-display text-xs font-semibold text-gold-deep transition-colors hover:bg-gold/10"
+                  >
+                    View on Google
+                  </a>
+                )}
+                {info.mapDirectionsUrl && (
+                  <a
+                    href={info.mapDirectionsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-teal px-3 py-1.5 font-display text-xs font-semibold text-ivory transition-colors hover:bg-teal-deep"
+                  >
+                    <Navigation className="h-3.5 w-3.5" />
+                    Get directions
+                  </a>
+                )}
+              </div>
             </div>
           </div>
 
@@ -101,24 +123,30 @@ export function ContactPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <a
-              href={info.waUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-4 py-3 font-serif text-sm font-semibold text-white transition-all hover:shadow-lg"
-            >
-              <MessageCircle className="h-4 w-4 transition-transform group-hover:scale-110" />
-              Chat on WhatsApp
-            </a>
-            <a
-              href={info.telUrl}
-              className="group flex items-center justify-center gap-2 rounded-2xl bg-teal px-4 py-3 font-serif text-sm font-semibold text-ivory transition-all hover:bg-teal-deep hover:shadow-lg"
-            >
-              <Phone className="h-4 w-4 transition-transform group-hover:scale-110" />
-              Call front desk
-            </a>
-          </div>
+          {(info.waUrl || info.telUrl) && (
+            <div className="grid grid-cols-2 gap-3">
+              {info.waUrl && (
+                <a
+                  href={info.waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-4 py-3 font-serif text-sm font-semibold text-white transition-all hover:shadow-lg"
+                >
+                  <MessageCircle className="h-4 w-4 transition-transform group-hover:scale-110" />
+                  Chat on WhatsApp
+                </a>
+              )}
+              {info.telUrl && (
+                <a
+                  href={info.telUrl}
+                  className={`group flex items-center justify-center gap-2 rounded-2xl bg-teal px-4 py-3 font-serif text-sm font-semibold text-ivory transition-all hover:bg-teal-deep hover:shadow-lg ${info.waUrl ? "" : "col-span-2"}`}
+                >
+                  <Phone className="h-4 w-4 transition-transform group-hover:scale-110" />
+                  Call front desk
+                </a>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right: travel info */}

@@ -21,6 +21,8 @@ export type LegalPageProps = {
   sections: LegalSection[];
   closing?: React.ReactNode;
   effectiveDate?: string;
+  /** Route path of this legal page, used for BreadcrumbList JSON-LD. */
+  path?: string;
 };
 
 /**
@@ -40,6 +42,7 @@ export function LegalPage({
   sections,
   closing,
   effectiveDate,
+  path,
 }: LegalPageProps) {
   const info = useContactInfo();
   const [activeId, setActiveId] = useState<string>(sections[0]?.id || "");
@@ -72,7 +75,15 @@ export function LegalPage({
   };
 
   return (
-    <PageShell title={title} subtitle={subtitle} accent={accent}>
+    <PageShell
+      title={title}
+      subtitle={subtitle}
+      accent={accent}
+      breadcrumbs={[
+        { name: "Home", path: "/" },
+        { name: title, path: path || "/" },
+      ]}
+    >
       <div className="grid gap-10 lg:grid-cols-[260px_1fr]">
         {/* Sticky table of contents (desktop only) */}
         <aside className="hidden lg:block">
@@ -172,20 +183,26 @@ export function LegalPage({
               <p className="mt-2 font-display text-sm text-charcoal-soft">
                 Our concierge team is happy to clarify any clause. Reach out — we reply within 4 hours.
               </p>
-              <div className="mt-4 grid gap-2 font-display text-sm sm:grid-cols-2">
-                <a
-                  href={info.telUrl}
-                  className="flex items-center gap-2 rounded-xl border border-teal/20 bg-teal/5 px-4 py-2.5 font-semibold text-teal transition-colors hover:bg-teal hover:text-ivory"
-                >
-                  📞 {info.phoneDisplay}
-                </a>
-                <a
-                  href={info.mailtoUrl}
-                  className="flex items-center gap-2 rounded-xl border border-teal/20 bg-teal/5 px-4 py-2.5 font-semibold text-teal transition-colors hover:bg-teal hover:text-ivory"
-                >
-                  ✉️ {info.emailPrimary}
-                </a>
-              </div>
+              {(info.telUrl || info.mailtoUrl) && (
+                <div className="mt-4 grid gap-2 font-display text-sm sm:grid-cols-2">
+                  {info.telUrl && (
+                    <a
+                      href={info.telUrl}
+                      className="flex items-center gap-2 rounded-xl border border-teal/20 bg-teal/5 px-4 py-2.5 font-semibold text-teal transition-colors hover:bg-teal hover:text-ivory"
+                    >
+                      📞 {info.phoneDisplay}
+                    </a>
+                  )}
+                  {info.mailtoUrl && (
+                    <a
+                      href={info.mailtoUrl}
+                      className="flex items-center gap-2 rounded-xl border border-teal/20 bg-teal/5 px-4 py-2.5 font-semibold text-teal transition-colors hover:bg-teal hover:text-ivory"
+                    >
+                      ✉️ {info.emailPrimary}
+                    </a>
+                  )}
+                </div>
+              )}
               <p className="mt-3 font-display text-xs text-charcoal-soft">
                 📍 {info.addressFull}
               </p>

@@ -4,6 +4,7 @@ import { useContentValue } from "@/lib/site-content";
 import { motion } from "framer-motion";
 import { Star, BadgeCheck, Quote, ExternalLink } from "lucide-react";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
+import { BUSINESS } from "@/lib/site.config";
 
 type Review = {
   id: string;
@@ -79,7 +80,10 @@ function ReviewCard({ r }: { r: Review }) {
 export function Testimonials() {
   const tLabel = useContentValue("testimonials.label", "Guests & devotees");
   const tTitle = useContentValue("testimonials.title", "Voices from our Braj family");
-  const tRating = useContentValue("testimonials.aggregate_rating", "4.9");
+  // Aggregate rating shown ONLY when the owner sets a verifiable value
+  // backed by a real review profile link (BUSINESS.reviews). Empty = hidden;
+  // never rendered unsourced and never emitted in JSON-LD schema.
+  const tRating = useContentValue("testimonials.aggregate_rating", "");
   const tGoogleCount = useContentValue("testimonials.google_review_count", "840+ reviews");
   const tTripAdvisorCount = useContentValue("testimonials.tripadvisor_review_count", "400+ reviews");
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -124,23 +128,25 @@ export function Testimonials() {
             </h2>
           </Reveal>
           <Reveal delay={0.1}>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-6">
-              <div className="flex items-center gap-2">
-                <div className="flex">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="h-5 w-5 fill-gold text-gold" />
-                  ))}
+            {tRating && (
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-6">
+                <div className="flex items-center gap-2">
+                  <div className="flex">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className="h-5 w-5 fill-gold text-gold" />
+                    ))}
+                  </div>
+                  <span className="font-serif text-2xl font-bold">{tRating}</span>
+                  <span className="font-display text-sm text-ivory/70">/ 5</span>
                 </div>
-                <span className="font-serif text-2xl font-bold">4.9</span>
-                <span className="font-display text-sm text-ivory/70">/ 5</span>
+                <div className="hidden h-8 w-px bg-ivory/30 sm:block" />
+                <div className="font-display text-sm text-ivory/80">
+                  Aggregated from{" "}
+                  <span className="font-semibold text-gold-soft">Google</span>,{" "}
+                  <span className="font-semibold text-gold-soft">TripAdvisor</span> &amp; direct stays
+                </div>
               </div>
-              <div className="hidden h-8 w-px bg-ivory/30 sm:block" />
-              <div className="font-display text-sm text-ivory/80">
-                Aggregated from{" "}
-                <span className="font-semibold text-gold-soft">Google</span>,{" "}
-                <span className="font-semibold text-gold-soft">TripAdvisor</span> &amp; direct stays
-              </div>
-            </div>
+            )}
           </Reveal>
         </div>
       </div>
@@ -166,12 +172,16 @@ export function Testimonials() {
         </div>
       )}
 
-      {/* Aggregate badges */}
+      {/* Aggregate badges — linked to the owner's real review profiles from
+          site.config BUSINESS. Hidden entirely until the TODO URLs are filled,
+          so we never link to generic placeholder pages. */}
+      {(BUSINESS.reviews.google || BUSINESS.reviews.tripadvisor) && (
       <div className="relative mt-16">
         <SectionDivider className="mb-8" />
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-6 px-4 sm:flex-row sm:gap-12">
+          {BUSINESS.reviews.google && (
           <a
-            href="https://www.google.com/travel/hotels"
+            href={BUSINESS.reviews.google}
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center gap-3 rounded-2xl border border-ivory/15 bg-ivory/5 px-5 py-3 transition-all hover:border-gold/40 hover:bg-ivory/10"
@@ -187,8 +197,10 @@ export function Testimonials() {
               </div>
             </div>
           </a>
+          )}
+          {BUSINESS.reviews.tripadvisor && (
           <a
-            href="https://www.tripadvisor.in"
+            href={BUSINESS.reviews.tripadvisor}
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center gap-3 rounded-2xl border border-ivory/15 bg-ivory/5 px-5 py-3 transition-all hover:border-gold/40 hover:bg-ivory/10"
@@ -204,8 +216,10 @@ export function Testimonials() {
               </div>
             </div>
           </a>
+          )}
         </div>
       </div>
+      )}
     </section>
   );
 }

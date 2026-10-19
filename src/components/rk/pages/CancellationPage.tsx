@@ -8,15 +8,23 @@ export function CancellationPage() {
       title="Cancellation & Refund Policy"
       subtitle="The terms applicable to reservations made through our website, phone, email, WhatsApp, or authorized booking partners. By confirming a reservation, you agree to the terms stated below."
       accent="marsala"
+      path="/cancellation-policy"
       effectiveDate="July 2026"
       intro={
-        <p>
+        <>
+          <Callout variant="warning">
+            <strong>TODO — legal review:</strong> this page uses placeholder template
+            text. Have it reviewed, completed and confirmed by your lawyer/legal team
+            before treating it as the final policy.
+          </Callout>
+          <p>
           At <strong className="text-marsala">RK Residency</strong>, we strive to provide a seamless
           booking experience for all our guests. This Cancellation & Refund Policy outlines the
           terms applicable to reservations made through our website, phone, email, WhatsApp, or
           authorized booking partners. By confirming a reservation, you agree to the terms stated
           below.
         </p>
+        </>
       }
       sections={[
         {

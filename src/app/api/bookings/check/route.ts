@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { checkRangeAvailability } from "@/lib/inventory";
 
 export const dynamic = "force-dynamic";
 
@@ -19,8 +20,11 @@ const schema = z.object({
  *   - pricePerNight, nights, subtotal, taxes, serviceFee, total
  *   - appliedRateOverride (if any festival/seasonal surge)
  *
- * Inventory model: each Room has `totalCount` inventory. We count overlapping
- * CONFIRMED bookings (status != CANCELLED) for the date range and subtract.
+ * Inventory model: each Room has `totalCount` inventory. Availability is
+ * computed PER NIGHT across the stay: overlapping CONFIRMED bookings
+ * (status != CANCELLED) are subtracted, and Admin-controlled per-day
+ * inventory (open/close/sellable override — RoomInventoryDay) is honoured,
+ * so a closed day blocks any stay that includes that night.
  * This is a single-source-of-truth check — concurrent bookings use a
  * transactional write in /api/bookings to prevent double-booking.
  */
@@ -55,20 +59,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Room not found." }, { status: 404 });
     }
 
-    // Count overlapping confirmed bookings
-    const overlapping = await db.booking.count({
-      where: {
-        roomId: room.id,
-        status: { not: "CANCELLED" },
-        AND: [
-          { checkIn: { lt: checkOut } },
-          { checkOut: { gt: checkIn } },
-        ],
-      },
-    });
-
-    const roomsLeft = Math.max(0, room.totalCount - overlapping);
-    const available = roomsLeft > 0;
+    // Per-night availability with admin open/close inventory control
+    const range = await checkRangeAvailability(room.id, room.totalCount, checkIn, checkOut);
+    const roomsLeft = range.minRoomsLeft;
+    const available = range.available;
 
     // Resolve rate — pick the highest applicable override in the window
     const applicableOverrides = room.rateOverrides.filter((ro) => {

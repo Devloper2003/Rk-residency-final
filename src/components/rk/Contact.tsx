@@ -15,7 +15,14 @@ import {
 } from "@/components/ui/select";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { toast } from "sonner";
-import { useSettingValue, useContentValue, parseJsonArray } from "@/lib/site-content";
+import { useSettingValue, useContentValue } from "@/lib/site-content";
+import { BUSINESS, businessAddress } from "@/lib/site.config";
+import {
+  googleMapsEmbedUrl,
+  sanitizeWhatsapp,
+  sanitizeContactText,
+  sanitizeDirectionsUrl,
+} from "@/lib/use-contact-info";
 
 export function Contact() {
   const [form, setForm] = useState({
@@ -23,32 +30,35 @@ export function Contact() {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  // Live editable contact info (with fallbacks)
-  const phoneDisplay = useSettingValue("phone_primary", "+91 565 234 5678");
-  const phoneTel = useSettingValue("phone_primary_tel", "+915652345678");
-  const phoneReservations = useSettingValue("phone_reservations", "+91 98765 43210");
-  const emailPrimary = useSettingValue("email_primary", "stay@rkresidency.in");
-  const emailEvents = useSettingValue("email_events", "events@rkresidency.in");
-  const addrLine1 = useSettingValue("address_line1", "RK Residency, Parikrama Marg");
-  const addrLine2 = useSettingValue("address_line2", "Vrindavan, Mathura");
-  const addrLine3 = useSettingValue("address_line3", "Uttar Pradesh 281121, India");
-  const mapEmbedUrl = useSettingValue("map_embed_url", "https://www.openstreetmap.org/export/embed.html?bbox=77.6950%2C27.5650%2C77.7250%2C27.5850&layer=mapnik&marker=27.5756%2C77.7100");
-  const mapDirectionsUrl = useSettingValue("map_directions_url", "https://www.google.com/maps/dir/?api=1&destination=Vrindavan%20Uttar%20Pradesh");
-  const whatsappNumberRaw = useSettingValue("whatsapp_number", "919876543210");
-  const whatsappNumber = whatsappNumberRaw.replace(/[^\d]/g, "");
+  // Live editable contact info — fallbacks from site.config BUSINESS (TODO
+  // values; DB settings win when present, no dummy data invented in code).
+  // Placeholder/dummy values are stripped so empty details HIDE instead of
+  // rendering dead links.
+  const phoneDisplay = sanitizeContactText(useSettingValue("phone_primary", BUSINESS.phonePrimary));
+  const phoneTel = sanitizeContactText(useSettingValue("phone_primary_tel", BUSINESS.phonePrimaryTel));
+  const phoneReservations = sanitizeContactText(useSettingValue("phone_reservations", BUSINESS.phoneReservations));
+  const emailPrimary = sanitizeContactText(useSettingValue("email_primary", BUSINESS.emailPrimary));
+  const emailEvents = sanitizeContactText(useSettingValue("email_events", ""));
+  // Address from site.config BUSINESS.address — same as footer + JSON-LD.
+  const addr = businessAddress();
+  const addrLine1 = useSettingValue("address_line1", addr.line1);
+  const addrLine2 = useSettingValue("address_line2", addr.line2);
+  const addrLine3 = useSettingValue("address_line3", addr.line3);
+  // Google Maps embed of the exact hotel location (was OpenStreetMap).
+  const mapEmbedUrl = useSettingValue("map_embed_url", googleMapsEmbedUrl());
+  const mapDirectionsUrl = sanitizeDirectionsUrl(useSettingValue("map_directions_url", ""));
+  const gbpUrl = BUSINESS.maps.googleBusinessProfile || BUSINESS.reviews.google;
+  const whatsappNumberRaw = useSettingValue("whatsapp_number", BUSINESS.whatsappNumber);
+  const whatsappNumber = sanitizeWhatsapp(whatsappNumberRaw);
   const whatsappPrefill = useContentValue("contact.whatsapp_prefill_text", "I would like to enquire about availability at RK Residency");
   const checkinTime = useSettingValue("checkin_time", "2:00 PM");
   const checkoutTime = useSettingValue("checkout_time", "11:00 AM");
   const conciergeHours = useSettingValue("concierge_hours", "7 AM – 11 PM IST");
-  const nearbyRaw = useContentValue("contact.nearby", "[]");
-  const nearby = parseJsonArray<{ name: string; distance: string; time: string }>(nearbyRaw, [
-    { name: "Banke Bihari Mandir", distance: "450 m", time: "6 min walk" },
-    { name: "ISKCON Vrindavan", distance: "1.2 km", time: "15 min walk" },
-    { name: "Prem Mandir", distance: "2 km", time: "25 min walk" },
-    { name: "Keshi Ghat", distance: "650 m", time: "8 min walk" },
-    { name: "Mathura Junction", distance: "12 km", time: "30 min drive" },
-    { name: "Agra Airport", distance: "65 km", time: "90 min drive" },
-  ]);
+  // Distances come from site.config BUSINESS.distances — the SAME single
+  // source as the homepage "Distances from RK Residency" section.
+  const nearby = Object.values(BUSINESS.distances)
+    .filter((d) => d && d.km && d.time)
+    .map((d) => ({ name: d.label, distance: `${d.km} km`, time: d.time }));
 
   const CONTACT_INFO = [
     {
@@ -59,19 +69,23 @@ export function Contact() {
     {
       icon: Phone,
       label: "Phone & WhatsApp",
-      lines: [`${phoneDisplay} (Front desk)`, `${phoneReservations} (Reservations)`],
+      // Only real, filled-in numbers are shown — placeholders hide.
+      lines: [
+        phoneDisplay ? `${phoneDisplay} (Front desk)` : "",
+        phoneReservations ? `${phoneReservations} (Reservations)` : "",
+      ].filter(Boolean),
     },
     {
       icon: Mail,
       label: "Email",
-      lines: [emailPrimary, `${emailEvents} (satsang & weddings)`],
+      lines: [emailPrimary, emailEvents ? `${emailEvents} (satsang & weddings)` : ""].filter(Boolean),
     },
     {
       icon: Clock,
       label: "Reception",
       lines: ["Open 24 hours, 7 days", `Check-in ${checkinTime} · Check-out ${checkoutTime}`],
     },
-  ];
+  ].filter((c) => c.lines.length > 0);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,8 +110,11 @@ export function Contact() {
     }
   };
 
-  // WhatsApp URL with prefill text
-  const waUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappPrefill)}`;
+  // WhatsApp URL with prefill text — empty when no real number is set
+  // (the button below hides itself in that case rather than dead-linking).
+  const waUrl = whatsappNumber
+    ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappPrefill)}`
+    : "";
 
   return (
     <section id="contact" className="relative bg-ivory py-24 lg:py-32">
@@ -165,15 +182,29 @@ export function Contact() {
                   <div className="font-display text-xs text-charcoal-soft">
                     {addrLine1} · {addrLine2} · {addrLine3}
                   </div>
-                  <a
-                    href={mapDirectionsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-teal px-3 py-1.5 font-display text-xs font-semibold text-ivory transition-colors hover:bg-teal-deep"
-                  >
-                    <Navigation className="h-3.5 w-3.5" />
-                    Get directions
-                  </a>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {gbpUrl && (
+                      <a
+                        href={gbpUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-white px-3 py-1.5 font-display text-xs font-semibold text-gold-deep transition-colors hover:bg-gold/10"
+                      >
+                        View on Google
+                      </a>
+                    )}
+                    {mapDirectionsUrl && (
+                      <a
+                        href={mapDirectionsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-teal px-3 py-1.5 font-display text-xs font-semibold text-ivory transition-colors hover:bg-teal-deep"
+                      >
+                        <Navigation className="h-3.5 w-3.5" />
+                        Get directions
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -198,25 +229,32 @@ export function Contact() {
                 </div>
               </div>
 
-              {/* Quick WhatsApp + Call */}
-              <div className="grid grid-cols-2 gap-3">
-                <a
-                  href={waUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-4 py-3 font-serif text-sm font-semibold text-white transition-all hover:shadow-lg"
-                >
-                  <MessageCircle className="h-4 w-4 transition-transform group-hover:scale-110" />
-                  Chat on WhatsApp
-                </a>
-                <a
-                  href={`tel:${phoneTel}`}
-                  className="group flex items-center justify-center gap-2 rounded-2xl bg-teal px-4 py-3 font-serif text-sm font-semibold text-ivory transition-all hover:bg-teal-deep hover:shadow-lg"
-                >
-                  <Phone className="h-4 w-4 transition-transform group-hover:scale-110" />
-                  Call front desk
-                </a>
-              </div>
+              {/* Quick WhatsApp + Call — each button hides when the real
+                  detail is not set yet (no dead links on the site). */}
+              {(waUrl || phoneTel) && (
+                <div className="grid grid-cols-2 gap-3">
+                  {waUrl && (
+                    <a
+                      href={waUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-4 py-3 font-serif text-sm font-semibold text-white transition-all hover:shadow-lg"
+                    >
+                      <MessageCircle className="h-4 w-4 transition-transform group-hover:scale-110" />
+                      Chat on WhatsApp
+                    </a>
+                  )}
+                  {phoneTel && (
+                    <a
+                      href={`tel:${phoneTel}`}
+                      className={`group flex items-center justify-center gap-2 rounded-2xl bg-teal px-4 py-3 font-serif text-sm font-semibold text-ivory transition-all hover:bg-teal-deep hover:shadow-lg ${waUrl ? "" : "col-span-2"}`}
+                    >
+                      <Phone className="h-4 w-4 transition-transform group-hover:scale-110" />
+                      Call front desk
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
           </Reveal>
 

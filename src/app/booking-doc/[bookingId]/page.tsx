@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { PrintButton } from "../PrintButton";
+import { BUSINESS, SITE_URL } from "@/lib/site.config";
 
 export const dynamic = "force-dynamic";
 
@@ -44,10 +45,10 @@ export default async function BookingDocPage({
   settings.forEach((s) => { cfg[s.key] = s.value; });
   cfg.brand_name = cfg.brand_name || "RK Residency";
   cfg.brand_tagline = cfg.brand_tagline || "Heritage Luxury in Vrindavan";
-  cfg.phone_primary = cfg.phone_primary || "+91 565 234 5678";
+  cfg.phone_primary = cfg.phone_primary || BUSINESS.phonePrimary; // TODO placeholder until owner fills site.config
   cfg.email_primary = cfg.email_primary || "reservations@rkresidencyvrindavan.in";
   cfg.address_full = cfg.address_full || "Krishna Janambhoomi Road, Vrindavan, Mathura, Uttar Pradesh 281121";
-  cfg.website_url = cfg.website_url || "www.rkresidencyvrindavan.in";
+  cfg.website_url = cfg.website_url || new URL(SITE_URL).host; // from SITE_URL env
   cfg.gstin = cfg.gstin || "—";
 
   // Load logo from DB MediaAsset and convert to base64 data URL for inline embedding.

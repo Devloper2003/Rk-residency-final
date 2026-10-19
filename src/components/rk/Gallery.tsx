@@ -16,49 +16,49 @@ type GalleryItem = {
 
 const GALLERY: GalleryItem[] = [
   {
-    src: "/uploads/77c2e9079bcad2e4.webp",
+    src: "/uploads/rk-residency-vrindavan-temple-skyline-sunrise.webp",
     alt: "Golden-hour Vrindavan temple skyline from Prem mandir",
     caption: "Sunrise over the temple skyline",
     span: "wide",
   },
   {
-    src: "/uploads/e7945e7017587391.webp",
+    src: "/uploads/rk-residency-vrindavan-keshi-ghat.webp",
     alt: "Historic architecture and temple corridor at Keshi Ghat, Vrindavan",
     caption: "Yamuna Side — kesi ghat",
     span: "tall",
   },
   {
-    src: "/uploads/bc1472b2bdcf41a1.webp",
+    src: "/uploads/rk-residency-vrindavan-yamuna-aarti-diyas.webp",
     alt: "Yamuna aarti at dusk with floating diyas",
     caption: "Yamuna aarti at Keshi Ghat",
     span: "square",
   },
   {
-    src: "/uploads/7ff0f47ff2a66e6b.webp",
+    src: "/uploads/rk-residency-vrindavan-braj-thali.webp",
     alt: "Satvik thali on a heritage brass plate",
     caption: "Braj Thali ",
     span: "square",
   },
   {
-    src: "/uploads/602dc906088e4031.webp?auto=format&fit=crop&w=1200&q=80",
+    src: "/uploads/rk-residency-vrindavan-prem-mandir-marble-detail.webp?auto=format&fit=crop&w=1200&q=80",
     alt: "Temple architecture detail in Vrindavan",
     caption: "Prem Mandir marble detail",
     span: "wide",
   },
   {
-    src: "/uploads/63e4076580ba26bc.webp?auto=format&fit=crop&w=1200&q=80",
+    src: "/uploads/rk-residency-vrindavan-yamuna-aarti-keshi-ghat.webp?auto=format&fit=crop&w=1200&q=80",
     alt: "Marigold garland and diya offerings",
     caption: "Marigold & diya — daily offerings",
     span: "tall",
   },
   {
-    src: "/uploads/59eababd45bb5dda.webp?auto=format&fit=crop&w=1200&q=80",
+    src: "/uploads/rk-residency-vrindavan-iskcon-kirtan.webp?auto=format&fit=crop&w=1200&q=80",
     alt: "ISKCON temple kirtan scene",
     caption: "ISKCON evening kirtan",
     span: "square",
   },
   {
-    src: "/uploads/430045b2d369a607.webp?auto=format&fit=crop&w=1200&q=80",
+    src: "/uploads/rk-residency-vrindavan-holi-colours.webp?auto=format&fit=crop&w=1200&q=80",
     alt: "Festival of Holi with gulal colours",
     caption: "Holi at the Braj courtyard",
     span: "square",
@@ -133,6 +133,8 @@ export function Gallery({ limit }: { limit?: number }) {
                 <img
                   src={item.src}
                   alt={item.alt}
+                  width={800}
+                  height={800}
                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                   loading="lazy"
                 />
@@ -156,7 +158,13 @@ export function Gallery({ limit }: { limit?: number }) {
             <SectionDivider className="mb-6" />
             <p className="text-center font-display text-sm text-charcoal-soft">
               A full 360° virtual tour of every room category is available on request —
-              write to <a href={info.mailtoUrl} className="text-teal underline-offset-2 hover:underline">{info.emailPrimary}</a>.
+              {info.emailPrimary ? (
+                <>
+                  {" "}write to <a href={info.mailtoUrl} className="text-teal underline-offset-2 hover:underline">{info.emailPrimary}</a>.
+                </>
+              ) : (
+                " use the contact form and we'll arrange it."
+              )}
             </p>
           </div>
         </Reveal>

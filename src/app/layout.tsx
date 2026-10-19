@@ -7,6 +7,7 @@ import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { VisitorTracker } from "@/components/rk/VisitorTracker";
 import { GoogleTagManager } from "@/components/rk/GoogleTagManager";
 import { GoogleAnalytics } from "@/components/rk/GoogleAnalytics";
+import { SITE_URL } from "@/lib/site.config";
 import { GlobalBookingWidget } from "@/components/rk/GlobalBookingWidget";
 import { ThemeProvider } from "@/components/rk/ThemeProvider";
 
@@ -32,34 +33,19 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "RK Residency — Heritage Luxury Stay in Vrindavan | Hotel near Banke Bihari Temple",
+  metadataBase: new URL(SITE_URL),
+  title: "Hotel near Banke Bihari Mandir, Vrindavan | RK Residency",
   description:
-    "RK Residency is a heritage-luxury residency in Vrindavan on the banks of the Yamuna. Spiritual luxury for pilgrims, devotee families and cultural travellers. Steps from Banke Bihari Mandir, ISKCON, Prem Mandir. Direct booking best-price guarantee.",
-  keywords: [
-    "Vrindavan hotel",
-    "hotel near Banke Bihari Temple",
-    "hotel near ISKCON Vrindavan",
-    "Vrindavan luxury stay",
-    "Vrindavan resort booking",
-    "RK Residency",
-    "Braj region hotel",
-    "spiritual luxury Vrindavan",
-    "Yamuna aarti stay",
-    "Prem Mandir hotel",
-  ],
+    "Heritage hotel near Banke Bihari Mandir & ISKCON Vrindavan. Satvik dining, serene rooms on the Yamuna. Book direct for the best price.",
   authors: [{ name: "RK Residency" }],
-  alternates: {
-    canonical: "https://rkresidency.in/",
-    languages: {
-      "en-IN": "/",
-      "hi-IN": "/hi",
-    },
-  },
+  // NOTE: no site-wide canonical here. Canonicals are set PER PAGE
+  // (self-referencing, built from SITE_URL) in each route's metadata so no
+  // page ever inherits another page's canonical.
   openGraph: {
-    title: "RK Residency — Heritage Luxury Stay in Vrindavan",
+    title: "Hotel near Banke Bihari Mandir, Vrindavan | RK Residency",
     description:
-      "Spiritual luxury on the banks of the Yamuna. Steps from Banke Bihari Mandir and ISKCON Vrindavan. Direct booking with best-price guarantee.",
-    url: "https://rkresidency.in",
+      "Heritage hotel near Banke Bihari Mandir & ISKCON Vrindavan. Satvik dining, serene rooms on the Yamuna. Book direct for the best price.",
+    url: "/",
     siteName: "RK Residency",
     locale: "en_IN",
     type: "website",
@@ -74,9 +60,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "RK Residency — Heritage Luxury Stay in Vrindavan",
+    title: "Hotel near Banke Bihari Mandir, Vrindavan | RK Residency",
     description:
-      "Spiritual luxury on the banks of the Yamuna. Direct booking with best-price guarantee.",
+      "Heritage hotel near Banke Bihari Mandir & ISKCON Vrindavan. Book direct for the best price.",
     images: ["/images/hero-vrindavan.webp"],
   },
   robots: {
@@ -90,8 +76,8 @@ export const metadata: Metadata = {
     },
   },
     icons: {
-    icon: "/uploads/4554e352db41d79f.webp",
-    apple: "/uploads/4554e352db41d79f.webp",
+    icon: "/uploads/rk-residency-vrindavan-logo.webp",
+    apple: "/uploads/rk-residency-vrindavan-logo.webp",
   },
 };
 
@@ -104,15 +90,27 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${playfair.variable} ${cormorant.variable} ${inter.variable} antialiased bg-ivory text-charcoal font-sans`}
              >
-        <ThemeProvider>
-        {/* Google Tag Manager */}
-        <Script id="google-tag-manager" strategy="afterInteractive">
+        {/* Google Tag Manager (noscript) — per GTM spec this must be the FIRST
+            element inside <body>, right after the opening tag. */}
+        <noscript>
+          <iframe
+            src="https://www.googletagmanager.com/ns.html?id=GTM-KSSWNL9K"
+            height="0"
+            width="0"
+            style={{ display: "none", visibility: "hidden" }}
+            title="Google Tag Manager"
+          />
+        </noscript>
+        {/* Google Tag Manager — loaded with beforeInteractive so Next.js injects
+            it as high in the <head> as possible, exactly as GTM requires. */}
+        <Script id="google-tag-manager" strategy="beforeInteractive">
           {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
           new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
           j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
           })(window,document,'script','dataLayer','GTM-KSSWNL9K');`}
         </Script>
+        <ThemeProvider>
          <NextRouterBridge />
         {children}
         

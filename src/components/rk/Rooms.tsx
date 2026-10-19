@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { useRouter } from "@/lib/router";
 import { safeJsonArray } from "@/lib/utils";
+import { BUSINESS } from "@/lib/site.config";
 
 type Room = {
   id: string;
@@ -72,11 +73,13 @@ function TiltCard({
       >
         {/* Image with arch mask on top */}
         <div className="relative h-60 overflow-hidden sm:h-72">
-          <div
-            className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-            style={{ backgroundImage: `url(${cover})` }}
-            role="img"
-            aria-label={room.name}
+          <img
+            src={cover}
+            alt={`${room.name} — ${room.view} room at RK Residency, Kailash Nagar, Vrindavan`}
+            width={800}
+            height={600}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-charcoal/85 via-charcoal/30 to-transparent" />
 
@@ -196,16 +199,27 @@ function matchFilter(room: Room, filter: string): boolean {
   return true;
 }
 
-export function Rooms({ onBookRoom, limit }: { onBookRoom: (room: Room) => void; limit?: number }) {
+export function Rooms({
+  onBookRoom,
+  limit,
+  initialRooms,
+}: {
+  onBookRoom: (room: Room) => void;
+  limit?: number;
+  /** SSR: rooms fetched by the server page — keeps cards + prices in the
+   *  initial HTML. The client fetch below remains only as a fallback. */
+  initialRooms?: Room[];
+}) {
   const rLabel = useContentValue("rooms.label", "Accommodation");
   const rTitle = useContentValue("rooms.title", "Rooms, suites & family ");
   const rSubtitle = useContentValue("rooms.subtitle", "");
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [rooms, setRooms] = useState<Room[]>(initialRooms || []);
+  const [loading, setLoading] = useState(!initialRooms);
   const [filter, setFilter] = useState("all");
   const navigate = useRouter((s) => s.navigate);
 
   useEffect(() => {
+    if (initialRooms) return; // data already rendered server-side
     fetch("/api/rooms")
       .then((r) => r.json())
       .then((data) => {
@@ -213,10 +227,16 @@ export function Rooms({ onBookRoom, limit }: { onBookRoom: (room: Room) => void;
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [initialRooms]);
 
   const visible = rooms.filter((r) => matchFilter(r, filter));
   const items = limit ? visible.slice(0, limit) : visible;
+
+  // "Starting from ₹X per night" — real price: lowest room basePrice in the
+  // DB, unless the owner pins one in site.config. Rendered server-side.
+  const startingFrom =
+    BUSINESS.startingFromPrice ||
+    (rooms.length ? Math.min(...rooms.map((r) => r.basePrice)) : 0);
   
   return (
     <section id="rooms" className="relative bg-ivory-deep py-24 lg:py-32">
@@ -247,6 +267,17 @@ export function Rooms({ onBookRoom, limit }: { onBookRoom: (room: Room) => void;
               where guests can experience the timeless charm and spiritual essence of Vrindavan.
             </p>
           </Reveal>
+          {startingFrom > 0 && (
+            <Reveal delay={0.12}>
+              <p className="mt-4 font-display text-base text-charcoal sm:text-lg">
+                Starting from{" "}
+                <span className="font-serif text-xl font-bold text-teal sm:text-2xl">
+                  ₹{startingFrom.toLocaleString("en-IN")}
+                </span>{" "}
+                <span className="text-charcoal-soft">per night</span>
+              </p>
+            </Reveal>
+          )}
         </div>
 
         {/* Filters */}
@@ -300,15 +331,18 @@ export function Rooms({ onBookRoom, limit }: { onBookRoom: (room: Room) => void;
           </div>
         </Reveal>
 
-        {/* Bottom note */}
+        {/* Bottom note — wording derives from the single breakfast policy
+            in site.config so it always matches the trust badge + FAQ. */}
         <Reveal delay={0.15}>
           <div className="mt-12">
             <SectionDivider className="mb-6" />
             <p className="text-center font-display text-sm text-charcoal-soft">
-              All rates exclude daily satvik breakfast &amp; assistance with temple visits.
+              {BUSINESS.breakfastIncluded
+                ? "Daily satvik breakfast is included in all rates, with assistance for temple visits."
+                : "All rates exclude daily satvik breakfast & assistance with temple visits."}
               <br />
               <span className="text-marsala">
-                Festival surge pricing applies during Janmashtami, Holi &amp; Radhashtami.
+                Festival surge pricing applies during Janmashtami, Holi & Radhashtami.
               </span>
             </p>
           </div>

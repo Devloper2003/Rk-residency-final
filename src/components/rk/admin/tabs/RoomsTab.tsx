@@ -4,7 +4,6 @@ import { Plus, Trash2, X, Save, BedDouble, Star, CalendarDays, ChevronDown, Chev
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { adminApi, adminFetch, LoadingSpinner, Field } from "./_shared";
-import { InventoryCalendar } from "./InventoryCalendar";
 import { refreshSiteContent } from "@/lib/site-content";
 import { ImageUploader } from "../ImageUploader";
 import { toast } from "sonner";
@@ -19,13 +18,16 @@ const EMPTY = {
 const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/* ── Inline Day-wise Quick Inventory Editor ── */
-type Override = { id: string; date: string; availableCount: number; note: string | null };
+/* ── Inline Day-wise Quick Inventory Editor ──
+   Talks to /api/admin/inventory (RoomInventoryDay model):
+   GET  ?startDate=&days=7 → { rooms: [{ id, days: { [date]: { booked, closed, override, sellable, note } } }] }
+   POST { roomId, date, sellableOverride } | { roomId, date, reset: true }
+   A day with no control row behaves exactly like the room default. */
+type DayCell = { booked: number; closed: boolean; override: number | null; sellable: number; note: string | null };
 
-function InlineInventoryEditor({ roomId, totalCount, onOpenCalendar }: { roomId: string; totalCount: number; onOpenCalendar: () => void }) {
+function InlineInventoryEditor({ roomId, totalCount, onOpenInventory }: { roomId: string; totalCount: number; onOpenInventory?: () => void }) {
   const [expanded, setExpanded] = useState(false);
-  const [overrides, setOverrides] = useState<Override[]>([]);
-  const [bookedMap, setBookedMap] = useState<Record<string, number>>({});
+  const [dayData, setDayData] = useState<Record<string, DayCell>>({});
   const [loading, setLoading] = useState(false);
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [editCount, setEditCount] = useState(0);
@@ -42,27 +44,24 @@ function InlineInventoryEditor({ roomId, totalCount, onOpenCalendar }: { roomId:
     return days;
   }, []);
 
-  const days = next7();
-  const startDate = days[0];
-  const endDate = days[days.length - 1];
+  const dayKeys = next7();
+  const startDate = dayKeys[0];
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await adminFetch(
-        `/api/admin/inventory?roomId=${roomId}&startDate=${startDate}&endDate=${endDate}`,
-      );
+      const res = await adminFetch(`/api/admin/inventory?startDate=${startDate}&days=7`);
       if (res && typeof res === "object") {
-        const data = res as any;
-        setOverrides(data.overrides || []);
-        setBookedMap(data.bookedMap || {});
+        const data = res as { rooms?: Array<{ id: string; days: Record<string, DayCell> }> };
+        const row = data.rooms?.find((r) => r.id === roomId);
+        setDayData(row?.days || {});
       }
     } catch {
       /* silent */
     } finally {
       setLoading(false);
     }
-  }, [roomId, startDate, endDate]);
+  }, [roomId, startDate]);
 
   const toggleExpand = () => {
     if (!expanded) {
@@ -72,9 +71,9 @@ function InlineInventoryEditor({ roomId, totalCount, onOpenCalendar }: { roomId:
   };
 
   const startEdit = (date: string) => {
-    const override = overrides.find((o) => o.date === date);
+    const day = dayData[date];
     setEditingDate(date);
-    setEditCount(override?.availableCount ?? totalCount);
+    setEditCount(day ? Math.max(0, day.sellable) : totalCount);
   };
 
   const cancelEdit = () => {
@@ -86,17 +85,21 @@ function InlineInventoryEditor({ roomId, totalCount, onOpenCalendar }: { roomId:
     if (!editingDate) return;
     setSaving(true);
     try {
+      // Setting the count back to the room default reverts to default behaviour;
+      // any other value (including 0 = block the day) is stored as a sellable override.
+      const body = editCount === totalCount
+        ? { roomId, date: editingDate, reset: true }
+        : { roomId, date: editingDate, sellableOverride: editCount };
       const res = await adminFetch("/api/admin/inventory", {
         method: "POST",
-        body: JSON.stringify({
-          roomId,
-          date: editingDate,
-          availableCount: editCount,
-          note: "",
-        }),
+        body: JSON.stringify(body),
       });
       if (res) {
-        toast.success(`${editingDate}: set to ${editCount} available`);
+        toast.success(
+          editCount === totalCount
+            ? `${editingDate}: reverted to default (${totalCount})`
+            : `${editingDate}: set to ${editCount} sellable`,
+        );
         await fetchData();
         cancelEdit();
       }
@@ -107,9 +110,12 @@ function InlineInventoryEditor({ roomId, totalCount, onOpenCalendar }: { roomId:
     }
   };
 
-  const removeOverride = async (overrideId: string, date: string) => {
+  const removeOverride = async (date: string) => {
     try {
-      const res = await adminFetch(`/api/admin/inventory?id=${overrideId}`, { method: "DELETE" });
+      const res = await adminFetch("/api/admin/inventory", {
+        method: "POST",
+        body: JSON.stringify({ roomId, date, reset: true }),
+      });
       if (res) {
         toast.success(`${date}: reverted to default (${totalCount})`);
         await fetchData();
@@ -120,14 +126,14 @@ function InlineInventoryEditor({ roomId, totalCount, onOpenCalendar }: { roomId:
   };
 
   const getCellData = (date: string) => {
-    const override = overrides.find((o) => o.date === date) || null;
-    const booked = bookedMap[date] || 0;
-    const total = override?.availableCount ?? totalCount;
-    const avail = total - booked;
-    const hasOverride = !!override;
-    const isBlocked = total === 0;
-    const isSoldOut = avail <= 0 && total > 0;
-    return { override, booked, total, avail, hasOverride, isBlocked, isSoldOut };
+    const day = dayData[date];
+    const booked = day?.booked || 0;
+    const total = day ? day.sellable : totalCount;
+    const avail = Math.max(0, total - booked);
+    const hasOverride = !!day && (day.closed || day.override !== null);
+    const isBlocked = !!day && (day.closed || total === 0);
+    const isSoldOut = !isBlocked && avail <= 0;
+    return { booked, total, avail, hasOverride, isBlocked, isSoldOut };
   };
 
   const today = new Date().toISOString().slice(0, 10);
@@ -156,7 +162,7 @@ function InlineInventoryEditor({ roomId, totalCount, onOpenCalendar }: { roomId:
           ) : (
             <>
               <div className="grid grid-cols-7 gap-1 mb-1">
-                {days.map((date) => {
+                {dayKeys.map((date) => {
                   const d = new Date(date + "T12:00:00Z");
                   const isToday = date === today;
                   return (
@@ -173,7 +179,7 @@ function InlineInventoryEditor({ roomId, totalCount, onOpenCalendar }: { roomId:
               </div>
 
               <div className="grid grid-cols-7 gap-1">
-                {days.map((date) => {
+                {dayKeys.map((date) => {
                   const cell = getCellData(date);
                   const isToday = date === today;
                   const isEditing = editingDate === date;
@@ -234,9 +240,9 @@ function InlineInventoryEditor({ roomId, totalCount, onOpenCalendar }: { roomId:
                       )}
                       {cell.hasOverride && !isEditing && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); removeOverride(cell.override!.id, date); }}
+                          onClick={(e) => { e.stopPropagation(); removeOverride(date); }}
                           className="absolute -right-0.5 -top-0.5 text-charcoal-soft/30 hover:text-marsala"
-                          title="Remove override"
+                          title="Reset to default"
                         >
                           <RotateCcw className="h-2 w-2" />
                         </button>
@@ -251,10 +257,10 @@ function InlineInventoryEditor({ roomId, totalCount, onOpenCalendar }: { roomId:
                 <div className="flex flex-wrap gap-2 font-display text-[8px] text-charcoal-soft/60">
                   <span className="flex items-center gap-0.5"><span className="inline-block h-1.5 w-1.5 rounded-sm bg-teal/30" /> Available</span>
                   <span className="flex items-center gap-0.5"><span className="inline-block h-1.5 w-1.5 rounded-sm bg-gold/40" /> Partial</span>
-                  <span className="flex items-center gap-0.5"><span className="inline-block h-1.5 w-1.5 rounded-sm bg-marsala/40" /> Blocked</span>
+                  <span className="flex items-center gap-0.5"><span className="inline-block h-1.5 w-1.5 rounded-sm bg-marsala/40" /> Closed / blocked</span>
                 </div>
                 <button
-                  onClick={onOpenCalendar}
+                  onClick={onOpenInventory}
                   className="font-display text-[9px] font-semibold text-teal hover:text-teal-deep"
                 >
                   Full calendar →
@@ -268,11 +274,10 @@ function InlineInventoryEditor({ roomId, totalCount, onOpenCalendar }: { roomId:
   );
 }
 
-export function RoomsTab() {
+export function RoomsTab({ onOpenInventory }: { onOpenInventory?: () => void }) {
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<any | null>(null);
-  const [inventoryRoom, setInventoryRoom] = useState<{ id: string; name: string; totalCount: number } | null>(null);
 
   const reload = useCallback(() => {
     adminApi.get("rooms").then((d) => {
@@ -375,7 +380,7 @@ export function RoomsTab() {
                   {imgs.length > 1 && <div className="font-display text-[10px] text-charcoal-soft">{imgs.length} images · {amenities.length} amenities</div>}
                   <div className="flex gap-1 border-t border-charcoal/10 pt-2">
                     <button onClick={() => setEditing(r)} className="flex-1 rounded-lg border border-charcoal/15 py-1.5 font-display text-[11px] font-semibold text-charcoal-soft hover:bg-teal hover:text-ivory">Edit</button>
-                    <button onClick={() => setInventoryRoom({ id: r.id, name: r.name, totalCount: r.totalCount })} className="flex-1 rounded-lg border border-charcoal/15 py-1.5 font-display text-[11px] font-semibold text-charcoal-soft hover:bg-gold hover:text-charcoal">Calendar</button>
+                    <button onClick={() => onOpenInventory?.()} className="flex-1 rounded-lg border border-charcoal/15 py-1.5 font-display text-[11px] font-semibold text-charcoal-soft hover:bg-gold hover:text-charcoal">Calendar</button>
                     <button onClick={() => toggleFeatured(r)} className={`grid h-7 w-7 place-items-center rounded-lg border border-charcoal/15 hover:bg-gold hover:text-charcoal ${r.featured ? "text-gold-deep" : "text-charcoal-soft"}`} title={r.featured ? "Unfeature" : "Feature"}>
                       <Star className={`h-3 w-3 ${r.featured ? "fill-current" : ""}`} />
                     </button>
@@ -388,7 +393,7 @@ export function RoomsTab() {
                 <InlineInventoryEditor
                   roomId={r.id}
                   totalCount={r.totalCount}
-                  onOpenCalendar={() => setInventoryRoom({ id: r.id, name: r.name, totalCount: r.totalCount })}
+                  onOpenInventory={onOpenInventory}
                 />
               </div>
             );
@@ -397,15 +402,6 @@ export function RoomsTab() {
       )}
 
       {editing && <RoomEditor room={editing} onClose={() => setEditing(null)} onSave={save} />}
-
-      {inventoryRoom && (
-        <InventoryCalendar
-          roomId={inventoryRoom.id}
-          roomName={inventoryRoom.name}
-          totalCount={inventoryRoom.totalCount}
-          onClose={() => setInventoryRoom(null)}
-        />
-      )}
     </div>
   );
 }

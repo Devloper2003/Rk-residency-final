@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Diya } from "./Motifs";
 import { WeatherWidget } from "./WeatherWidget";
 import { useContentValue, parseJsonArray } from "@/lib/site-content";
+import { BUSINESS } from "@/lib/site.config";
 
 export function Hero({ onBookClick }: { onBookClick: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -16,14 +17,22 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
     offset: ["start start", "end start"],
   });
 
-  const bgImage = useContentValue("hero.background_image", "//uploads/1b353f97f07cb823.webp");
+  const bgImage = useContentValue("hero.background_image", "/uploads/rk-residency-vrindavan-hero.webp");
+  const bgImageAlt = useContentValue("hero.background_alt", "RK Residency Vrindavan hotel near Banke Bihari Mandir — golden-hour temple skyline");
   const locationBadge = useContentValue("hero.location_badge", "Vrindavan · On the banks of the Yamuna");
-  const headlineLine1 = useContentValue("hero.headline_line1", "Where the spirit of Braj");
-  const headlineLine2 = useContentValue("hero.headline_line2", "finds its rest");
-  const subheadline = useContentValue("hero.subheadline", "A heritage-luxury residency steps from Banke Bihari Mandir & ISKCON Vrindavan. Calm, dignified comfort for pilgrims, devotee families and cultural travellers.");
+  // SEO: the single <h1> on the homepage carries the primary keyword.
+  const headlineLine1 = useContentValue("hero.headline_line1", "Hotel Near Banke Bihari Mandir,");
+  const headlineLine2 = useContentValue("hero.headline_line2", "Vrindavan");
+  // The old tagline is now a subheading (h2) below the keyword h1.
+  const tagline = useContentValue("hero.tagline", "Where the spirit of Braj finds its rest");
+  const subheadline = useContentValue("hero.subheadline", "A heritage-luxury residency minutes from Banke Bihari Mandir & ISKCON Vrindavan. Calm, dignified comfort for pilgrims, devotee families and cultural travellers.");
   const ctaPrimary = useContentValue("hero.cta_primary", "Check Availability");
   const ctaSecondary = useContentValue("hero.cta_secondary", "Explore Rooms");
-  const ratingText = useContentValue("hero.rating_text", "4.9 · 1,240+ verified stays");
+  // Rating claim (e.g. "4.9 · 1,240+ verified stays") is HIDDEN unless the
+  // owner sets a verifiable source: the DB value was cleared and stays empty
+  // until a real Google/TripAdvisor link exists. Never shown unsourced, and
+  // it is never emitted in JSON-LD schema either.
+  const ratingText = useContentValue("hero.rating_text", "");
   const featuredOnText = useContentValue("hero.featured_on_text", "Featured on Google · TripAdvisor");
 
   // Slider
@@ -59,14 +68,22 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* Layer 1 — sky / background image slider */}
+      {/* Layer 1 — sky / background image slider.
+          Real <img> tags (not CSS backgrounds) so the hero has alt text,
+          intrinsic width/height, and the LCP image is eager + high priority. */}
       <motion.div style={{ y: skyY }} className="absolute inset-0 z-0">
         <div className="relative h-[120%] w-full" aria-hidden="true">
           {allImages.map((img, i) => (
-            <div
+            <img
               key={i}
-              className="absolute inset-0 bg-cover bg-center transition-opacity duration-[1500ms] ease-in-out"
-              style={{ backgroundImage: `url('${img}')`, opacity: i === currentSlide ? 1 : 0 }}
+              src={img}
+              alt={i === currentSlide ? bgImageAlt : ""}
+              width={1600}
+              height={900}
+              loading={i === 0 ? "eager" : "lazy"}
+              fetchPriority={i === 0 ? "high" : undefined}
+              className="absolute inset-0 h-full w-full bg-cover bg-center object-cover transition-opacity duration-[1500ms] ease-in-out"
+              style={{ opacity: i === currentSlide ? 1 : 0 }}
             />
           ))}
         </div>
@@ -116,7 +133,7 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
           <WeatherWidget />
         </motion.div>
 
-        {/* Main headline */}
+        {/* Main headline — the page's single <h1>, carries the primary keyword */}
         <motion.h1
           initial={{ opacity: 0, y: 28 }}
           animate={{ opacity: 1, y: 0 }}
@@ -127,6 +144,16 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
           <br />
           <span className="text-gold-foil italic">{currentHeadline2}</span>
         </motion.h1>
+
+        {/* Tagline — demoted to an <h2> subheading below the keyword h1 */}
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.65, duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-5 font-serif text-lg italic text-ivory/90 sm:text-2xl"
+        >
+          {tagline}
+        </motion.h2>
 
         {/* Sub-headline */}
         <motion.p
@@ -172,14 +199,18 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
           className="mt-12 flex flex-col items-center gap-2 sm:flex-row sm:gap-6"
         >
           <div className="flex items-center gap-2">
-            <div className="flex">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className="h-4 w-4 fill-gold text-gold" />
-              ))}
-            </div>
-            <span className="text-sm font-medium text-ivory/90">
-              {ratingText}
-            </span>
+            {ratingText && (
+              <>
+                <div className="flex">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-gold text-gold" />
+                  ))}
+                </div>
+                <span className="text-sm font-medium text-ivory/90">
+                  {ratingText}
+                </span>
+              </>
+            )}
           </div>
           <div className="hidden h-4 w-px bg-ivory/30 sm:block" />
           <div className="text-xs uppercase tracking-wider text-ivory/70">
@@ -228,11 +259,16 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
 
 /** Trust badge strip shown just below hero on scroll. */
 export function TrustBadges() {
+  // Breakfast wording derives from the SINGLE policy in site.config so the
+  // badge, rooms note and FAQ can never contradict each other.
+  const breakfastBadge = BUSINESS.breakfastIncluded
+    ? { label: "Satvik Breakfast", sub: "Pure vegetarian, daily included" }
+    : { label: "Satvik Kitchen", sub: "Pure vegetarian; breakfast available" };
   const badges = [
     { label: "Best Price Guarantee", sub: "Direct booking, no OTA commission" },
     { label: "Free Cancellation", sub: "Up to 72 hours before check-in" },
     { label: "Late Check-out", sub: "Complimentary till 1 PM on request" },
-    { label: "Satvik Breakfast", sub: "Pure vegetarian, daily included" },
+    breakfastBadge,
   ];
   return (
     <div className="relative z-30 -mt-px border-y border-gold/20 bg-teal text-ivory">

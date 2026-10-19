@@ -6,8 +6,9 @@ const contentItems = [
   // ===================== HERO =====================
   { key: "hero.background_image", value: "/images/hero-vrindavan.webp", section: "hero", type: "image", label: "Background image" },
   { key: "hero.location_badge", value: "Vrindavan · On the banks of the Yamuna", section: "hero", type: "text", label: "Location badge" },
-  { key: "hero.headline_line1", value: "Where the spirit of Braj", section: "hero", type: "text", label: "Headline line 1" },
-  { key: "hero.headline_line2", value: "finds its rest", section: "hero", type: "text", label: "Headline line 2" },
+  { key: "hero.headline_line1", value: "Hotel Near Banke Bihari Mandir,", section: "hero", type: "text", label: "Headline line 1 (SEO: forms the page's single h1)" },
+  { key: "hero.headline_line2", value: "Vrindavan", section: "hero", type: "text", label: "Headline line 2 (SEO: forms the page's single h1)" },
+  { key: "hero.tagline", value: "Where the spirit of Braj finds its rest", section: "hero", type: "text", label: "Tagline (h2 subheading under the h1)" },
   { key: "hero.subheadline", value: "A heritage-luxury residency steps from Banke Bihari Mandir & ISKCON Vrindavan. Calm, dignified comfort for pilgrims, devotee families and cultural travellers.", section: "hero", type: "textarea", label: "Sub-headline" },
   { key: "hero.cta_primary", value: "Check Availability", section: "hero", type: "text", label: "Primary CTA" },
   { key: "hero.cta_secondary", value: "Explore Rooms", section: "hero", type: "text", label: "Secondary CTA" },
@@ -26,13 +27,13 @@ const contentItems = [
 
   // ===================== ABOUT (homepage) =====================
   { key: "about.label", value: "Our Story", section: "about", type: "text", label: "Section label" },
-  { key: "about.title_line1", value: "A heritage home on the", section: "about", type: "text", label: "Title line 1" },
-  { key: "about.title_line2", value: "banks of the Yamuna", section: "about", type: "text", label: "Title line 2" },
+  { key: "about.title_line1", value: "A heritage hotel in", section: "about", type: "text", label: "Title line 1 (SEO: forms the /about h1)" },
+  { key: "about.title_line2", value: "holy Vrindavan", section: "about", type: "text", label: "Title line 2 (SEO: forms the /about h1)" },
   { key: "about.image", value: "/images/heritage-room.webp", section: "about", type: "image", label: "Image" },
   { key: "about.image_alt", value: "Heritage luxury room with jharokha window at RK Residency", section: "about", type: "text", label: "Image alt text" },
-  { key: "about.image_caption_label", value: "Heritage Wing · Est. 2014", section: "about", type: "text", label: "Image caption label" },
+  { key: "about.image_caption_label", value: "Heritage Wing · Est. 2024", section: "about", type: "text", label: "Image caption label" },
   { key: "about.image_caption_sub", value: "Hand-carved teak · Makrana marble", section: "about", type: "text", label: "Image caption subtext" },
-  { key: "about.stat_card_label", value: "Since 2014", section: "about", type: "text", label: "Stat card label" },
+  { key: "about.stat_card_label", value: "Since 2024", section: "about", type: "text", label: "Stat card label" },
   { key: "about.stat_card_title", value: "Welcoming devotees", section: "about", type: "text", label: "Stat card title" },
   { key: "about.stat_card_sub", value: "from 42 countries", section: "about", type: "text", label: "Stat card subtitle" },
   { key: "about.body_p1", value: "RK Residency began as a small family guesthouse in 2014, when Shyam Khandelwal returned to his hometown of Vrindavan after two decades in hospitality abroad. The vision was simple: to offer visiting devotees a place that felt less like a hotel and more like a well-kept Braj home — where the morning begins with the sound of temple bells and the day ends with the scent of marigold.", section: "about", type: "textarea", label: "Body paragraph 1" },
@@ -170,11 +171,11 @@ const contentItems = [
   { key: "contact.phone_reservations", value: "+91 98765 43210", section: "contact", type: "text", label: "Reservations phone" },
   { key: "contact.email", value: "stay@rkresidency.in", section: "contact", type: "text", label: "Primary email" },
   { key: "contact.email_events", value: "events@rkresidency.in", section: "contact", type: "text", label: "Events email" },
-  { key: "contact.address_line1", value: "RK Residency, Parikrama Marg", section: "contact", type: "text", label: "Address line 1" },
+  { key: "contact.address_line1", value: "RK Residency, Kailash Nagar", section: "contact", type: "text", label: "Address line 1" },
   { key: "contact.address_line2", value: "Vrindavan, Mathura", section: "contact", type: "text", label: "Address line 2" },
   { key: "contact.address_line3", value: "Uttar Pradesh 281121, India", section: "contact", type: "text", label: "Address line 3" },
-  { key: "contact.address_full", value: "RK Residency, Parikrama Marg, Vrindavan, Mathura, UP 281121", section: "contact", type: "text", label: "Full address (one line)" },
-  { key: "contact.map_embed_url", value: "https://www.openstreetmap.org/export/embed.html?bbox=77.6950%2C27.5650%2C77.7250%2C27.5850&layer=mapnik&marker=27.5756%2C77.7100", section: "contact", type: "text", label: "Map embed URL (iframe src)" },
+  { key: "contact.address_full", value: "RK Residency, Kailash Nagar, Vrindavan, Mathura, UP 281121", section: "contact", type: "text", label: "Full address (one line)" },
+  { key: "contact.map_embed_url", value: "https://www.google.com/maps?q=RK%20Residency%2C%20Kailash%20Nagar%2C%20Vrindavan%2C%20Mathura%2C%20UP%20281121&output=embed", section: "contact", type: "text", label: "Map embed URL (iframe src)" },
   { key: "contact.map_directions_url", value: "https://www.google.com/maps/dir/?api=1&destination=Vrindavan%20Uttar%20Pradesh", section: "contact", type: "text", label: "Google Maps directions URL" },
   { key: "contact.geo_latitude", value: "27.5756", section: "contact", type: "text", label: "Latitude" },
   { key: "contact.geo_longitude", value: "77.7100", section: "contact", type: "text", label: "Longitude" },
@@ -191,7 +192,7 @@ const contentItems = [
   // ===================== FOOTER =====================
   { key: "footer.brand_name", value: "RK Residency", section: "footer", type: "text", label: "Brand name" },
   { key: "footer.brand_tagline", value: "Vrindavan · Braj", section: "footer", type: "text", label: "Brand tagline" },
-  { key: "footer.description", value: "A heritage-luxury residency on the banks of the Yamuna, welcoming pilgrims and devotee families since 2014. A guest is a visiting deity.", section: "footer", type: "textarea", label: "Footer description" },
+  { key: "footer.description", value: "A heritage-luxury residency on the banks of the Yamuna, welcoming pilgrims and devotee families since 2024. A guest is a visiting deity.", section: "footer", type: "textarea", label: "Footer description" },
   { key: "footer.copyright", value: "© {year} RK Residency, Vrindavan. All rights reserved.", section: "footer", type: "text", label: "Copyright text" },
   { key: "footer.newsletter_heading", value: "Stay in the circle", section: "footer", type: "text", label: "Newsletter heading" },
   { key: "footer.newsletter_title", value: "Festival calendars, member offers & Braj stories", section: "footer", type: "text", label: "Newsletter title" },
@@ -228,28 +229,34 @@ const settings = [
   { key: "concierge_reply_window", value: "Replies in ~5 min", label: "Concierge reply window text", category: "general" },
 
   // ===== CONTACT =====
-  { key: "phone_primary", value: "+91 565 234 5678", label: "Primary phone (display)", category: "contact" },
-  { key: "phone_primary_tel", value: "+915652345678", label: "Primary phone (tel: format, no spaces)", category: "contact" },
-  { key: "phone_reservations", value: "+91 98765 43210", label: "Reservations phone (display)", category: "contact" },
-  { key: "email_primary", value: "stay@rkresidency.in", label: "Primary email", category: "contact" },
-  { key: "email_events", value: "events@rkresidency.in", label: "Events email", category: "contact" },
-  { key: "whatsapp_number", value: "919876543210", label: "WhatsApp number (with country code, no +)", category: "contact" },
-  { key: "address_line1", value: "RK Residency, Parikrama Marg", label: "Address line 1", category: "contact" },
+  // NOTE: phone/whatsapp/email/social values are intentionally EMPTY —
+  // only the owner's REAL details belong here (Admin → Settings fills them
+  // at runtime). Components hide every button whose value is empty, so the
+  // site never shows placeholder numbers or dead links.
+  { key: "phone_primary", value: "", label: "Primary phone (display) — TODO: real number", category: "contact" },
+  { key: "phone_primary_tel", value: "", label: "Primary phone (tel: format) — TODO: real number", category: "contact" },
+  { key: "phone_reservations", value: "", label: "Reservations phone (display) — TODO: real number", category: "contact" },
+  { key: "email_primary", value: "", label: "Primary email — TODO: real address", category: "contact" },
+  { key: "email_events", value: "", label: "Events email — TODO: real address", category: "contact" },
+  { key: "whatsapp_number", value: "", label: "WhatsApp number (country code, no +) — TODO: real number", category: "contact" },
+  { key: "address_line1", value: "RK Residency, Kailash Nagar", label: "Address line 1", category: "contact" },
   { key: "address_line2", value: "Vrindavan, Mathura", label: "Address line 2", category: "contact" },
   { key: "address_line3", value: "Uttar Pradesh 281121, India", label: "Address line 3", category: "contact" },
-  { key: "address_full", value: "RK Residency, Parikrama Marg, Vrindavan, Mathura, UP 281121", label: "Full address (one line)", category: "contact" },
-  { key: "map_embed_url", value: "https://www.openstreetmap.org/export/embed.html?bbox=77.6950%2C27.5650%2C77.7250%2C27.5850&layer=mapnik&marker=27.5756%2C77.7100", label: "Map embed URL (iframe src)", category: "contact" },
-  { key: "map_directions_url", value: "https://www.google.com/maps/dir/?api=1&destination=Vrindavan%20Uttar%20Pradesh", label: "Google Maps directions URL", category: "contact" },
+  { key: "address_full", value: "RK Residency, Kailash Nagar, Vrindavan, Mathura, UP 281121", label: "Full address (one line)", category: "contact" },
+  { key: "map_embed_url", value: "https://www.google.com/maps?q=RK%20Residency%2C%20Kailash%20Nagar%2C%20Vrindavan%2C%20Mathura%2C%20UP%20281121&output=embed", label: "Map embed URL (iframe src)", category: "contact" },
+  { key: "map_directions_url", value: "https://www.google.com/maps/dir/?api=1&destination=RK%20Residency%2C%20Kailash%20Nagar%2C%20Vrindavan%2C%20Mathura%2C%20UP%20281121", label: "Google Maps directions URL (TODO: replace with the exact Google Business Profile place link)", category: "contact" },
   { key: "geo_latitude", value: "27.5756", label: "Latitude (for JSON-LD)", category: "contact" },
   { key: "geo_longitude", value: "77.7100", label: "Longitude (for JSON-LD)", category: "contact" },
 
   // ===== SOCIAL =====
-  { key: "instagram_url", value: "https://instagram.com", label: "Instagram URL", category: "social" },
-  { key: "facebook_url", value: "https://facebook.com", label: "Facebook URL", category: "social" },
-  { key: "youtube_url", value: "https://youtube.com", label: "YouTube URL", category: "social" },
+  // Generic homepage URLs are placeholders, not real profiles — empty until
+  // the owner fills the real profile links (buttons hide automatically).
+  { key: "instagram_url", value: "", label: "Instagram URL — TODO: real profile", category: "social" },
+  { key: "facebook_url", value: "", label: "Facebook URL — TODO: real profile", category: "social" },
+  { key: "youtube_url", value: "", label: "YouTube URL — TODO: real profile", category: "social" },
   { key: "twitter_url", value: "", label: "Twitter/X URL", category: "social" },
-  { key: "tripadvisor_url", value: "https://www.tripadvisor.in", label: "TripAdvisor URL", category: "social" },
-  { key: "google_reviews_url", value: "https://www.google.com/travel/hotels", label: "Google reviews URL", category: "social" },
+  { key: "tripadvisor_url", value: "", label: "TripAdvisor URL — TODO: real listing", category: "social" },
+  { key: "google_reviews_url", value: "", label: "Google reviews URL — TODO: real listing", category: "social" },
 
   // ===== SEO =====
   { key: "meta_title", value: "RK Residency — Heritage Luxury Stay in Vrindavan | Hotel near Banke Bihari Temple", label: "Meta title", category: "seo" },

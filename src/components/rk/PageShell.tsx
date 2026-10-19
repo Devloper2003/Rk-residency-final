@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Home } from "lucide-react";
 import { useRouter, routeHref } from "@/lib/router";
 import { Logo, SectionDivider } from "./Motifs";
+import { breadcrumbJsonLd } from "@/lib/schema-org";
 
 // Stable year for SSR/client hydration; updated on mount.
 function useYear() {
@@ -22,11 +23,14 @@ export function PageShell({
   subtitle,
   children,
   accent = "teal",
+  breadcrumbs,
 }: {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
   accent?: "teal" | "gold" | "marsala";
+  /** Ordered trail for BreadcrumbList JSON-LD, e.g. [{ name: "Home", path: "/" }, ...] */
+  breadcrumbs?: { name: string; path: string }[];
 }) {
   const navigate = useRouter((s) => s.navigate);
   const year = useYear();
@@ -46,6 +50,13 @@ export function PageShell({
       className="min-h-screen bg-ivory scrollbar-thin"
       role="main"
     >
+      {/* BreadcrumbList structured data — emitted in the server-rendered HTML */}
+      {breadcrumbs && breadcrumbs.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd(breadcrumbs)) }}
+        />
+      )}
       {/* Sticky top bar */}
       <div className={`sticky top-0 z-10 ${accentBg} border-b border-charcoal/10 backdrop-blur-md`}>
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
