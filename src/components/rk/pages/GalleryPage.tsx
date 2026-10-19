@@ -119,7 +119,13 @@ export function GalleryPage() {
       <div className="mt-12 flex items-center justify-center">
         <Lotus size={18} className="text-gold" />
         <span className="mx-3 font-display text-xs text-charcoal-soft">
-          A full 360° virtual tour is available on request — write to <a href={info.mailtoUrl} className="text-teal underline-offset-2 hover:underline">{info.emailPrimary}</a>
+          {info.emailPrimary ? (
+            <>
+              A full 360° virtual tour is available on request — write to <a href={info.mailtoUrl} className="text-teal underline-offset-2 hover:underline">{info.emailPrimary}</a>
+            </>
+          ) : (
+            "A full 360° virtual tour is available on request — use the contact form"
+          )}
         </span>
         <Lotus size={18} className="text-gold" />
       </div>

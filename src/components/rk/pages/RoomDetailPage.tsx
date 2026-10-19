@@ -320,21 +320,30 @@ export function RoomDetailPage({
                 ))}
               </div>
 
-              <a
-                href={info.waUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border border-[#25D366]/40 bg-[#25D366]/5 py-2.5 font-display text-xs font-semibold text-[#1a7d3a] transition-colors hover:bg-[#25D366]/10"
-              >
-                Ask on WhatsApp instead
-              </a>
+              {info.waUrl && (
+                <a
+                  href={info.waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border border-[#25D366]/40 bg-[#25D366]/5 py-2.5 font-display text-xs font-semibold text-[#1a7d3a] transition-colors hover:bg-[#25D366]/10"
+                >
+                  Ask on WhatsApp instead
+                </a>
+              )}
 
-              {/* Contact mini-card */}
-              <div className="mt-5 rounded-2xl bg-ivory-deep/40 p-4 text-center">
-                <div className="font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Need help?</div>
-                <a href={info.telUrl} className="mt-1 block font-serif text-sm font-bold text-teal hover:underline">{info.phoneDisplay}</a>
-                <a href={info.mailtoUrl} className="block font-display text-xs text-charcoal-soft hover:underline">{info.emailPrimary}</a>
-              </div>
+              {/* Contact mini-card — only shows channels that actually have
+                  real values set (never renders dead tel:/mailto: links). */}
+              {(info.phoneDisplay || info.emailPrimary) && (
+                <div className="mt-5 rounded-2xl bg-ivory-deep/40 p-4 text-center">
+                  <div className="font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Need help?</div>
+                  {info.phoneDisplay && (
+                    <a href={info.telUrl} className="mt-1 block font-serif text-sm font-bold text-teal hover:underline">{info.phoneDisplay}</a>
+                  )}
+                  {info.emailPrimary && (
+                    <a href={info.mailtoUrl} className="block font-display text-xs text-charcoal-soft hover:underline">{info.emailPrimary}</a>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

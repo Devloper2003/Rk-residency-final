@@ -12,6 +12,7 @@ import { Logo, Lotus } from "./Motifs";
 import { toast } from "sonner";
 import { useSettingValue, useContentValue } from "@/lib/site-content";
 import { BUSINESS, businessAddress } from "@/lib/site.config";
+import { sanitizeContactText, sanitizeSocialUrl } from "@/lib/use-contact-info";
 
 const NAV_GROUPS = [
   {
@@ -59,15 +60,15 @@ export function Footer() {
   const newsletterHeading = useContentValue("footer.newsletter_heading", "Stay in the circle");
   const newsletterTitle = useContentValue("footer.newsletter_title", "Festival calendars, member offers & Braj stories");
   const newsletterBody = useContentValue("footer.newsletter_body", "One email a fortnight. Never spam. Unsubscribe anytime.");
-  const phoneDisplay = useSettingValue("phone_primary", BUSINESS.phonePrimary);
-  const phoneTel = useSettingValue("phone_primary_tel", BUSINESS.phonePrimaryTel);
-  const emailPrimary = useSettingValue("email_primary", BUSINESS.emailPrimary);
+  const phoneDisplay = sanitizeContactText(useSettingValue("phone_primary", BUSINESS.phonePrimary));
+  const phoneTel = sanitizeContactText(useSettingValue("phone_primary_tel", BUSINESS.phonePrimaryTel));
+  const emailPrimary = sanitizeContactText(useSettingValue("email_primary", BUSINESS.emailPrimary));
   // Address from site.config BUSINESS.address — identical everywhere.
   const addressFull = useSettingValue("address_full", businessAddress().full);
   const gstin = useSettingValue("gstin", BUSINESS.gstin);
-  const instagramUrl = useSettingValue("instagram_url", BUSINESS.social.instagram);
-  const facebookUrl = useSettingValue("facebook_url", BUSINESS.social.facebook);
-  const youtubeUrl = useSettingValue("youtube_url", BUSINESS.social.youtube);
+  const instagramUrl = sanitizeSocialUrl(useSettingValue("instagram_url", BUSINESS.social.instagram));
+  const facebookUrl = sanitizeSocialUrl(useSettingValue("facebook_url", BUSINESS.social.facebook));
+  const youtubeUrl = sanitizeSocialUrl(useSettingValue("youtube_url", BUSINESS.social.youtube));
   // Legal links are structural routes, not editable content — hardcoded so
   // they always resolve to the real policy pages (never "#").
   const privacyUrl = "/privacy-policy";
@@ -78,7 +79,7 @@ export function Footer() {
     { icon: Instagram, label: "Instagram", href: instagramUrl },
     { icon: Facebook, label: "Facebook", href: facebookUrl },
     { icon: Youtube, label: "YouTube", href: youtubeUrl },
-  ].filter((s) => s.href); // hide socials with empty URLs
+  ].filter((s) => s.href); // hide socials with empty/placeholder URLs
 
   const onSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();

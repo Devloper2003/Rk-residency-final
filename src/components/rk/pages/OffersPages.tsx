@@ -280,14 +280,16 @@ export function OfferDetailPage({ slug, onBookClick }: { slug: string; onBookCli
               <Sparkles className="mr-2 h-5 w-5" />
               Reserve this package
             </Button>
-            <a
-              href={info.waUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 block rounded-full border border-[#25D366]/40 bg-[#25D366]/5 py-2.5 text-center font-display text-xs font-semibold text-[#1a7d3a] transition-colors hover:bg-[#25D366]/10"
-            >
-              Enquire on WhatsApp
-            </a>
+            {info.waUrl && (
+              <a
+                href={info.waUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 block rounded-full border border-[#25D366]/40 bg-[#25D366]/5 py-2.5 text-center font-display text-xs font-semibold text-[#1a7d3a] transition-colors hover:bg-[#25D366]/10"
+              >
+                Enquire on WhatsApp
+              </a>
+            )}
           </div>
         </div>
       </div>

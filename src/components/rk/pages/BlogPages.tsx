@@ -375,7 +375,13 @@ export function BlogDetailPage({
               <p className="mt-1 font-display text-sm text-charcoal-soft">
                 Our concierge team writes the Braj Journal from first-hand experience —
                 most have lived in Vrindavan for over a decade. Questions about this story?
-                Write to <a href={info.mailtoUrl} className="text-teal underline-offset-2 hover:underline">{info.emailPrimary}</a>.
+                {info.emailPrimary ? (
+                  <>
+                    {" "}Write to <a href={info.mailtoUrl} className="text-teal underline-offset-2 hover:underline">{info.emailPrimary}</a>.
+                  </>
+                ) : (
+                  " Use the contact form and we'll reply within 4 hours."
+                )}
               </p>
             </div>
           </div>

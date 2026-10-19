@@ -7,6 +7,7 @@ import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { useRouter } from "@/lib/router";
 import { useContentValue, parseJsonArray } from "@/lib/site-content";
 import { useSettingValue } from "@/lib/site-content";
+import { sanitizeContactText, sanitizeWhatsapp } from "@/lib/use-contact-info";
 import { BUSINESS } from "@/lib/site.config";
 import { FAQS, type FAQ } from "@/lib/faq-data";
 
@@ -19,9 +20,9 @@ export function FAQ({ limit }: { limit?: number }) {
   const faqLabel = useContentValue("faq.label", "Questions & answers");
   const faqTitle = useContentValue("faq.title", "Everything a Braj pilgrim asks us");
   const faqItems = parseJsonArray(useContentValue("faq.items", "[]"), FAQS);
-  const phoneDisplay = useSettingValue("phone_primary", BUSINESS.phonePrimary);
-  const phoneTel = useSettingValue("phone_primary_tel", BUSINESS.phonePrimaryTel);
-  const whatsappNumber = useSettingValue("whatsapp_number", BUSINESS.whatsappNumber).replace(/[^\d]/g, "");
+  const phoneDisplay = sanitizeContactText(useSettingValue("phone_primary", BUSINESS.phonePrimary));
+  const phoneTel = sanitizeContactText(useSettingValue("phone_primary_tel", BUSINESS.phonePrimaryTel));
+  const whatsappNumber = sanitizeWhatsapp(useSettingValue("whatsapp_number", BUSINESS.whatsappNumber));
   const waUrl = whatsappNumber ? `https://wa.me/${whatsappNumber}` : "";
 
   const filtered = category === "All" ? FAQS : FAQS.filter((f) => f.category === category);
@@ -140,22 +141,26 @@ export function FAQ({ limit }: { limit?: number }) {
                 Our concierge team replies within 4 hours, 7 AM – 11 PM IST.
               </p>
               <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-                <a
-                  href={waUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 font-serif text-sm font-semibold text-white transition-all hover:shadow-lg"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  WhatsApp us
-                </a>
-                <a
-                  href={`tel:${phoneTel}`}
-                  className="inline-flex items-center gap-2 rounded-full border border-teal/40 bg-white px-5 py-2.5 font-serif text-sm font-semibold text-teal transition-all hover:bg-teal hover:text-ivory"
-                >
-                  <Phone className="h-4 w-4" />
-                  {phoneDisplay}
-                </a>
+                {waUrl && (
+                  <a
+                    href={waUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 font-serif text-sm font-semibold text-white transition-all hover:shadow-lg"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    WhatsApp us
+                  </a>
+                )}
+                {phoneTel && (
+                  <a
+                    href={`tel:${phoneTel}`}
+                    className="inline-flex items-center gap-2 rounded-full border border-teal/40 bg-white px-5 py-2.5 font-serif text-sm font-semibold text-teal transition-all hover:bg-teal hover:text-ivory"
+                  >
+                    <Phone className="h-4 w-4" />
+                    {phoneDisplay}
+                  </a>
+                )}
                 <button
                   onClick={() => navigate("contact")}
                   className="inline-flex items-center gap-2 rounded-full border border-marsala/40 bg-white px-5 py-2.5 font-serif text-sm font-semibold text-marsala transition-all hover:bg-marsala hover:text-ivory"

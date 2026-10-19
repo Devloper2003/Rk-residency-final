@@ -209,7 +209,9 @@ export function AvailabilityCalendar({
           <div className="flex h-40 flex-col items-center justify-center text-center">
             <AlertCircle className="mb-2 h-8 w-8 text-marsala" />
             <p className="font-display text-sm text-charcoal-soft">
-              Unable to load availability. Please call us at {info.phoneDisplay}.
+              {info.phoneDisplay
+                ? `Unable to load availability. Please call us at ${info.phoneDisplay}.`
+                : "Unable to load availability right now — please try again or use the contact form."}
             </p>
           </div>
         ) : (

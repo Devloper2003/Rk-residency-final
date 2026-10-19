@@ -229,28 +229,34 @@ const settings = [
   { key: "concierge_reply_window", value: "Replies in ~5 min", label: "Concierge reply window text", category: "general" },
 
   // ===== CONTACT =====
-  { key: "phone_primary", value: "+91 565 234 5678", label: "Primary phone (display)", category: "contact" },
-  { key: "phone_primary_tel", value: "+915652345678", label: "Primary phone (tel: format, no spaces)", category: "contact" },
-  { key: "phone_reservations", value: "+91 98765 43210", label: "Reservations phone (display)", category: "contact" },
-  { key: "email_primary", value: "stay@rkresidency.in", label: "Primary email", category: "contact" },
-  { key: "email_events", value: "events@rkresidency.in", label: "Events email", category: "contact" },
-  { key: "whatsapp_number", value: "919876543210", label: "WhatsApp number (with country code, no +)", category: "contact" },
-  { key: "address_line1", value: "RK Residency, Parikrama Marg", label: "Address line 1", category: "contact" },
+  // NOTE: phone/whatsapp/email/social values are intentionally EMPTY —
+  // only the owner's REAL details belong here (Admin → Settings fills them
+  // at runtime). Components hide every button whose value is empty, so the
+  // site never shows placeholder numbers or dead links.
+  { key: "phone_primary", value: "", label: "Primary phone (display) — TODO: real number", category: "contact" },
+  { key: "phone_primary_tel", value: "", label: "Primary phone (tel: format) — TODO: real number", category: "contact" },
+  { key: "phone_reservations", value: "", label: "Reservations phone (display) — TODO: real number", category: "contact" },
+  { key: "email_primary", value: "", label: "Primary email — TODO: real address", category: "contact" },
+  { key: "email_events", value: "", label: "Events email — TODO: real address", category: "contact" },
+  { key: "whatsapp_number", value: "", label: "WhatsApp number (country code, no +) — TODO: real number", category: "contact" },
+  { key: "address_line1", value: "RK Residency, Kailash Nagar", label: "Address line 1", category: "contact" },
   { key: "address_line2", value: "Vrindavan, Mathura", label: "Address line 2", category: "contact" },
   { key: "address_line3", value: "Uttar Pradesh 281121, India", label: "Address line 3", category: "contact" },
-  { key: "address_full", value: "RK Residency, Parikrama Marg, Vrindavan, Mathura, UP 281121", label: "Full address (one line)", category: "contact" },
+  { key: "address_full", value: "RK Residency, Kailash Nagar, Vrindavan, Mathura, UP 281121", label: "Full address (one line)", category: "contact" },
   { key: "map_embed_url", value: "https://www.google.com/maps?q=RK%20Residency%2C%20Kailash%20Nagar%2C%20Vrindavan%2C%20Mathura%2C%20UP%20281121&output=embed", label: "Map embed URL (iframe src)", category: "contact" },
-  { key: "map_directions_url", value: "https://www.google.com/maps/dir/?api=1&destination=Vrindavan%20Uttar%20Pradesh", label: "Google Maps directions URL", category: "contact" },
+  { key: "map_directions_url", value: "https://www.google.com/maps/dir/?api=1&destination=RK%20Residency%2C%20Kailash%20Nagar%2C%20Vrindavan%2C%20Mathura%2C%20UP%20281121", label: "Google Maps directions URL (TODO: replace with the exact Google Business Profile place link)", category: "contact" },
   { key: "geo_latitude", value: "27.5756", label: "Latitude (for JSON-LD)", category: "contact" },
   { key: "geo_longitude", value: "77.7100", label: "Longitude (for JSON-LD)", category: "contact" },
 
   // ===== SOCIAL =====
-  { key: "instagram_url", value: "https://instagram.com", label: "Instagram URL", category: "social" },
-  { key: "facebook_url", value: "https://facebook.com", label: "Facebook URL", category: "social" },
-  { key: "youtube_url", value: "https://youtube.com", label: "YouTube URL", category: "social" },
+  // Generic homepage URLs are placeholders, not real profiles — empty until
+  // the owner fills the real profile links (buttons hide automatically).
+  { key: "instagram_url", value: "", label: "Instagram URL — TODO: real profile", category: "social" },
+  { key: "facebook_url", value: "", label: "Facebook URL — TODO: real profile", category: "social" },
+  { key: "youtube_url", value: "", label: "YouTube URL — TODO: real profile", category: "social" },
   { key: "twitter_url", value: "", label: "Twitter/X URL", category: "social" },
-  { key: "tripadvisor_url", value: "https://www.tripadvisor.in", label: "TripAdvisor URL", category: "social" },
-  { key: "google_reviews_url", value: "https://www.google.com/travel/hotels", label: "Google reviews URL", category: "social" },
+  { key: "tripadvisor_url", value: "", label: "TripAdvisor URL — TODO: real listing", category: "social" },
+  { key: "google_reviews_url", value: "", label: "Google reviews URL — TODO: real listing", category: "social" },
 
   // ===== SEO =====
   { key: "meta_title", value: "RK Residency — Heritage Luxury Stay in Vrindavan | Hotel near Banke Bihari Temple", label: "Meta title", category: "seo" },

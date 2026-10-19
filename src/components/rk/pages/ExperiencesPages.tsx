@@ -202,12 +202,14 @@ export function ExperienceDetailPage({ slug }: { slug: string }) {
               Reserve a private darshan pass, English-speaking guide or temple
               transfers through our front desk.
             </p>
-            <a
-              href={info.telUrl}
-              className="mt-4 inline-block rounded-full bg-teal px-5 py-2 font-serif text-sm font-semibold text-ivory transition-colors hover:bg-teal-deep"
-            >
-              {info.phoneDisplay}
-            </a>
+            {info.telUrl && (
+              <a
+                href={info.telUrl}
+                className="mt-4 inline-block rounded-full bg-teal px-5 py-2 font-serif text-sm font-semibold text-ivory transition-colors hover:bg-teal-deep"
+              >
+                {info.phoneDisplay}
+              </a>
+            )}
           </div>
         </div>
       </div>

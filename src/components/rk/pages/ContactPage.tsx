@@ -9,7 +9,6 @@ import { Reveal, Lotus } from "../Motifs";
 import { useContactInfo } from "@/lib/use-contact-info";
 import { useContentValue, parseJsonArray } from "@/lib/site-content";
 import { BUSINESS } from "@/lib/site.config";
-
 export function ContactPage() {
   const info = useContactInfo();
   // Distances come from site.config BUSINESS.distances — the SAME single
@@ -21,10 +20,21 @@ export function ContactPage() {
 
   const CONTACT_INFO = [
     { icon: MapPin, label: "Address", lines: [info.addrLine1, info.addrLine2, info.addrLine3] },
-    { icon: Phone, label: "Phone & WhatsApp", lines: [`${info.phoneDisplay} (Front desk)`, `${info.phoneReservations} (Reservations)`] },
-    { icon: Mail, label: "Email", lines: [info.emailPrimary, `${info.emailEvents} (satsang & weddings)`] },
+    {
+      icon: Phone,
+      label: "Phone & WhatsApp",
+      lines: [
+        info.phoneDisplay ? `${info.phoneDisplay} (Front desk)` : "",
+        info.phoneReservations ? `${info.phoneReservations} (Reservations)` : "",
+      ].filter(Boolean),
+    },
+    {
+      icon: Mail,
+      label: "Email",
+      lines: [info.emailPrimary, info.emailEvents ? `${info.emailEvents} (satsang & weddings)` : ""].filter(Boolean),
+    },
     { icon: Clock, label: "Reception", lines: ["Open 24 hours, 7 days", `Check-in ${info.checkinTime} · Check-out ${info.checkoutTime}`] },
-  ];
+  ].filter((c) => c.lines.length > 0);
 
   return (
     <PageShell
@@ -78,15 +88,17 @@ export function ContactPage() {
                     View on Google
                   </a>
                 )}
-                <a
-                  href={info.mapDirectionsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-teal px-3 py-1.5 font-display text-xs font-semibold text-ivory transition-colors hover:bg-teal-deep"
-                >
-                  <Navigation className="h-3.5 w-3.5" />
-                  Get directions
-                </a>
+                {info.mapDirectionsUrl && (
+                  <a
+                    href={info.mapDirectionsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-teal px-3 py-1.5 font-display text-xs font-semibold text-ivory transition-colors hover:bg-teal-deep"
+                  >
+                    <Navigation className="h-3.5 w-3.5" />
+                    Get directions
+                  </a>
+                )}
               </div>
             </div>
           </div>
@@ -111,24 +123,30 @@ export function ContactPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <a
-              href={info.waUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-4 py-3 font-serif text-sm font-semibold text-white transition-all hover:shadow-lg"
-            >
-              <MessageCircle className="h-4 w-4 transition-transform group-hover:scale-110" />
-              Chat on WhatsApp
-            </a>
-            <a
-              href={info.telUrl}
-              className="group flex items-center justify-center gap-2 rounded-2xl bg-teal px-4 py-3 font-serif text-sm font-semibold text-ivory transition-all hover:bg-teal-deep hover:shadow-lg"
-            >
-              <Phone className="h-4 w-4 transition-transform group-hover:scale-110" />
-              Call front desk
-            </a>
-          </div>
+          {(info.waUrl || info.telUrl) && (
+            <div className="grid grid-cols-2 gap-3">
+              {info.waUrl && (
+                <a
+                  href={info.waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-4 py-3 font-serif text-sm font-semibold text-white transition-all hover:shadow-lg"
+                >
+                  <MessageCircle className="h-4 w-4 transition-transform group-hover:scale-110" />
+                  Chat on WhatsApp
+                </a>
+              )}
+              {info.telUrl && (
+                <a
+                  href={info.telUrl}
+                  className={`group flex items-center justify-center gap-2 rounded-2xl bg-teal px-4 py-3 font-serif text-sm font-semibold text-ivory transition-all hover:bg-teal-deep hover:shadow-lg ${info.waUrl ? "" : "col-span-2"}`}
+                >
+                  <Phone className="h-4 w-4 transition-transform group-hover:scale-110" />
+                  Call front desk
+                </a>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right: travel info */}

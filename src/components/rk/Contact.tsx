@@ -17,7 +17,12 @@ import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { toast } from "sonner";
 import { useSettingValue, useContentValue } from "@/lib/site-content";
 import { BUSINESS, businessAddress } from "@/lib/site.config";
-import { googleMapsEmbedUrl } from "@/lib/use-contact-info";
+import {
+  googleMapsEmbedUrl,
+  sanitizeWhatsapp,
+  sanitizeContactText,
+  sanitizeDirectionsUrl,
+} from "@/lib/use-contact-info";
 
 export function Contact() {
   const [form, setForm] = useState({
@@ -27,11 +32,13 @@ export function Contact() {
 
   // Live editable contact info — fallbacks from site.config BUSINESS (TODO
   // values; DB settings win when present, no dummy data invented in code).
-  const phoneDisplay = useSettingValue("phone_primary", BUSINESS.phonePrimary);
-  const phoneTel = useSettingValue("phone_primary_tel", BUSINESS.phonePrimaryTel);
-  const phoneReservations = useSettingValue("phone_reservations", BUSINESS.phoneReservations);
-  const emailPrimary = useSettingValue("email_primary", BUSINESS.emailPrimary);
-  const emailEvents = useSettingValue("email_events", "");
+  // Placeholder/dummy values are stripped so empty details HIDE instead of
+  // rendering dead links.
+  const phoneDisplay = sanitizeContactText(useSettingValue("phone_primary", BUSINESS.phonePrimary));
+  const phoneTel = sanitizeContactText(useSettingValue("phone_primary_tel", BUSINESS.phonePrimaryTel));
+  const phoneReservations = sanitizeContactText(useSettingValue("phone_reservations", BUSINESS.phoneReservations));
+  const emailPrimary = sanitizeContactText(useSettingValue("email_primary", BUSINESS.emailPrimary));
+  const emailEvents = sanitizeContactText(useSettingValue("email_events", ""));
   // Address from site.config BUSINESS.address — same as footer + JSON-LD.
   const addr = businessAddress();
   const addrLine1 = useSettingValue("address_line1", addr.line1);
@@ -39,10 +46,10 @@ export function Contact() {
   const addrLine3 = useSettingValue("address_line3", addr.line3);
   // Google Maps embed of the exact hotel location (was OpenStreetMap).
   const mapEmbedUrl = useSettingValue("map_embed_url", googleMapsEmbedUrl());
-  const mapDirectionsUrl = useSettingValue("map_directions_url", BUSINESS.maps.directionsUrl);
+  const mapDirectionsUrl = sanitizeDirectionsUrl(useSettingValue("map_directions_url", ""));
   const gbpUrl = BUSINESS.maps.googleBusinessProfile || BUSINESS.reviews.google;
   const whatsappNumberRaw = useSettingValue("whatsapp_number", BUSINESS.whatsappNumber);
-  const whatsappNumber = whatsappNumberRaw.replace(/[^\d]/g, "");
+  const whatsappNumber = sanitizeWhatsapp(whatsappNumberRaw);
   const whatsappPrefill = useContentValue("contact.whatsapp_prefill_text", "I would like to enquire about availability at RK Residency");
   const checkinTime = useSettingValue("checkin_time", "2:00 PM");
   const checkoutTime = useSettingValue("checkout_time", "11:00 AM");
@@ -62,19 +69,23 @@ export function Contact() {
     {
       icon: Phone,
       label: "Phone & WhatsApp",
-      lines: [`${phoneDisplay} (Front desk)`, `${phoneReservations} (Reservations)`],
+      // Only real, filled-in numbers are shown — placeholders hide.
+      lines: [
+        phoneDisplay ? `${phoneDisplay} (Front desk)` : "",
+        phoneReservations ? `${phoneReservations} (Reservations)` : "",
+      ].filter(Boolean),
     },
     {
       icon: Mail,
       label: "Email",
-      lines: [emailPrimary, `${emailEvents} (satsang & weddings)`],
+      lines: [emailPrimary, emailEvents ? `${emailEvents} (satsang & weddings)` : ""].filter(Boolean),
     },
     {
       icon: Clock,
       label: "Reception",
       lines: ["Open 24 hours, 7 days", `Check-in ${checkinTime} · Check-out ${checkoutTime}`],
     },
-  ];
+  ].filter((c) => c.lines.length > 0);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,8 +110,11 @@ export function Contact() {
     }
   };
 
-  // WhatsApp URL with prefill text
-  const waUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappPrefill)}`;
+  // WhatsApp URL with prefill text — empty when no real number is set
+  // (the button below hides itself in that case rather than dead-linking).
+  const waUrl = whatsappNumber
+    ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappPrefill)}`
+    : "";
 
   return (
     <section id="contact" className="relative bg-ivory py-24 lg:py-32">
@@ -179,15 +193,17 @@ export function Contact() {
                         View on Google
                       </a>
                     )}
-                    <a
-                      href={mapDirectionsUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-full bg-teal px-3 py-1.5 font-display text-xs font-semibold text-ivory transition-colors hover:bg-teal-deep"
-                    >
-                      <Navigation className="h-3.5 w-3.5" />
-                      Get directions
-                    </a>
+                    {mapDirectionsUrl && (
+                      <a
+                        href={mapDirectionsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-teal px-3 py-1.5 font-display text-xs font-semibold text-ivory transition-colors hover:bg-teal-deep"
+                      >
+                        <Navigation className="h-3.5 w-3.5" />
+                        Get directions
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>
@@ -213,25 +229,32 @@ export function Contact() {
                 </div>
               </div>
 
-              {/* Quick WhatsApp + Call */}
-              <div className="grid grid-cols-2 gap-3">
-                <a
-                  href={waUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-4 py-3 font-serif text-sm font-semibold text-white transition-all hover:shadow-lg"
-                >
-                  <MessageCircle className="h-4 w-4 transition-transform group-hover:scale-110" />
-                  Chat on WhatsApp
-                </a>
-                <a
-                  href={`tel:${phoneTel}`}
-                  className="group flex items-center justify-center gap-2 rounded-2xl bg-teal px-4 py-3 font-serif text-sm font-semibold text-ivory transition-all hover:bg-teal-deep hover:shadow-lg"
-                >
-                  <Phone className="h-4 w-4 transition-transform group-hover:scale-110" />
-                  Call front desk
-                </a>
-              </div>
+              {/* Quick WhatsApp + Call — each button hides when the real
+                  detail is not set yet (no dead links on the site). */}
+              {(waUrl || phoneTel) && (
+                <div className="grid grid-cols-2 gap-3">
+                  {waUrl && (
+                    <a
+                      href={waUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-4 py-3 font-serif text-sm font-semibold text-white transition-all hover:shadow-lg"
+                    >
+                      <MessageCircle className="h-4 w-4 transition-transform group-hover:scale-110" />
+                      Chat on WhatsApp
+                    </a>
+                  )}
+                  {phoneTel && (
+                    <a
+                      href={`tel:${phoneTel}`}
+                      className={`group flex items-center justify-center gap-2 rounded-2xl bg-teal px-4 py-3 font-serif text-sm font-semibold text-ivory transition-all hover:bg-teal-deep hover:shadow-lg ${waUrl ? "" : "col-span-2"}`}
+                    >
+                      <Phone className="h-4 w-4 transition-transform group-hover:scale-110" />
+                      Call front desk
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
           </Reveal>
 

@@ -5,21 +5,25 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import { useSettingValue, useContentValue } from "@/lib/site-content";
+import { sanitizeWhatsapp } from "@/lib/use-contact-info";
 
 /**
  * Floating WhatsApp button — fixed bottom-right, with subtle pulse ring.
  * Pings on hover to remind the user it's available.
+ * Hidden ENTIRELY until the owner sets a real WhatsApp number in
+ * Admin → Settings — we never render a placeholder wa.me link.
  */
 export function FloatingWhatsApp() {
   const [showLabel, setShowLabel] = useState(false);
 
-  // Live editable contact info
-  const whatsappNumberRaw = useSettingValue("whatsapp_number", "919876543210");
+  // Live editable contact info — NO hardcoded fallback number.
+  const whatsappNumberRaw = useSettingValue("whatsapp_number", "");
   const conciergeReplyWindow = useSettingValue("concierge_reply_window", "Replies in ~5 min");
   const conciergeHours = useSettingValue("concierge_hours", "7 AM – 11 PM IST");
   const prefillText = useContentValue("contact.whatsapp_prefill_text", "I would like to enquire about availability at RK Residency");
-  // Strip +, spaces, dashes — wa.me needs digits only.
-  const whatsappNumber = whatsappNumberRaw.replace(/[^\d]/g, "");
+  // Strip +, spaces, dashes — wa.me needs digits only. Placeholder numbers
+  // (e.g. the old seeded sample) resolve to "" and hide the widget.
+  const whatsappNumber = sanitizeWhatsapp(whatsappNumberRaw);
 
   // After 6 seconds, briefly show a hover label as a hint
   useEffect(() => {
@@ -31,7 +35,12 @@ export function FloatingWhatsApp() {
     };
   }, []);
 
-  const waUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(prefillText)}`;
+  const waUrl = whatsappNumber
+    ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(prefillText)}`
+    : "";
+
+  // No real WhatsApp number configured yet — render nothing at all.
+  if (!waUrl) return null;
 
   return (
     <motion.a

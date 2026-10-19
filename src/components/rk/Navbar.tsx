@@ -7,6 +7,7 @@ import { Logo } from "./Motifs";
 import { useRouter, type RouteName } from "@/lib/router";
 import { useSettingValue } from "@/lib/site-content";
 import { BUSINESS } from "@/lib/site.config";
+import { sanitizeContactText } from "@/lib/use-contact-info";
 
 // Each nav item: clicking scrolls to the section on home; if not on home, navigates to dedicated page.
 const NAV_ITEMS: { id: string; route: RouteName; label: string; labelHi: string }[] = [
@@ -27,8 +28,8 @@ export function Navbar({ onBookClick: _onBookClick }: { onBookClick?: () => void
   // Live editable brand info
   const brandName = useSettingValue("brand_name", "RK Residency");
   const brandTagline = useSettingValue("brand_tagline", "Vrindavan · Braj");
-  const phoneDisplay = useSettingValue("phone_primary", BUSINESS.phonePrimary);
-  const phoneTel = useSettingValue("phone_primary_tel", BUSINESS.phonePrimaryTel);
+  const phoneDisplay = sanitizeContactText(useSettingValue("phone_primary", BUSINESS.phonePrimary));
+  const phoneTel = sanitizeContactText(useSettingValue("phone_primary_tel", BUSINESS.phonePrimaryTel));
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -184,15 +185,18 @@ export function Navbar({ onBookClick: _onBookClick }: { onBookClick?: () => void
               {lang === "en" ? "EN" : "हि"}
             </button>
 
-            {/* Phone (desktop) — highlighted */}
-            <a
-              href={`tel:${phoneTel}`}
-              className="hidden items-center gap-2 rounded-full bg-gradient-to-r from-gold via-gold-soft to-gold px-4 py-2 text-sm font-bold text-charcoal shadow-md transition-all hover:from-gold-deep hover:to-gold md:inline-flex"
-              aria-label={`Call ${brandName}`}
-            >
-              <Phone className="h-4 w-4" />
-              {phoneDisplay}
-            </a>
+            {/* Phone (desktop) — highlighted. Hidden until a real number is
+                set in Admin → Settings (never render a dead tel: link). */}
+            {phoneTel && (
+              <a
+                href={`tel:${phoneTel}`}
+                className="hidden items-center gap-2 rounded-full bg-gradient-to-r from-gold via-gold-soft to-gold px-4 py-2 text-sm font-bold text-charcoal shadow-md transition-all hover:from-gold-deep hover:to-gold md:inline-flex"
+                aria-label={`Call ${brandName}`}
+              >
+                <Phone className="h-4 w-4" />
+                {phoneDisplay}
+              </a>
+            )}
 
             {/* Mobile hamburger */}
             <button
@@ -270,13 +274,15 @@ export function Navbar({ onBookClick: _onBookClick }: { onBookClick?: () => void
                 </button>
               </nav>
               <div className="mt-auto border-t border-charcoal/10 px-5 py-4">
-                <a
-                  href={`tel:${phoneTel}`}
-                  className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-gold via-gold-soft to-gold py-3 font-bold text-charcoal shadow-md"
-                >
-                  <Phone className="h-4 w-4" />
-                  {phoneDisplay}
-                </a>
+                {phoneTel && (
+                  <a
+                    href={`tel:${phoneTel}`}
+                    className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-gold via-gold-soft to-gold py-3 font-bold text-charcoal shadow-md"
+                  >
+                    <Phone className="h-4 w-4" />
+                    {phoneDisplay}
+                  </a>
+                )}
                 <button
                   onClick={() => setLang(lang === "en" ? "hi" : "en")}
                   className="mt-2 flex w-full items-center justify-center gap-1.5 text-xs font-semibold text-charcoal-soft"

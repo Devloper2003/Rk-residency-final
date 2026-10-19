@@ -26,7 +26,7 @@ const QUICK_REPLIES = [
 const BOT_RESPONSES: Record<string, string> = {
   book: `I'd be happy to help you check availability! Click the 'Check Availability' button at the top of the page${BUSINESS.phonePrimary ? `, or call us at ${BUSINESS.phonePrimary}` : ""}. Our front desk is open 24 hours.`,
   tour: "We offer four temple tours: Private Temple Circuit (₹2,500/day), Guided Walking Yatra (₹1,200), Yamuna Boat + Aarti (₹1,500), and Full-Day Braj Tour (₹4,500). Scroll down to the 'Book a Temple Tour' section to book online.",
-  dining: "Our kitchen is strictly satvik — no onion, no garlic, no eggs. Daily breakfast is included with all rooms. The rooftop Yamuna Pavilion serves dinner under candlelight from 7-10 PM. Vegan and Jain options available on request.",
+  dining: "Our kitchen is strictly satvik — no onion, no garlic, no eggs. Daily breakfast is included with all rooms. The rooftop Yamuna Pavilion serves dinner under candlelight from 7:00 PM to 10:30 PM. Vegan and Jain options available on request.",
   temples: "Five sacred sites are within a 25-minute walk: Banke Bihari (0.6km), ISKCON (1.4km), Prem Mandir (2.1km), Nidhivan (0.9km), and Keshi Ghat for Yamuna Aarti (1.1km). Our concierge arranges reserved darshan passes.",
   contact: `Of course! Please share your phone number and a good time to call. Our concierge will reach out within 4 hours, 7 AM – 11 PM IST.${BUSINESS.whatsappNumber ? ` You can also WhatsApp us at +${BUSINESS.whatsappNumber} for instant replies.` : ""}`,
   default: `Thank you for your message! Our concierge team will respond within 4 hours.${BUSINESS.phonePrimary ? ` For urgent matters, please call ${BUSINESS.phonePrimary}.` : ""}`,

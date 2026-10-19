@@ -158,7 +158,13 @@ export function Gallery({ limit }: { limit?: number }) {
             <SectionDivider className="mb-6" />
             <p className="text-center font-display text-sm text-charcoal-soft">
               A full 360° virtual tour of every room category is available on request —
-              write to <a href={info.mailtoUrl} className="text-teal underline-offset-2 hover:underline">{info.emailPrimary}</a>.
+              {info.emailPrimary ? (
+                <>
+                  {" "}write to <a href={info.mailtoUrl} className="text-teal underline-offset-2 hover:underline">{info.emailPrimary}</a>.
+                </>
+              ) : (
+                " use the contact form and we'll arrange it."
+              )}
             </p>
           </div>
         </Reveal>
