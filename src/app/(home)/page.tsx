@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
 import { FAQS } from "@/lib/faq-data";
 import { faqJsonLd, hotelJsonLd } from "@/lib/schema-org";
+import { publicPostWhere } from "@/lib/blog-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,14 @@ export default async function HomeRoute() {
   // SSR: the first three rooms (hero-adjacent section) are fetched on the
   // server so room names, taglines and prices are in the initial HTML.
   const rooms = await db.room.findMany({ orderBy: [{ sortOrder: "asc" }] });
+  // Homepage latest-posts section (Task 8): the 3 newest live stories,
+  // revalidated whenever a post is published (blog-publish.ts).
+  const latestPosts = await db.blogPost.findMany({
+    where: publicPostWhere(),
+    orderBy: [{ publishedAt: "desc" }],
+    take: 3,
+    select: { id: true, slug: true, title: true, excerpt: true, imageUrl: true, category: true, readingMins: true },
+  });
   return (
     <>
       {/* Structured data — server-rendered into the initial HTML. Built from
@@ -36,7 +45,7 @@ export default async function HomeRoute() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd(FAQS)) }}
       />
-      <HomeClient initialRooms={rooms} />
+      <HomeClient initialRooms={rooms} initialLatestPosts={latestPosts} />
     </>
   );
 }

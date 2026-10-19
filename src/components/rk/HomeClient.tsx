@@ -34,7 +34,69 @@ function SeeMoreButton({ href, label }: { href: string; label: string }) {
   );
 }
 
-export function HomeClient({ initialRooms }: { initialRooms?: Room[] }) {
+export type LatestPost = {
+  id: string; slug: string; title: string; excerpt: string;
+  imageUrl: string | null; category: string; readingMins: number;
+};
+
+/**
+ * Homepage latest-posts section (Task 8) — server-rendered: the 3 newest
+ * live stories are fetched by the home page and passed in, so titles,
+ * excerpts, images and internal links to /blog/[slug] are all in the
+ * initial HTML. The section is revalidated on publish (blog-publish.ts).
+ */
+function LatestPosts({ posts }: { posts: LatestPost[] }) {
+  if (!posts.length) return null;
+  return (
+    <section id="latest-stories" className="bg-ivory py-16 lg:py-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-10 text-center">
+          <h2 className="font-serif text-3xl font-semibold leading-tight text-charcoal sm:text-4xl">
+            Latest from the Braj Journal
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl font-display text-sm leading-relaxed text-charcoal-soft sm:text-base">
+            Temple guides, festival explainers and local tips — written by our concierge team in Vrindavan.
+          </p>
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {posts.map((p) => (
+            <a
+              key={p.id}
+              href={`/blog/${p.slug}`}
+              className="group flex flex-col overflow-hidden rounded-3xl border border-charcoal/10 bg-white text-left shadow-sm transition-all hover:shadow-xl"
+            >
+              <div className="relative h-44 overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={p.imageUrl || "/images/marigold-garland.webp"}
+                  alt={p.title}
+                  width={800}
+                  height={450}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+              </div>
+              <div className="flex flex-1 flex-col p-5">
+                <h3 className="font-serif text-lg font-semibold leading-snug text-charcoal group-hover:text-teal">
+                  {p.title}
+                </h3>
+                <p className="mt-2 line-clamp-2 font-display text-sm leading-relaxed text-charcoal-soft">
+                  {p.excerpt}
+                </p>
+                <div className="mt-auto pt-3 inline-flex items-center gap-1 font-display text-sm font-semibold text-teal">
+                  Read story
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function HomeClient({ initialRooms, initialLatestPosts = [] }: { initialRooms?: Room[]; initialLatestPosts?: LatestPost[] }) {
   const openBooking = useRouter((s) => s.openBooking);
 
   // SSR: rooms are fetched by the server page and rendered into the initial
@@ -79,6 +141,8 @@ export function HomeClient({ initialRooms }: { initialRooms?: Room[] }) {
         <Offers onBookClick={openBookingCb} limit={3} />
         <SeeMoreButton href="/offers" label="See all offers & packages" />
         <Testimonials />
+        {/* Latest blog stories — server-rendered internal links to /blog/[slug] */}
+        <LatestPosts posts={initialLatestPosts} />
         <SeeMoreButton href="/blog" label="Read the Braj Journal" />
         <FAQ limit={6} />
         <Contact />
