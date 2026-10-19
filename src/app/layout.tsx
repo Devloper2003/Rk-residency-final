@@ -7,6 +7,7 @@ import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { VisitorTracker } from "@/components/rk/VisitorTracker";
 import { GoogleTagManager } from "@/components/rk/GoogleTagManager";
 import { GoogleAnalytics } from "@/components/rk/GoogleAnalytics";
+import { SITE_URL } from "@/lib/site.config";
 import { GlobalBookingWidget } from "@/components/rk/GlobalBookingWidget";
 import { ThemeProvider } from "@/components/rk/ThemeProvider";
 
@@ -32,6 +33,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "RK Residency — Heritage Luxury Stay in Vrindavan | Hotel near Banke Bihari Temple",
   description:
     "RK Residency is a heritage-luxury residency in Vrindavan on the banks of the Yamuna. Spiritual luxury for pilgrims, devotee families and cultural travellers. Steps from Banke Bihari Mandir, ISKCON, Prem Mandir. Direct booking best-price guarantee.",
@@ -48,18 +50,14 @@ export const metadata: Metadata = {
     "Prem Mandir hotel",
   ],
   authors: [{ name: "RK Residency" }],
-  alternates: {
-    canonical: "https://rkresidency.in/",
-    languages: {
-      "en-IN": "/",
-      "hi-IN": "/hi",
-    },
-  },
+  // NOTE: no site-wide canonical here. Canonicals are set PER PAGE
+  // (self-referencing, built from SITE_URL) in each route's metadata so no
+  // page ever inherits another page's canonical.
   openGraph: {
     title: "RK Residency — Heritage Luxury Stay in Vrindavan",
     description:
       "Spiritual luxury on the banks of the Yamuna. Steps from Banke Bihari Mandir and ISKCON Vrindavan. Direct booking with best-price guarantee.",
-    url: "https://rkresidency.in",
+    url: "/",
     siteName: "RK Residency",
     locale: "en_IN",
     type: "website",

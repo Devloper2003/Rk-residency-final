@@ -1,5 +1,7 @@
 import { BlogDetailPage } from "@/components/rk/pages/BlogPages";
 import { db } from "@/lib/db";
+import { absUrl } from "@/lib/seo";
+import { SITE_URL } from "@/lib/site.config";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +11,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: post ? `${post.title} — RK Residency Blog` : "Blog Post — RK Residency",
     description: post?.excerpt || "Braj Journal story from RK Residency, Vrindavan.",
+    // A blog post canonicals to ITSELF (never to the homepage or the blog list).
+    // Unknown slugs canonical to the blog index.
+    alternates: { canonical: post ? absUrl(`/blog/${post.slug}`) : absUrl("/blog") },
     openGraph: {
       title: post?.title || "RK Residency Blog",
       description: post?.excerpt || "",
@@ -46,12 +51,12 @@ export default async function BlogDetailRoute({ params }: { params: Promise<{ sl
                 name: "RK Residency",
                 logo: {
                   "@type": "ImageObject",
-                  url: "https://rkresidency.in/images/heritage-room.webp",
+                  url: `${SITE_URL}/images/heritage-room.webp`,
                 },
               },
               mainEntityOfPage: {
                 "@type": "WebPage",
-                "@id": `https://rkresidency.in/blog/${post.slug}`,
+                "@id": absUrl(`/blog/${post.slug}`),
               },
             }),
           }}
