@@ -42,8 +42,10 @@ export function hotelJsonLd(opts?: { rooms?: { basePrice: number }[] }) {
     .map((r) => r.basePrice)
     .filter((n) => Number.isFinite(n) && n > 0);
 
+  // Widen the `as const` empty-string literal so truthiness checks typecheck.
+  const cfgPriceRange: string = BUSINESS.priceRange;
   const priceRange =
-    (BUSINESS.priceRange && BUSINESS.priceRange.trim()) ||
+    (cfgPriceRange && cfgPriceRange.trim()) ||
     (prices.length ? `₹${Math.min(...prices).toLocaleString("en-IN")} – ₹${Math.max(...prices).toLocaleString("en-IN")}` : undefined);
 
   const checkin = timeToSchemaTime(BUSINESS.checkinTime);

@@ -98,7 +98,6 @@ export function GalleryPage() {
                 height={800}
                 loading="lazy"
                 className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-charcoal/85 via-transparent to-transparent opacity-70 transition-opacity group-hover:opacity-90" />
               <div className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-ivory/85 text-teal opacity-0 transition-opacity group-hover:opacity-100">

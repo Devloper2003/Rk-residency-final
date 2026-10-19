@@ -16,9 +16,13 @@ type Distance = { label: string; km: string; time: string };
  * empty km value (unfilled TODO) are omitted from the UI entirely.
  */
 export function DistancesSection() {
-  const entries: Distance[] = Object.values(BUSINESS.distances).filter(
-    (d): d is Distance => Boolean(d && d.km && d.time)
-  );
+  // Widen the readonly literal types from `as const` before filtering.
+  const all: Distance[] = Object.values(BUSINESS.distances).map((d) => ({
+    label: d.label,
+    km: d.km,
+    time: d.time,
+  }));
+  const entries: Distance[] = all.filter((d) => Boolean(d.km && d.time));
 
   if (entries.length === 0) return null;
 
