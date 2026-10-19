@@ -134,7 +134,9 @@ export function AboutPage() {
           {stats.map((s, i) => (
             <div key={i} className="text-center">
               <div className="font-serif text-4xl font-bold text-teal sm:text-5xl">
-                {s.value}{s.suffix}
+                {/* en-IN thousands separator for numeric values (48,000+),
+                    owner-entered text passes through unchanged */}
+                {/^\d+$/.test(s.value) ? Number(s.value).toLocaleString("en-IN") : s.value}{s.suffix}
               </div>
               <div className="mt-2 font-display text-xs uppercase tracking-[0.2em] text-charcoal-soft sm:text-sm">
                 {s.label}

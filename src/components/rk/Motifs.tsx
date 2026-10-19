@@ -273,7 +273,12 @@ export function CountUp({
           requestAnimationFrame(animate);
         }}
       >
-        <span data-count>{prefix}0{suffix}</span>
+        <span data-count>
+          {/* Server-side real value (SEO + no-JS): crawlers and users without
+              JavaScript see the FINAL number, not "0". The viewport animation
+              still replays 0 → end on the client when scrolled into view. */}
+          {prefix}{end.toLocaleString("en-IN")}{suffix}
+        </span>
       </motion.span>
     </motion.span>
   );

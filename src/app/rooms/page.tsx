@@ -5,7 +5,7 @@ import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
-const pageTitle = "Rooms & Suites — RK Residency Vrindavan";
+const pageTitle = "Rooms & Suites in Vrindavan near Banke Bihari Mandir | RK Residency";
 const pageDescription =
   "Explore rooms, suites and the Gokul Royal Villa — hand-carved teak, Makrana marble, Braj textiles. Book direct with RK Residency Vrindavan.";
 
