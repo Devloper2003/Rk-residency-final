@@ -52,6 +52,12 @@ export function BlogTab() {
     if (!p.slug.trim()) return toast.error("Slug is required");
     if (!p.title.trim()) return toast.error("Title is required");
     if (p.status === "SCHEDULED" && !p.publishOn) return toast.error("Pick a 'Publish on' date/time for a scheduled post.");
+    // Cover image workflow (Task 7): warn (not block) when going live
+    // without a cover image — posts render with a generic fallback image.
+    if ((p.status === "PUBLISHED" || p.status === "SCHEDULED") && !p.imageUrl) {
+      const go = confirm("This post has no cover image. Posts without a cover show a generic marigold image on the blog list and no hero image on the post page.\n\nPublish anyway?");
+      if (!go) return;
+    }
     const method = p.id ? "PATCH" : "POST";
     const payload = {
       ...p,
