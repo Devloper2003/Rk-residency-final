@@ -75,7 +75,7 @@ function TiltCard({
         <div className="relative h-60 overflow-hidden sm:h-72">
           <img
             src={cover}
-            alt={`${room.name} — ${room.view} room at RK Residency Vrindavan`}
+            alt={`${room.name} — ${room.view} room at RK Residency, Kailash Nagar, Vrindavan`}
             width={800}
             height={600}
             loading="lazy"
