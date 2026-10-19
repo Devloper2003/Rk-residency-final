@@ -91,6 +91,18 @@ export function DistancesSection() {
         <Reveal delay={0.15}>
           <div className="mt-12">
             <SectionDivider className="mb-6" />
+            {/* Contextual internal links from the distances data */}
+            <p className="text-center font-display text-sm text-charcoal-soft">
+              Planning your darshan around Janmashtami or Holi? Time your stay with the{" "}
+              <a href="/festivals" className="font-semibold text-teal underline-offset-2 hover:underline">
+                Braj festival calendar
+              </a>
+              , or explore our{" "}
+              <a href="/experiences" className="font-semibold text-teal underline-offset-2 hover:underline">
+                Vrindavan temple experiences guide
+              </a>
+              .
+            </p>
           </div>
         </Reveal>
       </div>

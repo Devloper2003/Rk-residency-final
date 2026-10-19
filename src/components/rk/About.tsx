@@ -148,14 +148,17 @@ export function About() {
             <Reveal delay={0.1}>
               <div className="mt-6 space-y-4 text-base leading-relaxed text-charcoal-soft">
                 <p>
-                  Nestled in the Kailash Nagar area of Vrindavan — moments from
-                  Banke Bihari Mandir and the Yamuna ghats — RK Residency 
+                  Nestled in the Kailash Nagar area of Vrindavan — moments from{" "}
+                  <a href="/experiences" className="text-teal underline-offset-2 hover:underline">Banke Bihari Mandir</a>
+                  {" "}and the Yamuna ghats — RK Residency 
                   is more than a hotel—it is a sanctuary where faith, 
                   comfort, and hospitality come together. Established in {BUSINESS.establishedYear}, our purpose has always been to create meaningful 
                   experiences for every pilgrim who walks through our doors.
                 </p>
                 <p>
-                From elegantly designed accommodations to attentive 
+                From our{" "}
+                  <a href="/rooms" className="text-teal underline-offset-2 hover:underline">elegantly designed accommodations</a>
+                  {" "}to attentive 
                   service inspired by the spirit of Atithi Devo Bhava,
                   every detail reflects our dedication to making your 
                   stay peaceful, memorable, and worthy of the divine 

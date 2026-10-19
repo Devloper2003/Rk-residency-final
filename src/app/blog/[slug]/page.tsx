@@ -38,7 +38,17 @@ export default async function BlogDetailRoute({ params }: { params: Promise<{ sl
 
   // SSR: the post is fetched once on the server and used BOTH for JSON-LD
   // and for the rendered article body, so the full text is in the initial HTML.
-  const post = await db.blogPost.findUnique({ where: { slug } });
+  // Related posts (same category first, then latest) are also fetched
+  // server-side so the internal links are crawlable.
+  const [post, allPublished] = await Promise.all([
+    db.blogPost.findUnique({ where: { slug } }),
+    db.blogPost.findMany({ where: { published: true }, orderBy: [{ publishedAt: "desc" }] }),
+  ]);
+
+  const others = allPublished.filter((p) => p.slug !== slug);
+  const sameCategory = post ? others.filter((p) => p.category === post.category) : [];
+  const rest = others.filter((p) => !sameCategory.includes(p));
+  const related = [...sameCategory, ...rest].slice(0, 3);
 
   return (
     <>
@@ -59,7 +69,7 @@ export default async function BlogDetailRoute({ params }: { params: Promise<{ sl
           }}
         />
       )}
-      <BlogDetailPage slug={slug} initialPost={post} />
+      <BlogDetailPage slug={slug} initialPost={post} initialRelated={related} />
     </>
   );
 }

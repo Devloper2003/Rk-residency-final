@@ -61,6 +61,19 @@ export function BlogListPage({ initialPosts }: { initialPosts?: BlogPost[] }) {
         { name: "Blog", path: "/blog" },
       ]}
     >
+      {/* Contextual internal links — descriptive anchors, in the initial HTML */}
+      <p className="mx-auto -mt-4 mb-10 max-w-3xl text-center font-display text-sm leading-relaxed text-charcoal-soft">
+        Reading before your trip? Browse our{" "}
+        <a href="/rooms" className="text-teal underline-offset-2 hover:underline">rooms and suites in Vrindavan</a>,
+        check the current{" "}
+        <a href="/offers" className="text-teal underline-offset-2 hover:underline">festival offers and packages</a>,
+        or plan your darshan with our{" "}
+        <a href="/experiences" className="text-teal underline-offset-2 hover:underline">temple experiences guide</a>,{" "}
+        see what{" "}
+        <a href="/dining" className="text-teal underline-offset-2 hover:underline">satvik dining at RK Residency</a>{" "}
+        tastes like, and time your visit with the{" "}
+        <a href="/festivals" className="text-teal underline-offset-2 hover:underline">Braj festival calendar</a>.
+      </p>
       {/* Filters */}
       <div className="mb-10 flex flex-wrap justify-center gap-2">
         {cats.map((c) => (
@@ -161,7 +174,17 @@ export function BlogListPage({ initialPosts }: { initialPosts?: BlogPost[] }) {
   );
 }
 
-export function BlogDetailPage({ slug, initialPost }: { slug: string; initialPost?: BlogPost | null }) {
+export function BlogDetailPage({
+  slug,
+  initialPost,
+  initialRelated = [],
+}: {
+  slug: string;
+  initialPost?: BlogPost | null;
+  /** SSR: up to 3 related posts (same category first) fetched by the server
+   *  page, so the internal links + images are in the initial HTML. */
+  initialRelated?: BlogPost[];
+}) {
   const navigate = useRouter((s) => s.navigate);
   const info = useContactInfo();
   // SSR: when the server page passes initialPost, the full article body is in
@@ -294,6 +317,55 @@ export function BlogDetailPage({ slug, initialPost }: { slug: string; initialPos
             </div>
           </div>
         </div>
+
+        {/* Related posts — internal linking, server-rendered */}
+        {initialRelated.length > 0 && (
+          <div className="mt-12">
+            <div className="mb-6 flex items-center gap-3">
+              <Lotus size={18} className="text-gold" />
+              <h2 className="font-serif text-2xl font-semibold text-charcoal">
+                Related stories from the Braj Journal
+              </h2>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-3">
+              {initialRelated.map((rp) => {
+                return (
+                  <a
+                    key={rp.id}
+                    href={`/blog/${rp.slug}`}
+                    className="group flex flex-col overflow-hidden rounded-2xl border border-charcoal/10 bg-white shadow-sm transition-all hover:shadow-lg"
+                  >
+                    <div className="relative h-36 overflow-hidden">
+                      <img
+                        src={rp.imageUrl || "/images/marigold-garland.webp"}
+                        alt={rp.title}
+                        width={800}
+                        height={450}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                      <div className={`absolute left-3 top-3 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${CATEGORY_COLOR[rp.category] || "bg-charcoal/8 text-charcoal"}`}>
+                        {CATEGORY_LABEL[rp.category] || rp.category}
+                      </div>
+                    </div>
+                    <div className="flex flex-1 flex-col p-4">
+                      <h3 className="font-serif text-base font-semibold leading-snug text-charcoal group-hover:text-teal">
+                        {rp.title}
+                      </h3>
+                      <p className="mt-1.5 line-clamp-2 font-display text-xs leading-relaxed text-charcoal-soft">
+                        {rp.excerpt}
+                      </p>
+                      <div className="mt-auto pt-3 inline-flex items-center gap-1 font-display text-xs font-semibold text-teal">
+                        Read story
+                        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                      </div>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Back */}
         <div className="mt-10">
