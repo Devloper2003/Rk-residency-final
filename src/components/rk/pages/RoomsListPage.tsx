@@ -54,7 +54,7 @@ export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
 
   return (
     <PageShell
-      title="Rooms & suites "
+      title="Rooms & Suites in Vrindavan"
       subtitle="Every room at RK Residency is thoughtfully curated to provide comfort, elegance, and a peaceful escape in the sacred city of Vrindavan. Explore each room category to view detailed amenities, photo galleries, and seamless booking options."
       accent="teal"
     >

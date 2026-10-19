@@ -53,7 +53,7 @@ export function BlogListPage({ initialPosts }: { initialPosts?: BlogPost[] }) {
 
   return (
     <PageShell
-      title="The Braj Journal"
+      title="The Braj Journal — Vrindavan Blog"
       subtitle="Temple guides, festival calendars, local tips and stories from Vrindavan — written by our resident scholars and concierge team."
       accent="gold"
     >

@@ -38,7 +38,7 @@ export function OffersListPage({ onBookClick }: { onBookClick?: () => void }) {
 
   return (
     <PageShell
-      title="Sacred seasons, thoughtfully packaged"
+      title="Offers & Festival Packages in Vrindavan"
       subtitle="From the midnight abhishek of Janmashtami to the colours of Holi in Barsana — our festival packages are designed around the real Braj calendar, not generic hotel promotions."
       accent="gold"
     >

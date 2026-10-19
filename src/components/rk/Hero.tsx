@@ -16,11 +16,15 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
     offset: ["start start", "end start"],
   });
 
-  const bgImage = useContentValue("hero.background_image", "//uploads/1b353f97f07cb823.webp");
+  const bgImage = useContentValue("hero.background_image", "/uploads/rk-residency-vrindavan-hero.webp");
+  const bgImageAlt = useContentValue("hero.background_alt", "RK Residency Vrindavan hotel near Banke Bihari Mandir — golden-hour temple skyline");
   const locationBadge = useContentValue("hero.location_badge", "Vrindavan · On the banks of the Yamuna");
-  const headlineLine1 = useContentValue("hero.headline_line1", "Where the spirit of Braj");
-  const headlineLine2 = useContentValue("hero.headline_line2", "finds its rest");
-  const subheadline = useContentValue("hero.subheadline", "A heritage-luxury residency steps from Banke Bihari Mandir & ISKCON Vrindavan. Calm, dignified comfort for pilgrims, devotee families and cultural travellers.");
+  // SEO: the single <h1> on the homepage carries the primary keyword.
+  const headlineLine1 = useContentValue("hero.headline_line1", "Hotel Near Banke Bihari Mandir,");
+  const headlineLine2 = useContentValue("hero.headline_line2", "Vrindavan");
+  // The old tagline is now a subheading (h2) below the keyword h1.
+  const tagline = useContentValue("hero.tagline", "Where the spirit of Braj finds its rest");
+  const subheadline = useContentValue("hero.subheadline", "A heritage-luxury residency minutes from Banke Bihari Mandir & ISKCON Vrindavan. Calm, dignified comfort for pilgrims, devotee families and cultural travellers.");
   const ctaPrimary = useContentValue("hero.cta_primary", "Check Availability");
   const ctaSecondary = useContentValue("hero.cta_secondary", "Explore Rooms");
   const ratingText = useContentValue("hero.rating_text", "4.9 · 1,240+ verified stays");
@@ -116,7 +120,7 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
           <WeatherWidget />
         </motion.div>
 
-        {/* Main headline */}
+        {/* Main headline — the page's single <h1>, carries the primary keyword */}
         <motion.h1
           initial={{ opacity: 0, y: 28 }}
           animate={{ opacity: 1, y: 0 }}
@@ -127,6 +131,16 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
           <br />
           <span className="text-gold-foil italic">{currentHeadline2}</span>
         </motion.h1>
+
+        {/* Tagline — demoted to an <h2> subheading below the keyword h1 */}
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.65, duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-5 font-serif text-lg italic text-ivory/90 sm:text-2xl"
+        >
+          {tagline}
+        </motion.h2>
 
         {/* Sub-headline */}
         <motion.p

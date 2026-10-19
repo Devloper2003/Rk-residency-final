@@ -24,7 +24,7 @@ export function ExperiencesListPage() {
 
   return (
     <PageShell
-      title="The Braj yatra, curated for you"
+      title="Vrindavan Temple & Braj Experiences"
       subtitle="Five sacred sites within a 25-minute walk of RK Residency. Tap any experience for full timings, history, highlights and pilgrim tips."
       accent="marsala"
     >

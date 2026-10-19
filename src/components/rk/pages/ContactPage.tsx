@@ -34,7 +34,7 @@ export function ContactPage() {
 
   return (
     <PageShell
-      title="Begin your Braj journey"
+      title="Contact & Location — Hotel in Vrindavan"
       subtitle={`Whether you are planning a pilgrimage, a satsang retreat or a small wedding — write to us. Our concierge replies within four hours, ${info.conciergeHours}.`}
       accent="teal"
     >

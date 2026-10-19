@@ -37,8 +37,8 @@ const STATS = [
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = { HandHeart, Sparkles, Heart, Award, Users, Quote };
 
 export function AboutPage() {
-  const titleLine1 = useContentValue("about.title_line1", "A divine home on the");
-  const titleLine2 = useContentValue("about.title_line2", "Braj bhoomi");
+  const titleLine1 = useContentValue("about.title_line1", "A heritage hotel in");
+  const titleLine2 = useContentValue("about.title_line2", "holy Vrindavan");
   const image = useContentValue("about.image", "/uploads/5b87a4725175feac.webp");
   const imageAlt = useContentValue("about.image_alt", "A Peaceful Retreat in the Heart of Vrindavan");
   const imageCaptionLabel = useContentValue("about.image_caption_label", "Heart of Vrindavan");

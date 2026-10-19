@@ -49,7 +49,7 @@ export function GalleryPage() {
 
   return (
     <PageShell
-      title="The Timeless Beauty of Braj"
+      title="Photo Gallery — RK Residency Vrindavan"
       subtitle="Every photograph tells a story of comfort, devotion, and heartfelt hospitality in the sacred city of Vrindavan."
       accent="gold"
     >

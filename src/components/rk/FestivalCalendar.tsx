@@ -134,9 +134,9 @@ export function FestivalCalendar() {
             </div>
           </Reveal>
           <Reveal delay={0.05}>
-            <h2 className="font-serif text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">
-              Sacred seasons of Braj
-            </h2>
+            <h1 className="font-serif text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">
+              Braj Festival Calendar 2026 — Vrindavan
+            </h1>
           </Reveal>
           <Reveal delay={0.1}>
             <p className="mx-auto mt-5 max-w-2xl font-display text-base leading-relaxed text-ivory/75 sm:text-lg">

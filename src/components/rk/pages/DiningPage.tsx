@@ -60,7 +60,7 @@ export function DiningPage() {
   const dSubtitle = useContentValue("dining.subtitle", "");
   return (
     <PageShell
-      title="Food as prasadam, not just sustenance"
+      title="Satvik Dining in Vrindavan"
       subtitle="Our kitchen follows the strict satvik tradition of Braj — no onion, no garlic, no eggs. Every meal is prepared after a kitchen aarti and served as prasadam."
       accent="marsala"
     >

@@ -6,8 +6,9 @@ const contentItems = [
   // ===================== HERO =====================
   { key: "hero.background_image", value: "/images/hero-vrindavan.webp", section: "hero", type: "image", label: "Background image" },
   { key: "hero.location_badge", value: "Vrindavan · On the banks of the Yamuna", section: "hero", type: "text", label: "Location badge" },
-  { key: "hero.headline_line1", value: "Where the spirit of Braj", section: "hero", type: "text", label: "Headline line 1" },
-  { key: "hero.headline_line2", value: "finds its rest", section: "hero", type: "text", label: "Headline line 2" },
+  { key: "hero.headline_line1", value: "Hotel Near Banke Bihari Mandir,", section: "hero", type: "text", label: "Headline line 1 (SEO: forms the page's single h1)" },
+  { key: "hero.headline_line2", value: "Vrindavan", section: "hero", type: "text", label: "Headline line 2 (SEO: forms the page's single h1)" },
+  { key: "hero.tagline", value: "Where the spirit of Braj finds its rest", section: "hero", type: "text", label: "Tagline (h2 subheading under the h1)" },
   { key: "hero.subheadline", value: "A heritage-luxury residency steps from Banke Bihari Mandir & ISKCON Vrindavan. Calm, dignified comfort for pilgrims, devotee families and cultural travellers.", section: "hero", type: "textarea", label: "Sub-headline" },
   { key: "hero.cta_primary", value: "Check Availability", section: "hero", type: "text", label: "Primary CTA" },
   { key: "hero.cta_secondary", value: "Explore Rooms", section: "hero", type: "text", label: "Secondary CTA" },
@@ -26,8 +27,8 @@ const contentItems = [
 
   // ===================== ABOUT (homepage) =====================
   { key: "about.label", value: "Our Story", section: "about", type: "text", label: "Section label" },
-  { key: "about.title_line1", value: "A heritage home on the", section: "about", type: "text", label: "Title line 1" },
-  { key: "about.title_line2", value: "banks of the Yamuna", section: "about", type: "text", label: "Title line 2" },
+  { key: "about.title_line1", value: "A heritage hotel in", section: "about", type: "text", label: "Title line 1 (SEO: forms the /about h1)" },
+  { key: "about.title_line2", value: "holy Vrindavan", section: "about", type: "text", label: "Title line 2 (SEO: forms the /about h1)" },
   { key: "about.image", value: "/images/heritage-room.webp", section: "about", type: "image", label: "Image" },
   { key: "about.image_alt", value: "Heritage luxury room with jharokha window at RK Residency", section: "about", type: "text", label: "Image alt text" },
   { key: "about.image_caption_label", value: "Heritage Wing · Est. 2014", section: "about", type: "text", label: "Image caption label" },
