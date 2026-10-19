@@ -7,7 +7,10 @@ import Script from "next/script";
  * GoogleAnalytics — loads GA4 tracking script if a measurement ID is configured.
  * Fetches the GA ID from /api/site-settings at runtime so admins can configure
  * it from the admin panel without redeploying.
+ * Falls back to G-F4SZRNY72V if no ID is configured in settings.
  */
+const DEFAULT_GA_ID = "G-F4SZRNY72V";
+
 export function GoogleAnalytics() {
   const [gaId, setGaId] = useState<string | null>(null);
 
@@ -17,8 +20,11 @@ export function GoogleAnalytics() {
       .then((data) => {
         const id = data.settings?.ga_measurement_id;
         if (id && id.startsWith("G-")) setGaId(id);
+        else setGaId(DEFAULT_GA_ID); // fallback to default GA ID
       })
-      .catch(() => {});
+      .catch(() => {
+        setGaId(DEFAULT_GA_ID); // fallback on fetch error too
+      });
   }, []);
 
   if (!gaId) return null;
