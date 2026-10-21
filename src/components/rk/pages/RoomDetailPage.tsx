@@ -276,7 +276,7 @@ export function RoomDetailPage({
                   "Free cancellation up to 72 hours before check-in",
                   "Daily satvik breakfast included for all guests",
                   "Children under 6 stay free with existing bedding",
-                  "5% GST and ₹250/night service fee included",
+                  "Only 5% GST added at checkout — no hidden charges",
                   "Festival surge pricing during Janmashtami, Holi & Radhashtami",
                 ].map((t) => (
                   <div key={t} className="flex items-start gap-2 font-display text-sm text-charcoal-soft">

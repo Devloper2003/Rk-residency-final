@@ -196,7 +196,8 @@ export function Offers({ onBookClick, limit }: { onBookClick: () => void; limit?
             <SectionDivider className="mb-6" />
             <p className="text-center font-display text-sm text-charcoal-soft">
               Thoughtfully designed for your comfort, every stay includes complimentary Wi-Fi, 
-              free parking, and attentive hospitality. Room rates are inclusive of applicable GST.
+              free parking, and attentive hospitality. Room rates are shown per night; a single 
+              5% GST is added at checkout — no hidden charges.
             </p>
           </div>
         </Reveal>

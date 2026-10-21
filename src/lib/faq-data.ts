@@ -32,7 +32,7 @@ export const FAQS: FAQ[] = [
   {
     category: "Booking",
     q: "Do I need to pay a deposit or full amount at booking?",
-    a: "For Pay-at-Hotel bookings, no deposit is required — we hold a valid card on file. For Razorpay/Stripe bookings, the full amount is charged at confirmation. Rates are shown per night; a 5% GST and a ₹250/night service fee are added at checkout — you always see the full itemised total before you pay.",
+    a: "For Pay-at-Hotel bookings, no deposit is required — we hold a valid card on file. For Razorpay/Stripe bookings, the full amount is charged at confirmation. Rates are shown per night; a single 5% GST is added at checkout — you always see the full itemised total before you pay. No other charges, no hidden fees.",
   },
   {
     category: "Booking",
