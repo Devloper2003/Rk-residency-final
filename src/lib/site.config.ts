@@ -177,8 +177,8 @@ export const BUSINESS = {
   },
 
   reviews: {
-    /** TODO: Google Business Profile "Write a review" / listing URL for the hotel. */
-    google: "",
+    /** Owner-supplied Google listing URL (the maps.app.goo.gl share link). */
+    google: "https://maps.app.goo.gl/EWLnPhdXAqbgmJ9Q6",
 
     /** TODO: TripAdvisor listing URL for the hotel (was placeholder "https://www.tripadvisor.in"). */
     tripadvisor: "",
@@ -195,8 +195,8 @@ export const BUSINESS = {
     /** Owner-supplied Google Maps place link (share URL) for "Get Directions". */
     directionsUrl: "https://maps.app.goo.gl/EWLnPhdXAqbgmJ9Q6",
 
-    /** TODO: Google Business Profile URL — shown as "View on Google" next to the map. */
-    googleBusinessProfile: "",
+    /** Owner-supplied Google Maps place link — the hotel's real Google listing. */
+    googleBusinessProfile: "https://maps.app.goo.gl/EWLnPhdXAqbgmJ9Q6",
   },
 } as const;
 

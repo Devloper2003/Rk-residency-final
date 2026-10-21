@@ -33,7 +33,10 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
   // until a real Google/TripAdvisor link exists. Never shown unsourced, and
   // it is never emitted in JSON-LD schema either.
   const ratingText = useContentValue("hero.rating_text", "");
-  const featuredOnText = useContentValue("hero.featured_on_text", "Featured on Google · TripAdvisor");
+  // "Featured on Google" links to the owner's real Google listing from
+  // site.config so the trust claim carries a verifiable source. TripAdvisor is
+  // NOT claimed until the owner supplies a real TripAdvisor listing URL.
+  const featuredOnText = useContentValue("hero.featured_on_text", "Featured on Google");
 
   // Slider
   const slidesRaw = useContentValue("hero.slides", "[]");
@@ -213,9 +216,20 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
             )}
           </div>
           <div className="hidden h-4 w-px bg-ivory/30 sm:block" />
-          <div className="text-xs uppercase tracking-wider text-ivory/70">
-            {featuredOnText}
-          </div>
+          {BUSINESS.maps.googleBusinessProfile ? (
+            <a
+              href={BUSINESS.maps.googleBusinessProfile}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs uppercase tracking-wider text-ivory/70 transition-colors hover:text-gold-soft"
+            >
+              {featuredOnText}
+            </a>
+          ) : (
+            <div className="text-xs uppercase tracking-wider text-ivory/70">
+              {featuredOnText}
+            </div>
+          )}
         </motion.div>
       </motion.div>
 

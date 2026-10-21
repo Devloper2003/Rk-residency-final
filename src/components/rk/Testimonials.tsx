@@ -6,14 +6,14 @@ import { Star, BadgeCheck, Quote, ExternalLink } from "lucide-react";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { BUSINESS } from "@/lib/site.config";
 
-type Review = {
+export type Review = {
   id: string;
   guestName: string;
   guestLocation: string | null;
   rating: number;
   title: string;
   body: string;
-  source: "DIRECT" | "GOOGLE" | "TRIPADVISOR";
+  source: string; // DIRECT | GOOGLE | TRIPADVISOR (DB stores a plain string)
   verified: boolean;
 };
 
@@ -44,9 +44,9 @@ function ReviewCard({ r }: { r: Review }) {
           ))}
         </div>
         <span
-          className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${SOURCE_COLOR[r.source]}`}
+          className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${SOURCE_COLOR[r.source] || "bg-teal/10 text-teal"}`}
         >
-          {SOURCE_LABEL[r.source]}
+          {SOURCE_LABEL[r.source] || "Verified stay"}
         </span>
       </div>
       <Quote className="h-6 w-6 text-gold/40" />
@@ -77,19 +77,23 @@ function ReviewCard({ r }: { r: Review }) {
   );
 }
 
-export function Testimonials() {
+/**
+ * @param initialReviews Server-fetched approved reviews (from the homepage
+ *   server component). When provided, the client-side /api/reviews fetch is
+ *   skipped entirely and the review cards are already in the initial HTML —
+ *   crawlers see every review without executing JavaScript.
+ */
+export function Testimonials({ initialReviews }: { initialReviews?: Review[] }) {
   const tLabel = useContentValue("testimonials.label", "Guests & devotees");
   const tTitle = useContentValue("testimonials.title", "Voices from our Braj family");
   // Aggregate rating shown ONLY when the owner sets a verifiable value
   // backed by a real review profile link (BUSINESS.reviews). Empty = hidden;
-  // never rendered unsourced and never emitted in JSON-LD schema.
   const tRating = useContentValue("testimonials.aggregate_rating", "");
-  const tGoogleCount = useContentValue("testimonials.google_review_count", "840+ reviews");
-  const tTripAdvisorCount = useContentValue("testimonials.tripadvisor_review_count", "400+ reviews");
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [reviews, setReviews] = useState<Review[]>(initialReviews || []);
+  const [loading, setLoading] = useState(!initialReviews);
 
   useEffect(() => {
+    if (initialReviews) return; // server-rendered — no client fetch needed
     fetch("/api/reviews")
       .then((r) => r.json())
       .then((data) => {
@@ -97,7 +101,7 @@ export function Testimonials() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [initialReviews]);
 
   // Duplicate for infinite marquee
   const doubled = [...reviews, ...reviews];
@@ -172,51 +176,31 @@ export function Testimonials() {
         </div>
       )}
 
-      {/* Aggregate badges — linked to the owner's real review profiles from
-          site.config BUSINESS. Hidden entirely until the TODO URLs are filled,
-          so we never link to generic placeholder pages. */}
-      {(BUSINESS.reviews.google || BUSINESS.reviews.tripadvisor) && (
+      {/* Aggregate badge — links to the owner's real Google listing and shows
+          the EXACT rating + review count from BUSINESS.rating. Renders ONLY
+          when all three config values exist, so no invented numbers appear.
+          No TripAdvisor badge until the owner supplies a real listing URL. */}
+      {BUSINESS.reviews.google && BUSINESS.rating.value && BUSINESS.rating.count && (
       <div className="relative mt-16">
         <SectionDivider className="mb-8" />
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-6 px-4 sm:flex-row sm:gap-12">
-          {BUSINESS.reviews.google && (
           <a
             href={BUSINESS.reviews.google}
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center gap-3 rounded-2xl border border-ivory/15 bg-ivory/5 px-5 py-3 transition-all hover:border-gold/40 hover:bg-ivory/10"
           >
-            <div className="font-serif text-2xl font-bold text-gold-soft">4.9</div>
+            <div className="font-serif text-2xl font-bold text-gold-soft">{BUSINESS.rating.value}</div>
             <div>
               <div className="font-display text-xs uppercase tracking-wider text-ivory/70">
                 Google Reviews
               </div>
               <div className="flex items-center gap-1.5 font-display text-xs text-ivory/85">
-                840+ reviews
+                {BUSINESS.rating.count} reviews
                 <ExternalLink className="h-3 w-3 opacity-60 transition-opacity group-hover:opacity-100" />
               </div>
             </div>
           </a>
-          )}
-          {BUSINESS.reviews.tripadvisor && (
-          <a
-            href={BUSINESS.reviews.tripadvisor}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex items-center gap-3 rounded-2xl border border-ivory/15 bg-ivory/5 px-5 py-3 transition-all hover:border-gold/40 hover:bg-ivory/10"
-          >
-            <div className="font-serif text-2xl font-bold text-gold-soft">4.8</div>
-            <div>
-              <div className="font-display text-xs uppercase tracking-wider text-ivory/70">
-                TripAdvisor
-              </div>
-              <div className="flex items-center gap-1.5 font-display text-xs text-ivory/85">
-                400+ reviews · Travellers' Choice 2025
-                <ExternalLink className="h-3 w-3 opacity-60 transition-opacity group-hover:opacity-100" />
-              </div>
-            </div>
-          </a>
-          )}
         </div>
       </div>
       )}
