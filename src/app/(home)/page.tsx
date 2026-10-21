@@ -32,6 +32,14 @@ export default async function HomeRoute() {
     take: 3,
     select: { id: true, slug: true, title: true, excerpt: true, imageUrl: true, category: true, readingMins: true },
   });
+  // SSR: approved guest reviews are fetched on the server and passed down to
+  // <Testimonials>, so every review card is in the initial HTML instead of
+  // appearing only after a client-side /api/reviews fetch. Same query as the
+  // API route (approved only, newest first) so both paths stay identical.
+  const reviews = await db.review.findMany({
+    where: { approved: true },
+    orderBy: [{ createdAt: "desc" }],
+  });
   return (
     <>
       {/* Structured data — server-rendered into the initial HTML. Built from
@@ -45,7 +53,7 @@ export default async function HomeRoute() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd(FAQS)) }}
       />
-      <HomeClient initialRooms={rooms} initialLatestPosts={latestPosts} />
+      <HomeClient initialRooms={rooms} initialLatestPosts={latestPosts} initialReviews={reviews} />
     </>
   );
 }
