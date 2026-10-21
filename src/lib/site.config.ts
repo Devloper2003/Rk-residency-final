@@ -51,23 +51,23 @@ export const DEFAULT_OG_IMAGE = `${SITE_URL}/images/hero-vrindavan.webp`;
  * panel and this config stay conceptually in sync.
  */
 export const BUSINESS = {
-  /** TODO: Real primary/front-desk phone number in display format (was placeholder "+91 565 234 5678"). */
-  phonePrimary: "",
+  /** Owner-supplied front-desk phone number in display format. */
+  phonePrimary: "+91 9760814931",
 
-  /** TODO: Same number in tel: format, no spaces (was placeholder "+915652345678"). */
-  phonePrimaryTel: "",
+  /** Same number in tel: format, no spaces. */
+  phonePrimaryTel: "+919760814931",
 
   /** TODO: Reservations desk phone in display format (was placeholder "+91 98765 43210"). */
   phoneReservations: "",
 
-  /** TODO: WhatsApp number, country code + number, digits only (was placeholder "919876543210"). */
-  whatsappNumber: "",
+  /** Owner-supplied WhatsApp number, country code + number, digits only. */
+  whatsappNumber: "919760814931",
 
-  /** TODO: Primary guest-facing email (was placeholder "stay@rkresidency.in"). */
-  emailPrimary: "",
+  /** Owner-supplied primary guest-facing email. */
+  emailPrimary: "rkresiddency121@gmail.com",
 
-  /** TODO: Real GSTIN of the property, 15 chars, e.g. "09ABCDE1234F1Z5" (was placeholder "09AAACK1234R1Z5"). */
-  gstin: "",
+  /** Owner-supplied GSTIN of the property, 15 chars. */
+  gstin: "09GUJPS8343M1ZK",
 
   /**
    * Postal address — used by the footer, contact page and Hotel JSON-LD so the
@@ -166,13 +166,13 @@ export const BUSINESS = {
   },
 
   social: {
-    /** TODO: Real Instagram profile URL (was placeholder "https://instagram.com"). */
-    instagram: "",
+    /** Owner-supplied Instagram profile URL. */
+    instagram: "https://instagram.com/rkhotels_official",
 
-    /** TODO: Real Facebook page URL (was placeholder "https://facebook.com"). */
-    facebook: "",
+    /** Owner-supplied Facebook page URL. */
+    facebook: "https://facebook.com/profile.php?id=61579055787568",
 
-    /** TODO: Real YouTube channel URL (was placeholder "https://youtube.com"). */
+    /** TODO: YouTube channel URL — owner has no channel yet; stays hidden until filled. */
     youtube: "",
   },
 
@@ -192,8 +192,8 @@ export const BUSINESS = {
      */
     embedUrl: "",
 
-    /** TODO: Google Maps place URL (share link) of the hotel for "Get Directions". */
-    directionsUrl: "",
+    /** Owner-supplied Google Maps place link (share URL) for "Get Directions". */
+    directionsUrl: "https://maps.app.goo.gl/EWLnPhdXAqbgmJ9Q6",
 
     /** TODO: Google Business Profile URL — shown as "View on Google" next to the map. */
     googleBusinessProfile: "",
