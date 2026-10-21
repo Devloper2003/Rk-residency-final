@@ -5,6 +5,7 @@ import { absUrl, pageOpenGraph, pageTwitter } from "@/lib/seo";
 import { FAQS } from "@/lib/faq-data";
 import { faqJsonLd, hotelJsonLd } from "@/lib/schema-org";
 import { publicPostWhere } from "@/lib/blog-utils";
+import { getGoogleReviews } from "@/lib/google-reviews";
 
 export const dynamic = "force-dynamic";
 
@@ -40,20 +41,29 @@ export default async function HomeRoute() {
     where: { approved: true },
     orderBy: [{ createdAt: "desc" }],
   });
+  // LIVE Google Business Profile data via the Places API (cached 24h).
+  // Returns null when GOOGLE_PLACES_API_KEY / Place ID are not configured —
+  // the site then falls back to DB reviews only. Nothing invented, ever.
+  const googleData = await getGoogleReviews();
   return (
     <>
       {/* Structured data — server-rendered into the initial HTML. Built from
           site.config + live room prices; never contains invented business data. */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(hotelJsonLd({ rooms })) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(hotelJsonLd({
+          rooms,
+          rating: googleData?.rating && googleData.count
+            ? { value: googleData.rating, count: googleData.count }
+            : undefined,
+        })) }}
       />
       {/* FAQPage built from the SAME data the FAQ section renders. */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd(FAQS)) }}
       />
-      <HomeClient initialRooms={rooms} initialLatestPosts={latestPosts} initialReviews={reviews} />
+      <HomeClient initialRooms={rooms} initialLatestPosts={latestPosts} initialReviews={reviews} googleData={googleData} />
     </>
   );
 }

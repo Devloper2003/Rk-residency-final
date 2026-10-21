@@ -33,11 +33,16 @@ function absoluteImage(url: string | null | undefined): string | undefined {
  * Hotel (LodgingBusiness) JSON-LD for the homepage.
  * - priceRange is derived from the live room prices when `rooms` is passed
  *   (real DB data), falling back to BUSINESS.priceRange.
- * - aggregateRating is emitted ONLY when BUSINESS.rating has a real,
- *   verifiable value AND count.
+ * - aggregateRating is emitted ONLY from REAL, verifiable data: the live
+ *   Places API rating when provided (opts.rating), else BUSINESS.rating
+ *   filled by the owner. Never invented.
  * - sameAs lists only real social/review URLs.
  */
-export function hotelJsonLd(opts?: { rooms?: { basePrice: number }[] }) {
+export function hotelJsonLd(opts?: {
+  rooms?: { basePrice: number }[];
+  /** Live rating from the Google Places API — overrides BUSINESS.rating. */
+  rating?: { value: string; count: string | number };
+}) {
   const prices = (opts?.rooms || [])
     .map((r) => r.basePrice)
     .filter((n) => Number.isFinite(n) && n > 0);
@@ -98,12 +103,12 @@ export function hotelJsonLd(opts?: { rooms?: { basePrice: number }[] }) {
         }
       : {}),
     ...(priceRange ? { priceRange } : {}),
-    ...(BUSINESS.rating.value && BUSINESS.rating.count
+    ...((opts?.rating?.value && opts?.rating?.count) || (BUSINESS.rating.value && BUSINESS.rating.count)
       ? {
           aggregateRating: {
             "@type": "AggregateRating",
-            ratingValue: BUSINESS.rating.value,
-            reviewCount: BUSINESS.rating.count,
+            ratingValue: opts?.rating?.value || BUSINESS.rating.value,
+            reviewCount: opts?.rating?.count ?? BUSINESS.rating.count,
           },
         }
       : {}),

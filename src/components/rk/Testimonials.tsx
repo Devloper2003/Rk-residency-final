@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Star, BadgeCheck, Quote, ExternalLink } from "lucide-react";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { BUSINESS } from "@/lib/site.config";
+import type { GoogleReviewsData } from "@/lib/google-reviews";
 
 export type Review = {
   id: string;
@@ -82,14 +83,39 @@ function ReviewCard({ r }: { r: Review }) {
  *   server component). When provided, the client-side /api/reviews fetch is
  *   skipped entirely and the review cards are already in the initial HTML —
  *   crawlers see every review without executing JavaScript.
+ * @param googleData LIVE data from the hotel's Google Business Profile via
+ *   the Places API (src/lib/google-reviews.ts). When present: the aggregate
+ *   badge shows Google's REAL rating + count, and Google's public reviews
+ *   merge into the marquee with source = GOOGLE. Null (no API key / Place
+ *   ID) = graceful fallback to database reviews only.
  */
-export function Testimonials({ initialReviews }: { initialReviews?: Review[] }) {
+export function Testimonials({
+  initialReviews,
+  googleData,
+}: {
+  initialReviews?: Review[];
+  googleData?: GoogleReviewsData | null;
+}) {
   const tLabel = useContentValue("testimonials.label", "Guests & devotees");
   const tTitle = useContentValue("testimonials.title", "Voices from our Braj family");
   // Aggregate rating shown ONLY when the owner sets a verifiable value
   // backed by a real review profile link (BUSINESS.reviews). Empty = hidden;
   const tRating = useContentValue("testimonials.aggregate_rating", "");
-  const [reviews, setReviews] = useState<Review[]>(initialReviews || []);
+  // Merge order: owner-moderated DB reviews first, then Google's public
+  // reviews (only when the Places API returned real data). Both arrays are
+  // server-rendered; neither contains invented content.
+  const googleAsReviews: Review[] = (googleData?.reviews || []).map((r, i) => ({
+    id: `google-${i}`,
+    guestName: r.author,
+    guestLocation: r.relativeTime || null,
+    rating: r.rating,
+    title: r.text.length > 64 ? r.text.slice(0, 61).trimEnd() + "…" : r.text,
+    body: r.text,
+    source: "GOOGLE",
+    verified: true,
+  }));
+  const allReviews = [...(initialReviews || []), ...googleAsReviews];
+  const [reviews, setReviews] = useState<Review[]>(allReviews);
   const [loading, setLoading] = useState(!initialReviews);
 
   useEffect(() => {
@@ -176,11 +202,16 @@ export function Testimonials({ initialReviews }: { initialReviews?: Review[] }) 
         </div>
       )}
 
-      {/* Aggregate badge — links to the owner's real Google listing and shows
-          the EXACT rating + review count from BUSINESS.rating. Renders ONLY
-          when all three config values exist, so no invented numbers appear.
-          No TripAdvisor badge until the owner supplies a real listing URL. */}
-      {BUSINESS.reviews.google && BUSINESS.rating.value && BUSINESS.rating.count && (
+      {/* Aggregate badge — links to the owner's real Google listing. When the
+          Places API returns live data, the rating + count are Google's OWN
+          real numbers. Otherwise it falls back to the owner-entered
+          BUSINESS.rating — and renders ONLY when real values exist, so no
+          invented numbers can ever appear. */}
+      {(() => {
+        const badgeRating = googleData?.rating || BUSINESS.rating.value;
+        const badgeCount = googleData ? String(googleData.count) : BUSINESS.rating.count;
+        if (!BUSINESS.reviews.google || !badgeRating || !badgeCount) return null;
+        return (
       <div className="relative mt-16">
         <SectionDivider className="mb-8" />
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-6 px-4 sm:flex-row sm:gap-12">
@@ -190,20 +221,21 @@ export function Testimonials({ initialReviews }: { initialReviews?: Review[] }) 
             rel="noopener noreferrer"
             className="group flex items-center gap-3 rounded-2xl border border-ivory/15 bg-ivory/5 px-5 py-3 transition-all hover:border-gold/40 hover:bg-ivory/10"
           >
-            <div className="font-serif text-2xl font-bold text-gold-soft">{BUSINESS.rating.value}</div>
+            <div className="font-serif text-2xl font-bold text-gold-soft">{badgeRating}</div>
             <div>
               <div className="font-display text-xs uppercase tracking-wider text-ivory/70">
                 Google Reviews
               </div>
               <div className="flex items-center gap-1.5 font-display text-xs text-ivory/85">
-                {BUSINESS.rating.count} reviews
+                {badgeCount} reviews
                 <ExternalLink className="h-3 w-3 opacity-60 transition-opacity group-hover:opacity-100" />
               </div>
             </div>
           </a>
         </div>
       </div>
-      )}
+        );
+      })()}
 
       {/* TripAdvisor — link-only chip to the owner's REAL listing. Shows NO
           rating or count: TripAdvisor figures are never invented and cannot

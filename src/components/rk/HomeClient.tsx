@@ -11,6 +11,7 @@ import { Dining } from "@/components/rk/Dining";
 import { Gallery } from "@/components/rk/Gallery";
 import { Offers } from "@/components/rk/Offers";
 import { Testimonials, type Review } from "@/components/rk/Testimonials";
+import type { GoogleReviewsData } from "@/lib/google-reviews";
 import { FAQ } from "@/components/rk/FAQ";
 import { Contact } from "@/components/rk/Contact";
 import { Footer } from "@/components/rk/Footer";
@@ -96,7 +97,7 @@ function LatestPosts({ posts }: { posts: LatestPost[] }) {
   );
 }
 
-export function HomeClient({ initialRooms, initialLatestPosts = [], initialReviews }: { initialRooms?: Room[]; initialLatestPosts?: LatestPost[]; initialReviews?: Review[] }) {
+export function HomeClient({ initialRooms, initialLatestPosts = [], initialReviews, googleData }: { initialRooms?: Room[]; initialLatestPosts?: LatestPost[]; initialReviews?: Review[]; googleData?: GoogleReviewsData | null }) {
   const openBooking = useRouter((s) => s.openBooking);
 
   // SSR: rooms are fetched by the server page and rendered into the initial
@@ -140,7 +141,7 @@ export function HomeClient({ initialRooms, initialLatestPosts = [], initialRevie
         <SeeMoreButton href="/gallery" label="View full gallery" />
         <Offers onBookClick={openBookingCb} limit={3} />
         <SeeMoreButton href="/offers" label="See all offers & packages" />
-        <Testimonials initialReviews={initialReviews} />
+        <Testimonials initialReviews={initialReviews} googleData={googleData} />
         {/* Latest blog stories — server-rendered internal links to /blog/[slug] */}
         <LatestPosts posts={initialLatestPosts} />
         <SeeMoreButton href="/blog" label="Read the Braj Journal" />
