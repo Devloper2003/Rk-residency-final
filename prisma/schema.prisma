@@ -33,6 +33,51 @@ model Room {
   bookings      Booking[]
   rateOverrides RateOverride[]
   inventoryDays RoomInventoryDay[]
+  ratePlans     RatePlan[]
+}
+
+/**
+ * OTA-style rate plans (EP / CP / MAP / AP) per room type — Phase 5.
+ * EP = Room only · CP = + Breakfast · MAP = + Lunch/Dinner (Half Board)
+ * AP = All meals (Full Board). Each plan carries its own base price so the
+ * room detail page can show a plan-wise rate table exactly like OTAs.
+ * A room with NO active plans simply keeps the classic single base price.
+ */
+model RatePlan {
+  id            String   @id @default(cuid())
+  roomId        String
+  room          Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  code          String   // short badge: EP, CP, MAP, AP, or a custom code
+  name          String   // display name, e.g. "Room Only (EP)"
+  description   String?  // one-line summary shown on the plan card
+  inclusions    String   @default("[]") // JSON array of inclusion strings
+  pricePerNight Int      // base INR per night for this plan
+  sortOrder     Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  dayRates      PlanDayRate[]
+
+  @@index([roomId])
+}
+
+/**
+ * Day-wise pricing (Phase 5): a specific price for a plan on a specific
+ * calendar date (festival surge, weekend pricing, off-season discounts…).
+ * No row for a date = the plan's base pricePerNight applies.
+ */
+model PlanDayRate {
+  id        String   @id @default(cuid())
+  planId    String
+  plan      RatePlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  date      DateTime // UTC midnight of the priced calendar day
+  price     Int      // INR per night for this plan on this date
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([planId, date])
+  @@index([planId, date])
 }
 
 /**
@@ -94,6 +139,8 @@ model Booking {
   guestName     String
   guestEmail    String
   guestPhone    String
+  planId        String?  // RatePlan booked (null = classic room base price)
+  planName      String?  // snapshot of the plan name/code for booking history
   specialRequests String?
   pricePerNight Int
   subtotal      Int

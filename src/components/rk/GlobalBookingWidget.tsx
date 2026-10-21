@@ -21,6 +21,7 @@ import type { Room } from "./Rooms";
 export function GlobalBookingWidget() {
   const bookingOpen = useRouter((s) => s.bookingOpen);
   const bookingRoomSlug = useRouter((s) => s.bookingRoomSlug);
+  const bookingPlanId = useRouter((s) => s.bookingPlanId);
   const closeBooking = useRouter((s) => s.closeBooking);
   const [preselectRoom, setPreselectRoom] = useState<Room | null>(null);
 
@@ -47,6 +48,7 @@ export function GlobalBookingWidget() {
       open={bookingOpen}
       onOpenChange={(o) => { if (!o) closeBooking(); }}
       preselectRoom={preselectRoom}
+      preselectPlanId={bookingPlanId || null}
     />
   );
 }

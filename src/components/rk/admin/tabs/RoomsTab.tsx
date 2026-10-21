@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Trash2, X, Save, BedDouble, Star, CalendarDays, ChevronDown, ChevronUp, Loader2, RotateCcw } from "lucide-react";
+import { Plus, Trash2, X, Save, BedDouble, Star, CalendarDays, ChevronDown, ChevronUp, Loader2, RotateCcw, Tag, Pencil, Coffee, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { adminApi, adminFetch, LoadingSpinner, Field } from "./_shared";
@@ -278,6 +278,7 @@ export function RoomsTab({ onOpenInventory }: { onOpenInventory?: () => void }) 
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<any | null>(null);
+  const [plansFor, setPlansFor] = useState<any | null>(null);
 
   const reload = useCallback(() => {
     adminApi.get("rooms").then((d) => {
@@ -380,6 +381,7 @@ export function RoomsTab({ onOpenInventory }: { onOpenInventory?: () => void }) 
                   {imgs.length > 1 && <div className="font-display text-[10px] text-charcoal-soft">{imgs.length} images · {amenities.length} amenities</div>}
                   <div className="flex gap-1 border-t border-charcoal/10 pt-2">
                     <button onClick={() => setEditing(r)} className="flex-1 rounded-lg border border-charcoal/15 py-1.5 font-display text-[11px] font-semibold text-charcoal-soft hover:bg-teal hover:text-ivory">Edit</button>
+                    <button onClick={() => setPlansFor(r)} className="flex-1 rounded-lg border border-charcoal/15 py-1.5 font-display text-[11px] font-semibold text-charcoal-soft hover:bg-teal hover:text-ivory" title="Rate plans (EP/CP/MAP/AP)">Plans</button>
                     <button onClick={() => onOpenInventory?.()} className="flex-1 rounded-lg border border-charcoal/15 py-1.5 font-display text-[11px] font-semibold text-charcoal-soft hover:bg-gold hover:text-charcoal">Calendar</button>
                     <button onClick={() => toggleFeatured(r)} className={`grid h-7 w-7 place-items-center rounded-lg border border-charcoal/15 hover:bg-gold hover:text-charcoal ${r.featured ? "text-gold-deep" : "text-charcoal-soft"}`} title={r.featured ? "Unfeature" : "Feature"}>
                       <Star className={`h-3 w-3 ${r.featured ? "fill-current" : ""}`} />
@@ -402,6 +404,307 @@ export function RoomsTab({ onOpenInventory }: { onOpenInventory?: () => void }) 
       )}
 
       {editing && <RoomEditor room={editing} onClose={() => setEditing(null)} onSave={save} />}
+      {plansFor && <PlansManager room={plansFor} onClose={() => setPlansFor(null)} />}
+    </div>
+  );
+}
+
+/* ── Standard hospitality plan templates (owner-editable, nothing invented —
+   prices are always set by the owner; EP prefills the room's own base price) ── */
+const PLAN_TEMPLATES: Record<string, { name: string; description: string; inclusions: string[] }> = {
+  EP: { name: "Room Only", description: "Stay only — meals available at extra cost.", inclusions: ["Room only — no meals included"] },
+  CP: { name: "Bed & Breakfast", description: "Stay with complimentary morning breakfast.", inclusions: ["Complimentary breakfast"] },
+  MAP: { name: "Half Board", description: "Stay with breakfast and dinner included.", inclusions: ["Complimentary breakfast", "Dinner included"] },
+  AP: { name: "Full Board", description: "Stay with all three meals included.", inclusions: ["Breakfast included", "Lunch included", "Dinner included"] },
+};
+
+type PlanRow = {
+  id: string; code: string; name: string; description: string | null;
+  inclusions: string; pricePerNight: number; sortOrder: number;
+  isActive: boolean; _count?: { dayRates: number };
+};
+
+function PlansManager({ room, onClose }: { room: any; onClose: () => void }) {
+  const [plans, setPlans] = useState<PlanRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{ name: string; description: string; pricePerNight: number; inclusions: string; isActive: boolean } | null>(null);
+  // Add-form state
+  const [newCode, setNewCode] = useState("EP");
+  const [newName, setNewName] = useState(PLAN_TEMPLATES.EP.name);
+  const [newDesc, setNewDesc] = useState(PLAN_TEMPLATES.EP.description);
+  const [newInclusions, setNewInclusions] = useState(PLAN_TEMPLATES.EP.inclusions.join(", "));
+  const [newPrice, setNewPrice] = useState<number>(room.basePrice || 0);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    adminFetch(`/api/admin/plans?roomId=${room.id}`)
+      .then((d) => { if (d) setPlans(d.plans || []); })
+      .catch(() => toast.error("Failed to load plans"))
+      .finally(() => setLoading(false));
+  }, [room.id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  /** Choosing a standard code prefills the standard name/inclusions template. */
+  const applyTemplate = (code: string) => {
+    setNewCode(code);
+    const t = PLAN_TEMPLATES[code];
+    if (t) {
+      setNewName(t.name);
+      setNewDesc(t.description);
+      setNewInclusions(t.inclusions.join(", "));
+    }
+    if (code === "EP") setNewPrice(room.basePrice || 0);
+  };
+
+  const addPlan = async () => {
+    if (!newName.trim()) return toast.error("Plan name is required");
+    if (!newPrice || newPrice <= 0) return toast.error("Set a price per night (activate plans only with a real price)");
+    setSaving(true);
+    try {
+      await adminFetch("/api/admin/plans", {
+        method: "POST",
+        body: JSON.stringify({
+          roomId: room.id,
+          code: newCode.trim().toUpperCase(),
+          name: newName.trim(),
+          description: newDesc.trim() || null,
+          inclusions: newInclusions.split(",").map((s) => s.trim()).filter(Boolean),
+          pricePerNight: newPrice,
+          sortOrder: plans.length,
+          isActive: true,
+        }),
+      });
+      toast.success(`${newCode.toUpperCase()} plan added`);
+      setNewPrice(0);
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to add plan");
+    } finally { setSaving(false); }
+  };
+
+  const startEdit = (p: PlanRow) => {
+    setEditId(p.id);
+    setEditForm({
+      name: p.name,
+      description: p.description || "",
+      pricePerNight: p.pricePerNight,
+      inclusions: (() => { try { return JSON.parse(p.inclusions || "[]").join(", "); } catch { return ""; } })(),
+      isActive: p.isActive,
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editId || !editForm) return;
+    setSaving(true);
+    try {
+      await adminFetch("/api/admin/plans", {
+        method: "PATCH",
+        body: JSON.stringify({
+          id: editId,
+          code: plans.find((p) => p.id === editId)?.code || "EP",
+          name: editForm.name.trim(),
+          description: editForm.description.trim() || null,
+          inclusions: editForm.inclusions.split(",").map((s) => s.trim()).filter(Boolean),
+          pricePerNight: editForm.pricePerNight,
+          isActive: editForm.isActive,
+        }),
+      });
+      toast.success("Plan updated");
+      setEditId(null);
+      setEditForm(null);
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to update plan");
+    } finally { setSaving(false); }
+  };
+
+  const toggleActive = async (p: PlanRow) => {
+    try {
+      await adminFetch("/api/admin/plans", {
+        method: "PATCH",
+        body: JSON.stringify({ id: p.id, code: p.code, name: p.name, inclusions: (() => { try { return JSON.parse(p.inclusions || "[]"); } catch { return []; } })(), pricePerNight: p.pricePerNight, isActive: !p.isActive }),
+      });
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    }
+  };
+
+  const delPlan = async (p: PlanRow) => {
+    if (!confirm(`Delete the ${p.code} plan? Its day-wise prices will also be removed.`)) return;
+    try {
+      await adminFetch(`/api/admin/plans?id=${p.id}`, { method: "DELETE" });
+      toast.success("Plan deleted");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete");
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[90] grid place-items-center bg-charcoal/70 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div className="scrollbar-thin max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-ivory shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-charcoal/10 bg-teal px-6 py-4 text-ivory">
+          <div>
+            <h3 className="font-serif text-lg font-semibold">Rate plans — {room.name}</h3>
+            <p className="font-display text-[10px] uppercase tracking-wider text-ivory/70">EP / CP / MAP / AP — shown on the room page like an OTA</p>
+          </div>
+          <button onClick={onClose} className="grid h-9 w-9 place-items-center rounded-full border border-ivory/25 text-ivory hover:bg-ivory/10">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="space-y-4 p-6">
+          {/* Add plan */}
+          <div className="rounded-2xl border border-charcoal/10 bg-white p-4">
+            <div className="mb-3 flex items-center gap-2 font-display text-xs font-semibold uppercase tracking-wider text-charcoal-soft">
+              <Plus className="h-4 w-4 text-teal" /> Add a plan
+            </div>
+            <div className="grid gap-3 sm:grid-cols-[110px_1fr_140px]">
+              <div>
+                <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Code</label>
+                <select
+                  value={newCode}
+                  onChange={(e) => applyTemplate(e.target.value)}
+                  className="w-full rounded-md border border-charcoal/15 bg-white px-2 py-2 font-display text-xs text-charcoal focus:border-teal focus:outline-none"
+                >
+                  {Object.keys(PLAN_TEMPLATES).map((c) => <option key={c} value={c}>{c}</option>)}
+                  <option value="CUSTOM">Custom</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Plan name</label>
+                <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Room Only" className="bg-white" />
+              </div>
+              <div>
+                <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Price ₹/night</label>
+                <Input type="number" min={0} value={newPrice || ""} onChange={(e) => setNewPrice(parseInt(e.target.value) || 0)} className="bg-white" />
+              </div>
+            </div>
+            <div className="mt-3 grid gap-3">
+              <div>
+                <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Short description</label>
+                <Input value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="Stay with breakfast and dinner included" className="bg-white" />
+              </div>
+              <div>
+                <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Inclusions (comma separated)</label>
+                <Input value={newInclusions} onChange={(e) => setNewInclusions(e.target.value)} placeholder="Complimentary breakfast, Dinner included" className="bg-white" />
+              </div>
+            </div>
+            <div className="mt-3 flex justify-end">
+              <Button onClick={addPlan} disabled={saving} className="rounded-full bg-teal px-5 py-2 text-sm text-ivory hover:bg-teal-deep">
+                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-1.5 h-4 w-4" />} Add plan
+              </Button>
+            </div>
+          </div>
+
+          {/* Plan list */}
+          {loading ? (
+            <LoadingSpinner />
+          ) : plans.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-charcoal/15 bg-white p-8 text-center">
+              <Tag className="mx-auto h-7 w-7 text-charcoal-soft/40" />
+              <p className="mt-2 font-serif text-sm font-semibold text-charcoal">No plans yet</p>
+              <p className="mt-1 font-display text-xs text-charcoal-soft">
+                Add EP / CP / MAP / AP above — they appear on the room page instantly. Until then the room uses its single base price.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {plans.map((p) => {
+                const incs: string[] = (() => { try { return JSON.parse(p.inclusions || "[]"); } catch { return []; } })();
+                const isEditing = editId === p.id;
+                return (
+                  <div key={p.id} className={`rounded-2xl border bg-white p-4 ${p.isActive ? "border-charcoal/10" : "border-charcoal/10 opacity-60"}`}>
+                    {isEditing && editForm ? (
+                      <div className="space-y-3">
+                        <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
+                          <div>
+                            <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Plan name</label>
+                            <Input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="bg-white" />
+                          </div>
+                          <div>
+                            <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Price ₹/night</label>
+                            <Input type="number" min={0} value={editForm.pricePerNight} onChange={(e) => setEditForm({ ...editForm, pricePerNight: parseInt(e.target.value) || 0 })} className="bg-white" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Description</label>
+                          <Input value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} className="bg-white" />
+                        </div>
+                        <div>
+                          <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Inclusions (comma separated)</label>
+                          <Input value={editForm.inclusions} onChange={(e) => setEditForm({ ...editForm, inclusions: e.target.value })} className="bg-white" />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <label className="flex cursor-pointer items-center gap-2 font-display text-xs text-charcoal">
+                            <input type="checkbox" checked={editForm.isActive} onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })} className="h-4 w-4 rounded border-charcoal/30" />
+                            Active (visible on site)
+                          </label>
+                          <div className="flex gap-2">
+                            <Button variant="outline" onClick={() => { setEditId(null); setEditForm(null); }} className="rounded-full">Cancel</Button>
+                            <Button onClick={saveEdit} disabled={saving} className="rounded-full bg-teal px-5 text-ivory hover:bg-teal-deep"><Save className="mr-1.5 h-4 w-4" /> Save</Button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="rounded-md bg-teal px-2 py-0.5 font-display text-[11px] font-bold tracking-widest text-ivory">{p.code}</span>
+                              <span className="font-serif text-sm font-semibold text-charcoal">{p.name}</span>
+                              {!p.isActive && <span className="rounded-full bg-charcoal/10 px-2 py-0.5 font-display text-[9px] uppercase tracking-wider text-charcoal-soft">Hidden</span>}
+                            </div>
+                            {p.description && <p className="mt-1 font-display text-xs text-charcoal-soft">{p.description}</p>}
+                            {incs.length > 0 && (
+                              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                                {incs.map((inc) => (
+                                  <span key={inc} className="flex items-center gap-1 rounded-full bg-ivory-deep/60 px-2 py-0.5 font-display text-[10px] text-charcoal-soft">
+                                    {/breakfast/i.test(inc) ? <Coffee className="h-2.5 w-2.5 text-teal" /> : /lunch|dinner|meal/i.test(inc) ? <UtensilsCrossed className="h-2.5 w-2.5 text-teal" /> : null}
+                                    {inc}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <div className="font-serif text-base font-bold text-teal">₹{p.pricePerNight.toLocaleString("en-IN")}</div>
+                            <div className="font-display text-[9px] uppercase tracking-wider text-charcoal-soft">per night</div>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between border-t border-charcoal/10 pt-2">
+                          <span className="font-display text-[10px] text-charcoal-soft">
+                            {p._count?.dayRates ?? 0} day-wise price{p._count?.dayRates === 1 ? "" : "s"} · edit in Inventory calendar
+                          </span>
+                          <div className="flex gap-1">
+                            <button onClick={() => toggleActive(p)} className="rounded-lg border border-charcoal/15 px-2.5 py-1 font-display text-[10px] font-semibold text-charcoal-soft hover:bg-teal hover:text-ivory" title={p.isActive ? "Hide from site" : "Show on site"}>
+                              {p.isActive ? "Hide" : "Show"}
+                            </button>
+                            <button onClick={() => startEdit(p)} className="grid h-7 w-7 place-items-center rounded-lg border border-charcoal/15 text-charcoal-soft hover:bg-teal hover:text-ivory" title="Edit plan">
+                              <Pencil className="h-3 w-3" />
+                            </button>
+                            <button onClick={() => delPlan(p)} className="grid h-7 w-7 place-items-center rounded-lg border border-charcoal/15 text-charcoal-soft hover:bg-marsala hover:text-ivory" title="Delete plan">
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <p className="font-display text-[10px] leading-relaxed text-charcoal-soft/70">
+            Tip: set EP close to the room's base price so "from ₹" stays honest. Day-wise (festival/weekend) pricing for each plan is managed in Inventory → Calendar.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

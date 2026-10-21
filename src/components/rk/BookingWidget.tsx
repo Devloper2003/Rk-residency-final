@@ -18,23 +18,37 @@ import { Diya, Lotus } from "./Motifs";
 import type { Room } from "./Rooms";
 import { toast } from "sonner";
 
+type PlanInfo = {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  inclusions: string[];
+  pricePerNight: number;
+  sortOrder: number;
+};
+type RoomWithPlans = Room & { plans?: PlanInfo[] };
+type NightRate = { date: string; price: number; override: boolean };
+
 type Props = {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   preselectRoom?: Room | null;
+  preselectPlanId?: string | null;
 };
 
 const STEPS = ["Dates & Room", "Guests", "Payment", "Confirmation"] as const;
 type Step = (typeof STEPS)[number];
 
-const GST_RATE = 0.05; // 5% GST on hotels < ₹7,500
-const SERVICE_FEE_FLAT = 250;
+const GST_RATE = 0.05; // 5% GST — the only extra, exactly as published everywhere
 
-export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
-  const [rooms, setRooms] = useState<Room[]>([]);
+export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlanId }: Props) {
+  const [rooms, setRooms] = useState<RoomWithPlans[]>([]);
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [selectedRoomId, setSelectedRoomId] = useState<string>("");
+  const [selectedPlanId, setSelectedPlanId] = useState<string>("");
+  const [dayRates, setDayRates] = useState<{ nights: NightRate[]; subtotal: number } | null>(null);
   const [guests, setGuests] = useState({ adults: 2, children: 0 });
   const [contact, setContact] = useState({ name: "", email: "", phone: "", requests: "" });
   const [paymentMethod, setPaymentMethod] = useState<"RAZORPAY" | "STRIPE" | "PAY_AT_HOTEL">("RAZORPAY");
@@ -62,6 +76,11 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
     }
   }, [preselectRoom]);
 
+  // Preselect rate plan when opening with one (from a room detail plan card)
+  useEffect(() => {
+    if (preselectPlanId) setSelectedPlanId(preselectPlanId);
+  }, [preselectPlanId, open]);
+
   // Reset on close
   useEffect(() => {
     if (!open) {
@@ -69,6 +88,8 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
         setStep(0);
         setDateRange({});
         setSelectedRoomId("");
+        setSelectedPlanId("");
+        setDayRates(null);
         setGuests({ adults: 2, children: 0 });
         setContact({ name: "", email: "", phone: "", requests: "" });
         setDiscountCode("");
@@ -84,6 +105,41 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
     () => rooms.find((r) => r.id === selectedRoomId),
     [rooms, selectedRoomId]
   );
+
+  const selectedPlan = useMemo(
+    () => selectedRoom?.plans?.find((p) => p.id === selectedPlanId) || null,
+    [selectedRoom, selectedPlanId]
+  );
+
+  // Auto-select the owner's first plan when a room with plans is chosen;
+  // keep an explicitly preselected plan if it belongs to this room.
+  useEffect(() => {
+    const plans = selectedRoom?.plans || [];
+    if (plans.length === 0) {
+      if (selectedPlanId) setSelectedPlanId("");
+      return;
+    }
+    if (!selectedPlanId || !plans.some((p) => p.id === selectedPlanId)) {
+      setSelectedPlanId(plans[0].id);
+    }
+  }, [selectedRoom, selectedPlanId]);
+
+  // Fetch the day-wise effective rates for the chosen plan + dates
+  // (festival surge / weekend pricing set by the admin in the calendar).
+  useEffect(() => {
+    if (!open || !selectedRoomId || !selectedPlanId || !dateRange.from || !dateRange.to) {
+      setDayRates(null);
+      return;
+    }
+    let cancelled = false;
+    const ci = dateRange.from.toISOString().slice(0, 10);
+    const co = dateRange.to.toISOString().slice(0, 10);
+    fetch(`/api/rooms/rates?roomId=${selectedRoomId}&planId=${selectedPlanId}&checkIn=${ci}&checkOut=${co}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!cancelled && d && d.ok) setDayRates({ nights: d.nights, subtotal: d.subtotal }); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [open, selectedRoomId, selectedPlanId, dateRange.from, dateRange.to]);
 
   const nights = useMemo(() => {
     if (!dateRange.from || !dateRange.to) return 0;
@@ -132,18 +188,21 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
 
   const pricing = useMemo(() => {
     if (!selectedRoom || nights === 0) return null;
-    const subtotal = selectedRoom.basePrice * nights;
+    const perNight = selectedPlan ? selectedPlan.pricePerNight : selectedRoom.basePrice;
+    const subtotal = dayRates ? dayRates.subtotal : perNight * nights;
     const discountAmt = discountInfo ? Math.round(subtotal * (discountInfo.pct / 100)) : 0;
     const subtotalAfterDiscount = subtotal - discountAmt;
     const taxes = Math.round(subtotalAfterDiscount * GST_RATE);
-    const serviceFee = SERVICE_FEE_FLAT * nights;
-    const total = subtotalAfterDiscount + taxes + serviceFee;
+    const total = subtotalAfterDiscount + taxes;
+    const hasDayRates = !!dayRates && dayRates.nights.some((n) => n.override);
     return {
-      subtotal, discountAmt, subtotalAfterDiscount, taxes, serviceFee, total,
-      perNight: selectedRoom.basePrice,
+      subtotal, discountAmt, subtotalAfterDiscount, taxes, total,
+      perNight, hasDayRates,
+      planName: selectedPlan?.name || null,
+      planCode: selectedPlan?.code || null,
       discountPct: discountInfo?.pct || 0,
     };
-  }, [selectedRoom, nights, discountInfo]);
+  }, [selectedRoom, selectedPlan, dayRates, nights, discountInfo]);
 
   const canProceedDates = !!dateRange.from && !!dateRange.to && !!selectedRoomId && nights > 0;
   const canProceedGuests =
@@ -160,6 +219,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           roomId: selectedRoom.id,
+          planId: selectedPlanId || undefined,
           checkIn: dateRange.from.toISOString(),
           checkOut: dateRange.to.toISOString(),
           nights,
@@ -441,6 +501,48 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
                     </div>
                   </div>
 
+                  {/* Rate plan selection — OTA-style EP / CP / MAP / AP */}
+                  {selectedRoom?.plans && selectedRoom.plans.length > 0 && (
+                    <div>
+                      <Label className="mb-2 flex items-center gap-1.5 font-display text-xs uppercase tracking-wider text-charcoal-soft">
+                        <Sparkles className="h-3.5 w-3.5" /> Rate plan — choose what's included
+                      </Label>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {selectedRoom.plans.map((p) => {
+                          const sel = p.id === selectedPlanId;
+                          return (
+                            <button
+                              key={p.id}
+                              onClick={() => setSelectedPlanId(p.id)}
+                              className={`rounded-xl border p-3 text-left transition-all focus-ring ${
+                                sel
+                                  ? "border-gold bg-gold/10 shadow-sm"
+                                  : "border-charcoal/10 bg-white hover:border-teal/30"
+                              }`}
+                              aria-pressed={sel}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="rounded-md bg-teal px-1.5 py-0.5 font-display text-[10px] font-bold tracking-wider text-ivory">
+                                  {p.code}
+                                </span>
+                                <span className="font-serif text-sm font-bold text-teal">
+                                  ₹{p.pricePerNight.toLocaleString("en-IN")}
+                                  <span className="font-sans text-[10px] font-normal text-charcoal-soft"> / night</span>
+                                </span>
+                              </div>
+                              <div className="mt-1.5 font-display text-xs font-semibold text-charcoal">{p.name}</div>
+                              {p.inclusions.length > 0 && (
+                                <div className="mt-0.5 font-display text-[10px] leading-relaxed text-charcoal-soft">
+                                  {p.inclusions.join(" · ")}
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Live price preview */}
                   {pricing && (
                     <div className="rounded-2xl border border-gold/30 bg-white p-4">
@@ -453,14 +555,25 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
                         </span>
                       </div>
                       <div className="space-y-1.5 font-display text-sm text-charcoal-soft">
-                        <Row label={`₹${pricing.perNight.toLocaleString("en-IN")} × ${nights}`} value={`₹${pricing.subtotal.toLocaleString("en-IN")}`} />
-                        <Row label="GST (5%)" value={`₹${pricing.taxes.toLocaleString("en-IN")}`} />
-                                                  <Row label={`₹${pricing.perNight.toLocaleString("en-IN")} × ${nights}`} value={`₹${pricing.subtotal.toLocaleString("en-IN")}`} />
+                        {pricing.planName && (
+                          <div className="mb-1 flex items-center gap-1.5">
+                            <span className="rounded bg-teal px-1.5 py-0.5 font-display text-[9px] font-bold tracking-wider text-ivory">{pricing.planCode}</span>
+                            <span className="font-display text-xs text-charcoal">{pricing.planName}</span>
+                          </div>
+                        )}
+                        <Row
+                          label={pricing.hasDayRates ? "Nightly rates (day-wise)" : `₹${pricing.perNight.toLocaleString("en-IN")} × ${nights}`}
+                          value={`₹${pricing.subtotal.toLocaleString("en-IN")}`}
+                        />
                         {pricing.discountAmt > 0 && (
                           <Row label={`Discount (${pricing.discountPct}%)`} value={`-₹${pricing.discountAmt.toLocaleString("en-IN")}`} />
                         )}
                         <Row label="GST (5%)" value={`₹${pricing.taxes.toLocaleString("en-IN")}`} />
-                        <Row label="Service fee" value={`₹${pricing.serviceFee.toLocaleString("en-IN")}`} />
+                        {pricing.hasDayRates && (
+                          <div className="font-display text-[10px] text-charcoal-soft/70">
+                            Includes festival / weekend day-wise rates set by the hotel.
+                          </div>
+                        )}
                         <div className="mt-2 flex items-center justify-between border-t border-charcoal/10 pt-2">
                           <span className="font-serif text-base font-semibold text-charcoal">Total</span>
                           <span className="font-serif text-xl font-bold text-teal">
@@ -627,9 +740,14 @@ export function BookingWidget({ open, onOpenChange, preselectRoom }: Props) {
                         </div>
                       </div>
                       <div className="space-y-1.5 font-display text-sm text-charcoal-soft">
-                        <Row label="Room subtotal" value={`₹${pricing.subtotal.toLocaleString("en-IN")}`} />
+                        <Row
+                          label={pricing.planCode ? `Room subtotal · ${pricing.planCode} ${pricing.planName || ""}` : "Room subtotal"}
+                          value={`₹${pricing.subtotal.toLocaleString("en-IN")}`}
+                        />
+                        {pricing.discountAmt > 0 && (
+                          <Row label={`Discount (${pricing.discountPct}%)`} value={`-₹${pricing.discountAmt.toLocaleString("en-IN")}`} />
+                        )}
                         <Row label="GST (5%)" value={`₹${pricing.taxes.toLocaleString("en-IN")}`} />
-                        <Row label="Service fee" value={`₹${pricing.serviceFee.toLocaleString("en-IN")}`} />
                         <div className="mt-2 flex items-center justify-between border-t border-charcoal/10 pt-2">
                           <span className="font-serif text-base font-semibold text-charcoal">Total payable</span>
                           <span className="font-serif text-xl font-bold text-teal">

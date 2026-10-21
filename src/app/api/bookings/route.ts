@@ -16,6 +16,7 @@ const schema = z.object({
   guestName: z.string().min(2).max(120),
   guestEmail: z.string().email().max(160),
   guestPhone: z.string().min(6).max(30),
+  planId: z.string().max(64).optional().or(z.literal("")), // OTA rate plan (null = classic base price)
   specialRequests: z.string().max(2000).optional().or(z.literal("")),
   paymentMethod: z.enum(["RAZORPAY", "STRIPE", "PAY_AT_HOTEL"]).default("PAY_AT_HOTEL"),
     discountCode: z.string().max(30).optional().or(z.literal("")),
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
 
     const {
       roomId, checkIn: checkInISO, checkOut: checkOutISO, nights,
-      adults, children, guestName, guestEmail, guestPhone,
+      adults, children, guestName, guestEmail, guestPhone, planId,
             specialRequests, paymentMethod, discountCode: rawDiscountCode,
     } = parsed.data;
 
@@ -81,16 +82,59 @@ export async function POST(req: Request) {
         throw new Error("SOLD_OUT");
       }
 
-      // 3. Resolve price (surge override if applicable)
-      const applicable = room.rateOverrides.filter((ro) => {
-        const roStart = new Date(ro.startDate);
-        const roEnd = new Date(ro.endDate);
-        return roStart < checkOut && roEnd > checkIn;
-      });
-      const surge = applicable.length
-        ? applicable.reduce((max, ro) => (ro.pricePerNight > max.pricePerNight ? ro : max))
-        : null;
-      const pricePerNight = surge ? surge.pricePerNight : room.basePrice;
+      // 3. Resolve price — chosen rate plan first (with day-wise overrides),
+      // else the classic surge-override / base price path.
+      let pricePerNight: number;
+      let subtotal: number;
+      let planIdValue: string | null = null;
+      let planNameValue: string | null = null;
+
+      const chosenPlanId = planId && planId.trim() ? planId.trim() : null;
+      if (chosenPlanId) {
+        const plan = await tx.ratePlan.findUnique({
+          where: { id: chosenPlanId },
+          select: { id: true, code: true, name: true, pricePerNight: true, isActive: true, roomId: true },
+        });
+        if (!plan || !plan.isActive || plan.roomId !== room.id) throw new Error("PLAN_INVALID");
+
+        const dayRates = await tx.planDayRate.findMany({
+          where: { planId: plan.id, date: { gte: checkIn, lt: checkOut } },
+          select: { date: true, price: true },
+        });
+        const overrideMap = new Map<string, number>();
+        for (const o of dayRates) {
+          overrideMap.set(o.date.toISOString().slice(0, 10), o.price);
+        }
+
+        subtotal = 0;
+        let counted = 0;
+        const cur = new Date(checkIn);
+        cur.setUTCHours(0, 0, 0, 0);
+        const end = new Date(checkOut);
+        end.setUTCHours(0, 0, 0, 0);
+        while (cur < end) {
+          const key = cur.toISOString().slice(0, 10);
+          const p = overrideMap.get(key);
+          subtotal += p !== undefined && p > 0 ? p : plan.pricePerNight;
+          counted++;
+          cur.setUTCDate(cur.getUTCDate() + 1);
+        }
+        if (counted !== nights) throw new Error("NIGHTS_MISMATCH");
+        pricePerNight = Math.round(subtotal / nights);
+        planIdValue = plan.id;
+        planNameValue = `${plan.code} — ${plan.name}`;
+      } else {
+        const applicable = room.rateOverrides.filter((ro) => {
+          const roStart = new Date(ro.startDate);
+          const roEnd = new Date(ro.endDate);
+          return roStart < checkOut && roEnd > checkIn;
+        });
+        const surge = applicable.length
+          ? applicable.reduce((max, ro) => (ro.pricePerNight > max.pricePerNight ? ro : max))
+          : null;
+        pricePerNight = surge ? surge.pricePerNight : room.basePrice;
+        subtotal = pricePerNight * nights;
+      }
 
             // Validate discount code if provided
       let discountPct = 0;
@@ -113,11 +157,12 @@ export async function POST(req: Request) {
         }
       }
 
-      const subtotal = pricePerNight * nights;
       const discountAmount = Math.round(subtotal * (discountPct / 100));
       const subtotalAfterDiscount = subtotal - discountAmount;
       const taxesGst = Math.round(subtotalAfterDiscount * 0.05);
-      const serviceFee = 250 * nights;
+      // No service fee — the published price story everywhere on the site is
+      // "room/plan rate + a single 5% GST at checkout, no hidden charges".
+      const serviceFee = 0;
       const totalAmount = subtotalAfterDiscount + taxesGst + serviceFee;
 
       // 4. Upsert guest
@@ -154,6 +199,8 @@ export async function POST(req: Request) {
           guestName,
           guestEmail: guestEmail.toLowerCase(),
           guestPhone,
+          planId: planIdValue,
+          planName: planNameValue,
           specialRequests: specialRequests || null,
           pricePerNight,
           subtotal: subtotalAfterDiscount,
@@ -212,6 +259,12 @@ export async function POST(req: Request) {
     }
     if (msg === "ROOM_NOT_FOUND") {
       return NextResponse.json({ error: "Room not found." }, { status: 404 });
+    }
+    if (msg === "PLAN_INVALID") {
+      return NextResponse.json({ error: "The selected rate plan is no longer available. Please pick another plan." }, { status: 400 });
+    }
+    if (msg === "NIGHTS_MISMATCH") {
+      return NextResponse.json({ error: "Date mismatch. Please re-select your dates." }, { status: 400 });
     }
     console.error("[/api/bookings] error:", e);
     return NextResponse.json({ error: "Booking failed. Please try again." }, { status: 500 });

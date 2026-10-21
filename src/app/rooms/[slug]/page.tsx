@@ -1,6 +1,7 @@
 import { RoomDetailPage } from "@/components/rk/pages/RoomDetailPage";
 import { db } from "@/lib/db";
 import { absUrl, pageOpenGraph, pageTwitter, titledPageTitle, seoDescription } from "@/lib/seo";
+import { toPublicPlan } from "@/lib/rate-plans";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -33,12 +34,28 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function RoomDetailRoute({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  // SSR: fetch the room + related rooms on the server so the room's full
-  // content (name, description, amenities, gallery) is in the initial HTML.
-  const [room, allRooms] = await Promise.all([
-    db.room.findUnique({ where: { slug } }),
+  // SSR: fetch the room + related rooms + ACTIVE rate plans on the server so
+  // the room's full content (name, description, amenities, gallery, plans)
+  // is in the initial HTML — crawlable without JS.
+  const [roomWithPlans, allRooms] = await Promise.all([
+    db.room.findUnique({
+      where: { slug },
+      include: {
+        ratePlans: {
+          where: { isActive: true, pricePerNight: { gt: 0 } },
+          orderBy: [{ sortOrder: "asc" }, { pricePerNight: "asc" }],
+        },
+      },
+    }),
     db.room.findMany({ orderBy: [{ sortOrder: "asc" }] }),
   ]);
+
   const related = allRooms.filter((r) => r.slug !== slug).slice(0, 3);
-  return <RoomDetailPage slug={slug} initialRoom={room} initialRelated={related} />;
+  if (!roomWithPlans) {
+    return <RoomDetailPage slug={slug} initialRoom={null} initialRelated={related} />;
+  }
+
+  const { ratePlans, ...room } = roomWithPlans;
+  const plans = (ratePlans || []).map(toPublicPlan);
+  return <RoomDetailPage slug={slug} initialRoom={room} initialRelated={related} initialPlans={plans} />;
 }

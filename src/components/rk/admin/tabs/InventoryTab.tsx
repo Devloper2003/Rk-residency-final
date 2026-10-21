@@ -3,10 +3,13 @@ import { useEffect, useState, useCallback } from "react";
 import {
   BedDouble, CalendarDays, AlertTriangle,
   CheckCircle2, ChevronLeft, ChevronRight,
-  Plus, Eye, Lock, LockOpen,
+  Plus, Eye, Lock, LockOpen, IndianRupee, Loader2, X, Save, RotateCcw,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { adminApi, adminFetch, LoadingSpinner, ErrorState, KpiCard } from "./_shared";
 import { ManualBookingModal } from "./ManualBookingModal";
+import { toast } from "sonner";
 
 type Booking = {
   id: string; referenceCode: string; guestName: string;
@@ -26,6 +29,20 @@ type GridDay = { booked: number; closed: boolean; override: number | null; sella
 type GridRoom = { id: string; name: string; slug: string; totalCount: number; badge: string | null; days: Record<string, GridDay> };
 type GridData = { startDate: string; days: number; keys: string[]; rooms: GridRoom[] };
 
+/* ── Day-wise pricing (Phase 5) — OTA-style per-plan per-date rates ── */
+type PricingPlan = { id: string; roomId: string; roomName: string; code: string; name: string; pricePerNight: number };
+type DayRateRow = { id: string; date: string; price: number; note: string | null };
+
+function nextKeys(from: string, count: number): string[] {
+  const keys: string[] = [];
+  const d = new Date(from + "T00:00:00");
+  for (let i = 0; i < count; i++) {
+    keys.push(d.toISOString().slice(0, 10));
+    d.setDate(d.getDate() + 1);
+  }
+  return keys;
+}
+
 export function InventoryTab() {
   const [rooms, setRooms] = useState<InventoryRoom[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +54,21 @@ export function InventoryTab() {
   // Day-by-day open/close grid (14 days from the viewed date)
   const [grid, setGrid] = useState<GridData | null>(null);
   const [gridSaving, setGridSaving] = useState<string | null>(null); // "roomId:date"
+
+  // Day-wise pricing state
+  const [plans, setPlans] = useState<PricingPlan[]>([]);
+  const [pricingPlanId, setPricingPlanId] = useState("");
+  const [priceStrip, setPriceStrip] = useState<Record<string, DayRateRow>>({});
+  const [priceLoading, setPriceLoading] = useState(false);
+  const [priceModalDate, setPriceModalDate] = useState<string | null>(null);
+  const [bulkFrom, setBulkFrom] = useState(() => new Date().toISOString().slice(0, 10));
+  const [bulkTo, setBulkTo] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() + 13);
+    return d.toISOString().slice(0, 10);
+  });
+  const [bulkPrice, setBulkPrice] = useState(0);
+  const [bulkWeekend, setBulkWeekend] = useState(false);
+  const [bulkSaving, setBulkSaving] = useState(false);
 
   const load = useCallback(() => {
     let cancelled = false;
@@ -56,6 +88,65 @@ export function InventoryTab() {
   }, [viewDate]);
 
   useEffect(() => { const c = load(); return c; }, [load]);
+
+  // Load active rate plans once (cross-room) for the pricing panel.
+  useEffect(() => {
+    let cancelled = false;
+    adminFetch("/api/admin/plans").then((d: any) => {
+      if (cancelled || !d) return;
+      const list: PricingPlan[] = (d.plans || []).map((p: any) => ({
+        id: p.id, roomId: p.roomId, roomName: p.roomName || "", code: p.code, name: p.name, pricePerNight: p.pricePerNight,
+      }));
+      setPlans(list);
+      if (list.length > 0) setPricingPlanId((cur) => (cur && list.some((p) => p.id === cur) ? cur : list[0].id));
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  // Load the 14-day price strip for the selected plan.
+  const loadPriceStrip = useCallback(async () => {
+    if (!pricingPlanId) { setPriceStrip({}); return; }
+    setPriceLoading(true);
+    try {
+      const end = new Date(viewDate + "T00:00:00");
+      end.setDate(end.getDate() + 13);
+      const d = await adminFetch(`/api/admin/plans/day-rates?planId=${pricingPlanId}&startDate=${viewDate}&endDate=${end.toISOString().slice(0, 10)}`);
+      if (d && !d.error) {
+        const map: Record<string, DayRateRow> = {};
+        for (const r of d.rates || []) map[r.date] = r;
+        setPriceStrip(map);
+      }
+    } catch { /* strip is auxiliary */ }
+    finally { setPriceLoading(false); }
+  }, [pricingPlanId, viewDate]);
+
+  useEffect(() => { loadPriceStrip(); }, [loadPriceStrip]);
+
+  const pricingPlan = plans.find((p) => p.id === pricingPlanId) || null;
+  const priceKeys = nextKeys(viewDate, 14);
+
+  /** Bulk-set or bulk-clear day rates for the selected plan. */
+  const applyBulk = async (reset: boolean) => {
+    if (!pricingPlan) return;
+    if (!reset && (!bulkPrice || bulkPrice <= 0)) { toast.error("Enter a price per night first"); return; }
+    if (new Date(bulkTo) < new Date(bulkFrom)) { toast.error("'To' must be on or after 'From'"); return; }
+    setBulkSaving(true);
+    try {
+      const res = await adminFetch("/api/admin/plans/day-rates", {
+        method: "POST",
+        body: JSON.stringify(reset
+          ? { planId: pricingPlan.id, from: bulkFrom, to: bulkTo, reset: true }
+          : { planId: pricingPlan.id, from: bulkFrom, to: bulkTo, price: bulkPrice, onlyDays: bulkWeekend ? "weekend" : "all" }),
+      });
+      if (res && !res.error) {
+        toast.success(res.reset ? `Cleared overrides for ${res.count} days` : `Set ₹${bulkPrice}/night for ${res.count} days${bulkWeekend ? " (weekends)" : ""}`);
+        await loadPriceStrip();
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Bulk update failed");
+    } finally { setBulkSaving(false); }
+  };
+
   const retry = () => { setError(false); load(); };
   const shiftDate = (days: number) => {
     const d = new Date(viewDate);
@@ -320,6 +411,123 @@ export function InventoryTab() {
         </div>
       )}
 
+      {/* Day-wise pricing (Phase 5) — OTA-style per-plan rates */}
+      <div className="rounded-2xl border border-charcoal/10 bg-white p-4">
+        <div className="mb-3">
+          <h3 className="font-serif text-sm font-semibold text-charcoal">Day-wise pricing (OTA rates)</h3>
+          <p className="mt-0.5 font-display text-[11px] text-charcoal-soft">
+            Set a different price for any day — festival surge, weekend rates, offers. Guests see these exact prices at checkout.
+          </p>
+        </div>
+
+        {plans.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-charcoal/15 bg-ivory-deep/20 p-6 text-center">
+            <p className="font-display text-xs text-charcoal-soft">
+              No rate plans yet. Create EP / CP / MAP / AP plans in <b>Rooms → Plans</b> first — then day-wise pricing can be set per plan here.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Plan selector pills */}
+            <div className="mb-3 flex flex-wrap items-center gap-1.5">
+              {plans.map((p) => {
+                const sel = p.id === pricingPlanId;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => setPricingPlanId(p.id)}
+                    className={`rounded-full border px-3 py-1.5 font-display text-[11px] font-semibold transition-colors ${
+                      sel ? "border-teal bg-teal text-ivory" : "border-charcoal/15 bg-white text-charcoal-soft hover:border-teal/40"
+                    }`}
+                  >
+                    {p.code} · {p.roomName} · ₹{p.pricePerNight.toLocaleString("en-IN")}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 14-day price strip */}
+            <div className="overflow-x-auto">
+              <div className="flex min-w-[900px] gap-1">
+                {priceKeys.map((key) => {
+                  const d = new Date(key + "T00:00:00");
+                  const row = priceStrip[key];
+                  const isOverride = !!row;
+                  const eff = row ? row.price : pricingPlan?.pricePerNight ?? 0;
+                  const isSel = key === viewDate;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setPriceModalDate(key)}
+                      className={`relative min-w-[60px] flex-1 rounded-lg border p-1.5 text-center transition-all ${
+                        isOverride ? "border-gold/60 bg-gold/10" : "border-charcoal/8 bg-ivory-deep/20 hover:border-teal/40"
+                      } ${isSel ? "ring-1 ring-teal" : ""}`}
+                      title={`${key} — click to edit price for ${pricingPlan?.code || "plan"}`}
+                    >
+                      <div className="font-display text-[8px] uppercase text-charcoal-soft">{d.toLocaleDateString("en-IN", { weekday: "short" })}</div>
+                      <div className="font-serif text-[11px] font-bold text-charcoal">{d.getDate()}</div>
+                      {priceLoading ? (
+                        <Loader2 className="mx-auto h-3 w-3 animate-spin text-charcoal-soft" />
+                      ) : (
+                        <div className={`font-display text-[10px] font-bold ${isOverride ? "text-gold-deep" : "text-teal"}`}>
+                          ₹{eff.toLocaleString("en-IN")}
+                        </div>
+                      )}
+                      {isOverride && <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-gold-deep" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-3 font-display text-[9px] text-charcoal-soft">
+              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-teal/40" /> plan base price</span>
+              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-gold/50" /> custom day price</span>
+              <span>Click any day to edit — prices apply to the selected plan</span>
+            </div>
+
+            {/* Bulk range tools */}
+            <div className="mt-3 rounded-xl border border-charcoal/10 bg-ivory-deep/20 p-3">
+              <div className="mb-2 font-display text-[10px] font-semibold uppercase tracking-wider text-charcoal-soft">Bulk set — date range</div>
+              <div className="flex flex-wrap items-end gap-2">
+                <div>
+                  <label className="mb-1 block font-display text-[9px] uppercase tracking-wider text-charcoal-soft">From</label>
+                  <input type="date" value={bulkFrom} onChange={(e) => setBulkFrom(e.target.value)} className="rounded-lg border border-charcoal/10 bg-white px-2 py-1.5 font-display text-xs text-charcoal focus:border-teal focus:outline-none" />
+                </div>
+                <div>
+                  <label className="mb-1 block font-display text-[9px] uppercase tracking-wider text-charcoal-soft">To</label>
+                  <input type="date" value={bulkTo} onChange={(e) => setBulkTo(e.target.value)} className="rounded-lg border border-charcoal/10 bg-white px-2 py-1.5 font-display text-xs text-charcoal focus:border-teal focus:outline-none" />
+                </div>
+                <div>
+                  <label className="mb-1 block font-display text-[9px] uppercase tracking-wider text-charcoal-soft">Price ₹/night</label>
+                  <input type="number" min={0} value={bulkPrice || ""} onChange={(e) => setBulkPrice(parseInt(e.target.value) || 0)} placeholder="e.g. 6500" className="w-28 rounded-lg border border-charcoal/10 bg-white px-2 py-1.5 font-display text-xs text-charcoal focus:border-teal focus:outline-none" />
+                </div>
+                <label className="flex cursor-pointer items-center gap-1.5 pb-1.5 font-display text-[11px] text-charcoal">
+                  <input type="checkbox" checked={bulkWeekend} onChange={(e) => setBulkWeekend(e.target.checked)} className="h-3.5 w-3.5 rounded border-charcoal/30" />
+                  Weekends only
+                </label>
+                <Button onClick={() => applyBulk(false)} disabled={bulkSaving || !pricingPlan} className="rounded-full bg-teal px-4 py-1.5 text-xs text-ivory hover:bg-teal-deep">
+                  {bulkSaving ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <IndianRupee className="mr-1 h-3.5 w-3.5" />} Apply
+                </Button>
+                <Button onClick={() => applyBulk(true)} disabled={bulkSaving || !pricingPlan} variant="outline" className="rounded-full border-charcoal/20 px-4 py-1.5 text-xs text-charcoal-soft hover:border-marsala/40 hover:text-marsala">
+                  <RotateCcw className="mr-1 h-3.5 w-3.5" /> Reset range
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Single-day price editor */}
+      {priceModalDate && pricingPlan && (
+        <DayPriceEditor
+          plan={pricingPlan}
+          date={priceModalDate}
+          existing={priceStrip[priceModalDate] || null}
+          onClose={() => setPriceModalDate(null)}
+          onSaved={() => { setPriceModalDate(null); loadPriceStrip(); }}
+        />
+      )}
+
       <div className="rounded-2xl border border-charcoal/10 bg-white p-4">
         <h3 className="mb-3 font-serif text-sm font-semibold text-charcoal">7-Day Occupancy Forecast</h3>
         <div className="grid grid-cols-7 gap-2">
@@ -336,6 +544,81 @@ export function InventoryTab() {
               </button>
             );
           })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Single-day price editor for the selected rate plan ── */
+function DayPriceEditor({ plan, date, existing, onClose, onSaved }: {
+  plan: PricingPlan;
+  date: string;
+  existing: DayRateRow | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [price, setPrice] = useState(existing ? existing.price : plan.pricePerNight);
+  const [note, setNote] = useState(existing?.note || "");
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await adminFetch("/api/admin/plans/day-rates", {
+        method: "POST",
+        body: JSON.stringify({ planId: plan.id, date, price, note }),
+      });
+      toast.success(`${date}: ₹${price.toLocaleString("en-IN")}/night saved for ${plan.code}`);
+      onSaved();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to save");
+    } finally { setSaving(false); }
+  };
+
+  const removeOverride = async () => {
+    setSaving(true);
+    try {
+      await adminFetch("/api/admin/plans/day-rates", {
+        method: "POST",
+        body: JSON.stringify({ planId: plan.id, date, price: 0 }),
+      });
+      toast.success(`${date}: reverted to plan base (₹${plan.pricePerNight.toLocaleString("en-IN")})`);
+      onSaved();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[80] grid place-items-center bg-charcoal/60 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-2xl bg-ivory p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-1 flex items-center gap-2">
+          <span className="rounded-md bg-teal px-2 py-0.5 font-display text-[10px] font-bold tracking-widest text-ivory">{plan.code}</span>
+          <span className="font-serif text-sm font-semibold text-charcoal">{plan.roomName}</span>
+        </div>
+        <h3 className="font-serif text-lg font-semibold text-charcoal">
+          {new Date(date + "T00:00:00").toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
+        </h3>
+        <p className="mb-3 font-display text-[11px] text-charcoal-soft">
+          Plan base: ₹{plan.pricePerNight.toLocaleString("en-IN")}/night{existing ? " · custom price set" : ""}
+        </p>
+        <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Price ₹/night</label>
+        <Input type="number" min={0} value={price} onChange={(e) => setPrice(parseInt(e.target.value) || 0)} className="bg-white" />
+        <label className="mb-1 mt-3 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Note (optional)</label>
+        <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Janmashtami surge" className="bg-white" />
+        <div className="mt-4 flex items-center justify-between">
+          {existing ? (
+            <Button onClick={removeOverride} disabled={saving} variant="outline" className="rounded-full border-marsala/30 text-marsala hover:bg-marsala hover:text-ivory">
+              <RotateCcw className="mr-1 h-3.5 w-3.5" /> Use base price
+            </Button>
+          ) : <span />}
+          <div className="flex gap-2">
+            <Button onClick={onClose} variant="outline" className="rounded-full">Cancel</Button>
+            <Button onClick={save} disabled={saving || price <= 0} className="rounded-full bg-teal px-5 text-ivory hover:bg-teal-deep">
+              <Save className="mr-1.5 h-4 w-4" /> Save
+            </Button>
+          </div>
         </div>
       </div>
     </div>

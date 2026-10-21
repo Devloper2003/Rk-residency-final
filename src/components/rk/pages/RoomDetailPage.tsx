@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import {
   Users, Maximize, BedDouble, Eye, Sparkles, Check, ArrowRight,
   CalendarDays, ShieldCheck, Wifi, Snowflake, Coffee, Bell,
-  MapPin, Star, ChevronLeft, ChevronRight, X,
+  MapPin, Star, ChevronLeft, ChevronRight, X, UtensilsCrossed,
 } from "lucide-react";
 import { PageShell } from "../PageShell";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { AvailabilityCalendar } from "../AvailabilityCalendar";
 import { useRouter } from "@/lib/router";
 import { useContactInfo } from "@/lib/use-contact-info";
 import { sanitizeRoomView } from "@/lib/room-display";
+import type { PublicPlan } from "@/lib/rate-plans";
 import { useContentValue } from "@/lib/site-content";
 
 type Room = {
@@ -46,10 +47,12 @@ export function RoomDetailPage({
   slug,
   initialRoom,
   initialRelated,
+  initialPlans,
 }: {
   slug: string;
   initialRoom?: Room | null;
   initialRelated?: Room[];
+  initialPlans?: PublicPlan[];
 }) {
   const navigate = useRouter((s) => s.navigate);
   const openBooking = useRouter((s) => s.openBooking);
@@ -63,6 +66,7 @@ export function RoomDetailPage({
   // amenities and gallery are in the initial HTML (crawlable without JS).
   const [room, setRoom] = useState<Room | null>(initialRoom ?? null);
   const [related, setRelated] = useState<Room[]>(initialRelated || []);
+  const [plans, setPlans] = useState<PublicPlan[]>(initialPlans || []);
   const [loading, setLoading] = useState(initialRoom === undefined);
   const [activeImage, setActiveImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -74,8 +78,9 @@ export function RoomDetailPage({
       .then((r) => r.json())
       .then((data) => {
         if (cancelled) return;
-        const found = (data.rooms as Room[]).find((r) => r.slug === slug);
+        const found = (data.rooms as (Room & { plans?: PublicPlan[] })[]).find((r) => r.slug === slug);
         setRoom(found || null);
+        setPlans(found?.plans || []);
         setActiveImage(0);
         setRelated((data.rooms as Room[]).filter((r) => r.slug !== slug).slice(0, 3));
         setLoading(false);
@@ -103,6 +108,15 @@ export function RoomDetailPage({
   const images: string[] = (() => { try { return JSON.parse(room.imageUrls || "[]"); } catch { return []; } })();
   const amenities: string[] = (() => { try { return JSON.parse(room.amenities || "[]"); } catch { return []; } })();
   const gallery = images.length > 0 ? images : ["/images/heritage-room.webp"];
+
+  // OTA-style rate plans: "from" price = the cheapest sellable option.
+  const planList = plans;
+  const cheapestPlan = planList.length
+    ? planList.reduce((a, b) => (a.pricePerNight <= b.pricePerNight ? a : b))
+    : null;
+  const fromPrice = cheapestPlan
+    ? Math.min(cheapestPlan.pricePerNight, room.basePrice)
+    : room.basePrice;
 
   const nextImage = () => setActiveImage((i) => (i + 1) % gallery.length);
   const prevImage = () => setActiveImage((i) => (i - 1 + gallery.length) % gallery.length);
@@ -177,8 +191,8 @@ export function RoomDetailPage({
                 <p className="mt-1 font-display text-sm text-ivory/80">{room.tagline}</p>
               </div>
               <div className="hidden shrink-0 rounded-2xl bg-ivory/15 px-5 py-3 text-right backdrop-blur-md sm:block">
-                <div className="font-serif text-2xl font-bold text-ivory">₹{room.basePrice.toLocaleString("en-IN")}</div>
-                <div className="font-display text-[10px] uppercase tracking-wider text-ivory/70">per night</div>
+                <div className="font-serif text-2xl font-bold text-ivory">₹{fromPrice.toLocaleString("en-IN")}</div>
+                <div className="font-display text-[10px] uppercase tracking-wider text-ivory/70">from · per night</div>
               </div>
             </div>
           </div>
@@ -224,6 +238,77 @@ export function RoomDetailPage({
           </div>
         ))}
       </div>
+
+      {/* ===== RATE PLANS — OTA-style EP / CP / MAP / AP ===== */}
+      {planList.length > 0 && (
+        <div className="mb-10">
+          <div className="mb-5 flex items-center justify-center">
+            <Lotus size={18} className="text-gold" />
+            <span className="mx-3 font-display text-xs uppercase tracking-[0.32em] text-gold-deep">Rate plans</span>
+            <Lotus size={18} className="text-gold" />
+          </div>
+          <p className="mb-6 text-center font-display text-sm text-charcoal-soft">
+            Pick the plan that fits your stay — meals and inclusions change with each plan.
+          </p>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {planList.map((p) => {
+              const isCheapest = cheapestPlan && p.id === cheapestPlan.id;
+              const inclusionIcon = (inc: string) =>
+                /breakfast/i.test(inc) ? Coffee : /lunch|dinner|meal/i.test(inc) ? UtensilsCrossed : Check;
+              return (
+                <div
+                  key={p.id}
+                  className={`relative flex flex-col rounded-3xl border bg-white p-6 shadow-sm transition-shadow hover:shadow-lg ${
+                    isCheapest ? "border-gold/60" : "border-charcoal/10"
+                  }`}
+                >
+                  {isCheapest && (
+                    <span className="absolute -top-3 left-6 rounded-full bg-gradient-to-r from-gold to-gold-soft px-3 py-0.5 font-display text-[10px] font-bold uppercase tracking-wider text-charcoal shadow">
+                      Best value
+                    </span>
+                  )}
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="rounded-md bg-teal px-2 py-1 font-display text-xs font-bold tracking-widest text-ivory">
+                      {p.code}
+                    </span>
+                    <div className="text-right">
+                      <div className="font-serif text-2xl font-bold text-teal">
+                        ₹{p.pricePerNight.toLocaleString("en-IN")}
+                      </div>
+                      <div className="font-display text-[10px] uppercase tracking-wider text-charcoal-soft">
+                        per night + 5% GST
+                      </div>
+                    </div>
+                  </div>
+                  <h3 className="mt-3 font-serif text-lg font-semibold text-charcoal">{p.name}</h3>
+                  {p.description && (
+                    <p className="mt-1 font-display text-xs leading-relaxed text-charcoal-soft">{p.description}</p>
+                  )}
+                  {p.inclusions.length > 0 && (
+                    <ul className="mt-4 space-y-1.5 border-t border-charcoal/10 pt-4">
+                      {p.inclusions.map((inc) => {
+                        const Icon = inclusionIcon(inc);
+                        return (
+                          <li key={inc} className="flex items-start gap-2 font-display text-sm text-charcoal-soft">
+                            <Icon className="mt-0.5 h-4 w-4 shrink-0 text-teal" /> {inc}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  <Button
+                    onClick={() => openBooking(room.slug, p.id)}
+                    className="mt-5 w-full rounded-full bg-gradient-to-r from-gold via-gold-soft to-gold py-2.5 font-serif text-sm font-semibold text-charcoal shadow hover:from-gold-deep hover:to-gold"
+                  >
+                    <CalendarDays className="mr-2 h-4 w-4" />
+                    Book this plan
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ===== MAIN CONTENT GRID ===== */}
       <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
@@ -274,7 +359,9 @@ export function RoomDetailPage({
                 {[
                   `Check-in ${checkinTime} · Check-out ${checkoutTime}`,
                   "Free cancellation up to 72 hours before check-in",
-                  "Daily satvik breakfast included for all guests",
+                  planList.length > 0
+                    ? "Meals as per your chosen rate plan"
+                    : "Daily satvik breakfast included for all guests",
                   "Children under 6 stay free with existing bedding",
                   "Only 5% GST added at checkout — no hidden charges",
                   "Festival surge pricing during Janmashtami, Holi & Radhashtami",
@@ -296,10 +383,14 @@ export function RoomDetailPage({
             <div className="bg-gradient-to-br from-teal to-teal-deep p-6 text-ivory">
               <div className="font-display text-xs uppercase tracking-wider text-ivory/70">Starting from</div>
               <div className="mt-1 font-serif text-4xl font-bold">
-                ₹{room.basePrice.toLocaleString("en-IN")}
+                ₹{fromPrice.toLocaleString("en-IN")}
                 <span className="ml-1 font-sans text-sm font-normal text-ivory/70">/ night</span>
               </div>
-              <div className="mt-1 font-display text-xs text-ivory/60">Inclusive of breakfast · {room.totalCount} rooms available</div>
+              <div className="mt-1 font-display text-xs text-ivory/60">
+                {planList.length > 0
+                  ? `${planList.length} rate plan${planList.length === 1 ? "" : "s"} · pick yours below`
+                  : `Inclusive of breakfast · ${room.totalCount} rooms available`}
+              </div>
             </div>
 
             {/* Body */}
@@ -407,10 +498,12 @@ export function RoomDetailPage({
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="font-serif text-lg font-bold text-teal">
-              ₹{room.basePrice.toLocaleString("en-IN")}
+              ₹{fromPrice.toLocaleString("en-IN")}
               <span className="font-sans text-xs font-normal text-charcoal-soft"> / night</span>
             </div>
-            <div className="font-display text-[10px] text-charcoal-soft">{room.totalCount} rooms · Free cancellation</div>
+            <div className="font-display text-[10px] text-charcoal-soft">
+              {planList.length > 0 ? `from · ${planList.length} plans` : `${room.totalCount} rooms · Free cancellation`}
+            </div>
           </div>
           <Button
             onClick={() => openBooking(room.slug)}

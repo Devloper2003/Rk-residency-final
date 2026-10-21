@@ -45,7 +45,8 @@ export interface RouterState {
   // Booking widget state (lifted here so any page can open it)
   bookingOpen: boolean;
   bookingRoomSlug?: string;
-  openBooking: (roomSlug?: string) => void;
+  bookingPlanId?: string;
+  openBooking: (roomSlug?: string, planId?: string) => void;
   closeBooking: () => void;
   // Navigation (delegates to Next.js router)
   navigate: (route: RouteName, param?: string) => void;
@@ -77,9 +78,10 @@ function toPath(route: RouteName, param?: string): string {
 export const useRouter = create<RouterState>((set) => ({
   bookingOpen: false,
   bookingRoomSlug: undefined,
-  openBooking: (roomSlug) =>
-    set({ bookingOpen: true, bookingRoomSlug: roomSlug }),
-  closeBooking: () => set({ bookingOpen: false, bookingRoomSlug: undefined }),
+  bookingPlanId: undefined,
+  openBooking: (roomSlug, planId) =>
+    set({ bookingOpen: true, bookingRoomSlug: roomSlug, bookingPlanId: planId }),
+  closeBooking: () => set({ bookingOpen: false, bookingRoomSlug: undefined, bookingPlanId: undefined }),
   navigate: (route, param) => {
     const path = toPath(route, param);
     if (typeof window !== "undefined") {
