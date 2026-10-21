@@ -180,8 +180,17 @@ export const BUSINESS = {
     /** Owner-supplied Google listing URL (the maps.app.goo.gl share link). */
     google: "https://maps.app.goo.gl/EWLnPhdXAqbgmJ9Q6",
 
-    /** TODO: TripAdvisor listing URL for the hotel (was placeholder "https://www.tripadvisor.in"). */
-    tripadvisor: "",
+    /**
+     * TODO: Google Place ID of the hotel — needed to fetch LIVE Google
+     * reviews via the Places API (see src/lib/google-reviews.ts). The
+     * GOOGLE_PLACES_API_KEY env var (owner creates in Google Cloud) is also
+     * required. Until both exist the site shows owner-moderated guest
+     * reviews from the database — nothing invented.
+     */
+    googlePlaceId: "",
+
+    /** Owner-supplied TripAdvisor listing URL (real, verified by owner). */
+    tripadvisor: "https://www.tripadvisor.in/Hotel_Review-g951350-d33536283-Reviews-Hotel_R_K_Residency-Vrindavan_Mathura_District_Uttar_Pradesh.html",
   },
 
   maps: {

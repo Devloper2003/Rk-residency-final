@@ -204,6 +204,34 @@ export function Testimonials({ initialReviews }: { initialReviews?: Review[] }) 
         </div>
       </div>
       )}
+
+      {/* TripAdvisor — link-only chip to the owner's REAL listing. Shows NO
+          rating or count: TripAdvisor figures are never invented and cannot
+          be fetched server-side, so the chip just says "Read our reviews". */}
+      {BUSINESS.reviews.tripadvisor && (
+      <div className="relative mt-16">
+        <SectionDivider className="mb-8" />
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-6 px-4 sm:flex-row sm:gap-12">
+          <a
+            href={BUSINESS.reviews.tripadvisor}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex items-center gap-3 rounded-2xl border border-ivory/15 bg-ivory/5 px-5 py-3 transition-all hover:border-gold/40 hover:bg-ivory/10"
+          >
+            <div className="font-serif text-lg font-bold text-gold-soft">TripAdvisor</div>
+            <div>
+              <div className="font-display text-xs uppercase tracking-wider text-ivory/70">
+                Verified listing
+              </div>
+              <div className="flex items-center gap-1.5 font-display text-xs text-ivory/85">
+                Read our reviews
+                <ExternalLink className="h-3 w-3 opacity-60 transition-opacity group-hover:opacity-100" />
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+      )}
     </section>
   );
 }

@@ -230,6 +230,19 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
               {featuredOnText}
             </div>
           )}
+          {BUSINESS.reviews.tripadvisor && (
+            <>
+              <span className="hidden h-4 w-px bg-ivory/30 sm:block" />
+              <a
+                href={BUSINESS.reviews.tripadvisor}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs uppercase tracking-wider text-ivory/70 transition-colors hover:text-gold-soft"
+              >
+                TripAdvisor
+              </a>
+            </>
+          )}
         </motion.div>
       </motion.div>
 
