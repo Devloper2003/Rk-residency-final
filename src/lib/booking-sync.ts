@@ -48,7 +48,7 @@ function makeRazorpay(keyId: string, keySecret: string): Razorpay {
 }
 
 // ---------------------------------------------------------------------------
-// WhatsApp owner notifications (CallMeBot — free personal gateway)
+// WhatsApp owner notifications (multi-gateway: CallMeBot | UltraMsg | Green API)
 // ---------------------------------------------------------------------------
 
 function waEnabled(cfg: Record<string, string>): boolean {
@@ -59,15 +59,84 @@ function waEnabled(cfg: Record<string, string>): boolean {
   );
 }
 
-/** Fire-and-forget owner WhatsApp message. Never throws. */
+/**
+ * Send one WhatsApp message to the owner through the configured gateway.
+ * Three interchangeable providers (owner's choice in Admin → Payment Settings):
+ *   - callmebot (default)  — key from +34 644 51 95 23 registration, plain GET
+ *   - ultramsg             — owner's own WhatsApp linked via QR scan
+ *                            POST https://api.ultramsg.com/{instance}/messages/chat
+ *   - greenapi             — owner's own WhatsApp linked via QR scan
+ *                            POST https://api.green-api.com/waInstance{id}/sendMessage/{token}
+ * All three reuse the same SiteSetting keys: whatsapp_enabled,
+ * whatsapp_owner_phone, whatsapp_api_key (+ provider-specific instance id).
+ * Fire-and-forget. Never throws. Returns true only on a provider-confirmed send.
+ */
 export async function notifyOwnerWhatsApp(text: string): Promise<boolean> {
   try {
-    const cfg = await getSettings(["whatsapp_enabled", "whatsapp_owner_phone", "whatsapp_api_key"]);
+    const cfg = await getSettings([
+      "whatsapp_enabled",
+      "whatsapp_owner_phone",
+      "whatsapp_api_key",
+      "whatsapp_provider",
+      "whatsapp_ultramsg_instance",
+      "whatsapp_greenapi_instance",
+    ]);
     if (!waEnabled(cfg)) return false;
+    const provider = (cfg.whatsapp_provider || "callmebot").trim().toLowerCase();
+    const digits = cfg.whatsapp_owner_phone.replace(/\D/g, "");
+    const key = cfg.whatsapp_api_key;
+
+    if (provider === "ultramsg") {
+      const instance = (cfg.whatsapp_ultramsg_instance || "").trim();
+      if (!instance) {
+        console.error("[whatsapp-notify] ultramsg selected but whatsapp_ultramsg_instance missing");
+        return false;
+      }
+      const res = await fetch(
+        `https://api.ultramsg.com/${encodeURIComponent(instance)}/messages/chat`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            token: key,
+            to: digits,
+            body: text.slice(0, 4096),
+          }).toString(),
+          signal: AbortSignal.timeout(10_000),
+        }
+      );
+      const parsed: any = await res.json().catch(() => null);
+      const ok = res.ok && (parsed?.sent === "true" || parsed?.sent === true);
+      if (!ok) console.error("[whatsapp-notify] UltraMsg responded", res.status, JSON.stringify(parsed)?.slice(0, 200));
+      return ok;
+    }
+
+    if (provider === "greenapi") {
+      const instance = (cfg.whatsapp_greenapi_instance || "").trim();
+      if (!instance) {
+        console.error("[whatsapp-notify] greenapi selected but whatsapp_greenapi_instance missing");
+        return false;
+      }
+      const res = await fetch(
+        `https://api.green-api.com/waInstance${encodeURIComponent(instance)}/sendMessage/${encodeURIComponent(key)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chatId: `${digits}@c.us`, message: text.slice(0, 4000) }),
+          signal: AbortSignal.timeout(10_000),
+        }
+      );
+      const parsed: any = await res.json().catch(() => null);
+      const ok = res.ok && !!parsed?.idMessage;
+      if (!ok) console.error("[whatsapp-notify] Green API responded", res.status, JSON.stringify(parsed)?.slice(0, 200));
+      return ok;
+    }
+
+    // Default: CallMeBot (free personal gateway)
     const url =
       `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(cfg.whatsapp_owner_phone)}` +
       `&text=${encodeURIComponent(text.slice(0, 900))}` +
-      `&apikey=${encodeURIComponent(cfg.whatsapp_api_key)}`;
+      `&apikey=${encodeURIComponent(key)}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(7000) });
     if (!res.ok) {
       console.error("[whatsapp-notify] CallMeBot responded", res.status);
