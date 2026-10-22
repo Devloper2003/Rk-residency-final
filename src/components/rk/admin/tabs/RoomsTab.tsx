@@ -420,7 +420,9 @@ const PLAN_TEMPLATES: Record<string, { name: string; description: string; inclus
 
 type PlanRow = {
   id: string; code: string; name: string; description: string | null;
-  inclusions: string; pricePerNight: number; sortOrder: number;
+  inclusions: string; pricePerNight: number; priceSingle?: number | null;
+  extraAdultPrice?: number; extraChildPrice?: number;
+  sortOrder: number;
   isActive: boolean; _count?: { dayRates: number };
 };
 
@@ -429,13 +431,16 @@ function PlansManager({ room, onClose }: { room: any; onClose: () => void }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<{ name: string; description: string; pricePerNight: number; inclusions: string; isActive: boolean } | null>(null);
+  const [editForm, setEditForm] = useState<{ name: string; description: string; pricePerNight: number; priceSingle: number; extraAdultPrice: number; extraChildPrice: number; inclusions: string; isActive: boolean } | null>(null);
   // Add-form state
   const [newCode, setNewCode] = useState("EP");
   const [newName, setNewName] = useState(PLAN_TEMPLATES.EP.name);
   const [newDesc, setNewDesc] = useState(PLAN_TEMPLATES.EP.description);
   const [newInclusions, setNewInclusions] = useState(PLAN_TEMPLATES.EP.inclusions.join(", "));
   const [newPrice, setNewPrice] = useState<number>(room.basePrice || 0);
+  const [newPriceSingle, setNewPriceSingle] = useState<number>(0); // 0 = same as double
+  const [newExtraAdult, setNewExtraAdult] = useState<number>(0);
+  const [newExtraChild, setNewExtraChild] = useState<number>(0);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -473,12 +478,18 @@ function PlansManager({ room, onClose }: { room: any; onClose: () => void }) {
           description: newDesc.trim() || null,
           inclusions: newInclusions.split(",").map((s) => s.trim()).filter(Boolean),
           pricePerNight: newPrice,
+          priceSingle: newPriceSingle > 0 ? newPriceSingle : null,
+          extraAdultPrice: newExtraAdult > 0 ? newExtraAdult : 0,
+          extraChildPrice: newExtraChild > 0 ? newExtraChild : 0,
           sortOrder: plans.length,
           isActive: true,
         }),
       });
       toast.success(`${newCode.toUpperCase()} plan added`);
       setNewPrice(0);
+      setNewPriceSingle(0);
+      setNewExtraAdult(0);
+      setNewExtraChild(0);
       load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to add plan");
@@ -491,6 +502,9 @@ function PlansManager({ room, onClose }: { room: any; onClose: () => void }) {
       name: p.name,
       description: p.description || "",
       pricePerNight: p.pricePerNight,
+      priceSingle: p.priceSingle || 0,
+      extraAdultPrice: p.extraAdultPrice || 0,
+      extraChildPrice: p.extraChildPrice || 0,
       inclusions: (() => { try { return JSON.parse(p.inclusions || "[]").join(", "); } catch { return ""; } })(),
       isActive: p.isActive,
     });
@@ -509,6 +523,9 @@ function PlansManager({ room, onClose }: { room: any; onClose: () => void }) {
           description: editForm.description.trim() || null,
           inclusions: editForm.inclusions.split(",").map((s) => s.trim()).filter(Boolean),
           pricePerNight: editForm.pricePerNight,
+          priceSingle: editForm.priceSingle > 0 ? editForm.priceSingle : null,
+          extraAdultPrice: editForm.extraAdultPrice > 0 ? editForm.extraAdultPrice : 0,
+          extraChildPrice: editForm.extraChildPrice > 0 ? editForm.extraChildPrice : 0,
           isActive: editForm.isActive,
         }),
       });
@@ -584,6 +601,20 @@ function PlansManager({ room, onClose }: { room: any; onClose: () => void }) {
                 <Input type="number" min={0} value={newPrice || ""} onChange={(e) => setNewPrice(parseInt(e.target.value) || 0)} className="bg-white" />
               </div>
             </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <div>
+                <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">1-person rate ₹/night</label>
+                <Input type="number" min={0} value={newPriceSingle || ""} onChange={(e) => setNewPriceSingle(parseInt(e.target.value) || 0)} placeholder="same as 2-person" className="bg-white" />
+              </div>
+              <div>
+                <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">+1 Adult ₹/night</label>
+                <Input type="number" min={0} value={newExtraAdult || ""} onChange={(e) => setNewExtraAdult(parseInt(e.target.value) || 0)} placeholder="0 = free" className="bg-white" />
+              </div>
+              <div>
+                <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">+1 Child ₹/night</label>
+                <Input type="number" min={0} value={newExtraChild || ""} onChange={(e) => setNewExtraChild(parseInt(e.target.value) || 0)} placeholder="0 = free" className="bg-white" />
+              </div>
+            </div>
             <div className="mt-3 grid gap-3">
               <div>
                 <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Short description</label>
@@ -621,14 +652,28 @@ function PlansManager({ room, onClose }: { room: any; onClose: () => void }) {
                   <div key={p.id} className={`rounded-2xl border bg-white p-4 ${p.isActive ? "border-charcoal/10" : "border-charcoal/10 opacity-60"}`}>
                     {isEditing && editForm ? (
                       <div className="space-y-3">
-                        <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
+                        <div className="grid gap-3 sm:grid-cols-2">
                           <div>
                             <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Plan name</label>
                             <Input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="bg-white" />
                           </div>
                           <div>
-                            <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Price ₹/night</label>
+                            <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Price ₹/night (2 persons)</label>
                             <Input type="number" min={0} value={editForm.pricePerNight} onChange={(e) => setEditForm({ ...editForm, pricePerNight: parseInt(e.target.value) || 0 })} className="bg-white" />
+                          </div>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          <div>
+                            <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">1-person rate ₹/night</label>
+                            <Input type="number" min={0} value={editForm.priceSingle || ""} onChange={(e) => setEditForm({ ...editForm, priceSingle: parseInt(e.target.value) || 0 })} placeholder="same as 2-person" className="bg-white" />
+                          </div>
+                          <div>
+                            <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">+1 Adult ₹/night</label>
+                            <Input type="number" min={0} value={editForm.extraAdultPrice || ""} onChange={(e) => setEditForm({ ...editForm, extraAdultPrice: parseInt(e.target.value) || 0 })} placeholder="0 = free" className="bg-white" />
+                          </div>
+                          <div>
+                            <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">+1 Child ₹/night</label>
+                            <Input type="number" min={0} value={editForm.extraChildPrice || ""} onChange={(e) => setEditForm({ ...editForm, extraChildPrice: parseInt(e.target.value) || 0 })} placeholder="0 = free" className="bg-white" />
                           </div>
                         </div>
                         <div>
@@ -673,7 +718,16 @@ function PlansManager({ room, onClose }: { room: any; onClose: () => void }) {
                           </div>
                           <div className="text-right">
                             <div className="font-serif text-base font-bold text-teal">₹{p.pricePerNight.toLocaleString("en-IN")}</div>
-                            <div className="font-display text-[9px] uppercase tracking-wider text-charcoal-soft">per night</div>
+                            <div className="font-display text-[9px] uppercase tracking-wider text-charcoal-soft">per night · 2 persons</div>
+                            {(p.priceSingle && p.priceSingle > 0 && p.priceSingle !== p.pricePerNight) && (
+                              <div className="font-display text-[9px] text-charcoal-soft">1 person ₹{p.priceSingle.toLocaleString("en-IN")}</div>
+                            )}
+                            {(p.extraAdultPrice ?? 0) > 0 && (
+                              <div className="font-display text-[9px] text-charcoal-soft">+1 adult ₹{(p.extraAdultPrice || 0).toLocaleString("en-IN")}</div>
+                            )}
+                            {(p.extraChildPrice ?? 0) > 0 && (
+                              <div className="font-display text-[9px] text-charcoal-soft">+1 child ₹{(p.extraChildPrice || 0).toLocaleString("en-IN")}</div>
+                            )}
                           </div>
                         </div>
                         <div className="mt-3 flex items-center justify-between border-t border-charcoal/10 pt-2">
@@ -701,7 +755,7 @@ function PlansManager({ room, onClose }: { room: any; onClose: () => void }) {
           )}
 
           <p className="font-display text-[10px] leading-relaxed text-charcoal-soft/70">
-            Tip: set EP close to the room's base price so "from ₹" stays honest. Day-wise (festival/weekend) pricing for each plan is managed in Inventory → Calendar.
+            Tip: set EP close to the room's base price so "from ₹" stays honest. 1-person rate applies when a guest books solo; +Adult/+Child apply per extra guest beyond 2 adults. Day-wise (festival/weekend) pricing for each plan is managed in Inventory → Plan rate calendar.
           </p>
         </div>
       </div>

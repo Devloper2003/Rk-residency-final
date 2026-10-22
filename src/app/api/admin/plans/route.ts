@@ -9,9 +9,14 @@ export const dynamic = "force-dynamic";
  * Admin CRUD for OTA-style rate plans (EP / CP / MAP / AP) per room.
  *
  * GET    /api/admin/plans?roomId=...   → { plans } (ALL plans incl. inactive)
- * POST   { roomId, code, name, description?, inclusions[], pricePerNight, sortOrder?, isActive? }
+ * POST   { roomId, code, name, description?, inclusions[], pricePerNight,
+ *          priceSingle?, extraAdultPrice?, extraChildPrice?, sortOrder?, isActive? }
  * PATCH  { id, ...fields }
  * DELETE /api/admin/plans?id=...
+ *
+ * Occupancy pricing (Phase 6): pricePerNight = standard 2-person rate;
+ * priceSingle = 1-person rate (null/0 = same as double); extraAdultPrice /
+ * extraChildPrice = per-night add-ons beyond 2 adults / per child.
  */
 
 const planBody = z.object({
@@ -20,6 +25,9 @@ const planBody = z.object({
   description: z.string().trim().max(200).optional().nullable(),
   inclusions: z.array(z.string().trim().min(1).max(60)).max(10).default([]),
   pricePerNight: z.number().int().min(0).max(1_000_000),
+  priceSingle: z.number().int().min(0).max(1_000_000).nullable().optional(),
+  extraAdultPrice: z.number().int().min(0).max(1_000_000).optional(),
+  extraChildPrice: z.number().int().min(0).max(1_000_000).optional(),
   sortOrder: z.number().int().min(0).max(99).optional(),
   isActive: z.boolean().optional(),
 });
@@ -71,6 +79,14 @@ export async function POST(req: Request) {
     const dupe = await db.ratePlan.findFirst({ where: { roomId, code: parsed.data.code } });
     if (dupe) return NextResponse.json({ error: `Plan "${parsed.data.code}" already exists for this room` }, { status: 409 });
 
+    // 1-person rate: 0/empty/absent → null (means "same as the double rate").
+    const singleRate =
+      parsed.data.priceSingle !== undefined &&
+      parsed.data.priceSingle !== null &&
+      parsed.data.priceSingle > 0
+        ? parsed.data.priceSingle
+        : null;
+
     const plan = await db.ratePlan.create({
       data: {
         roomId,
@@ -79,6 +95,9 @@ export async function POST(req: Request) {
         description: parsed.data.description || null,
         inclusions: JSON.stringify(parsed.data.inclusions),
         pricePerNight: parsed.data.pricePerNight,
+        priceSingle: singleRate,
+        extraAdultPrice: parsed.data.extraAdultPrice ?? 0,
+        extraChildPrice: parsed.data.extraChildPrice ?? 0,
         sortOrder: parsed.data.sortOrder ?? 0,
         isActive: parsed.data.isActive ?? true,
       },
@@ -90,7 +109,10 @@ export async function POST(req: Request) {
         action: "RATE_PLAN_CREATED",
         entity: "RatePlan",
         entityId: plan.id,
-        details: `${parsed.data.code} — ${parsed.data.name} @ ₹${parsed.data.pricePerNight}/night`,
+        details: `${parsed.data.code} — ${parsed.data.name} @ ₹${parsed.data.pricePerNight}/night (2p)` +
+          (plan.priceSingle ? ` · ₹${plan.priceSingle}/night (1p)` : "") +
+          (plan.extraAdultPrice ? ` · +₹${plan.extraAdultPrice}/adult` : "") +
+          (plan.extraChildPrice ? ` · +₹${plan.extraChildPrice}/child` : ""),
       },
     });
 
@@ -117,6 +139,10 @@ export async function PATCH(req: Request) {
     const data: Record<string, unknown> = { ...parsed.data };
     if (typeof parsed.data.code === "string") data.code = parsed.data.code.toUpperCase();
     if (Array.isArray(parsed.data.inclusions)) data.inclusions = JSON.stringify(parsed.data.inclusions);
+    // priceSingle: 0/empty → null (same as double rate)
+    if (parsed.data.priceSingle !== undefined && parsed.data.priceSingle !== null && parsed.data.priceSingle <= 0) {
+      data.priceSingle = null;
+    }
     delete data.id;
     delete data.roomId;
 

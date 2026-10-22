@@ -24,7 +24,10 @@ type PlanInfo = {
   name: string;
   description: string | null;
   inclusions: string[];
-  pricePerNight: number;
+  pricePerNight: number; // standard 2-person rate
+  priceSingle: number; // 1-person rate (falls back to double when unset)
+  extraAdultPrice: number;
+  extraChildPrice: number;
   sortOrder: number;
 };
 type RoomWithPlans = Room & { plans?: PlanInfo[] };
@@ -48,7 +51,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [selectedRoomId, setSelectedRoomId] = useState<string>("");
   const [selectedPlanId, setSelectedPlanId] = useState<string>("");
-  const [dayRates, setDayRates] = useState<{ nights: NightRate[]; subtotal: number } | null>(null);
+  const [dayRates, setDayRates] = useState<{ nights: NightRate[]; subtotal: number; closedDates: string[] } | null>(null);
   const [guests, setGuests] = useState({ adults: 2, children: 0 });
   const [contact, setContact] = useState({ name: "", email: "", phone: "", requests: "" });
   const [paymentMethod, setPaymentMethod] = useState<"RAZORPAY" | "STRIPE" | "PAY_AT_HOTEL">("RAZORPAY");
@@ -124,8 +127,9 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
     }
   }, [selectedRoom, selectedPlanId]);
 
-  // Fetch the day-wise effective rates for the chosen plan + dates
-  // (festival surge / weekend pricing set by the admin in the calendar).
+  // Fetch the day-wise effective rates for the chosen plan + dates + OCCUPANCY
+  // (festival surge / weekend pricing and 1-person vs 2-person rates set by
+  // the admin in the rate calendar).
   useEffect(() => {
     if (!open || !selectedRoomId || !selectedPlanId || !dateRange.from || !dateRange.to) {
       setDayRates(null);
@@ -134,12 +138,12 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
     let cancelled = false;
     const ci = dateRange.from.toISOString().slice(0, 10);
     const co = dateRange.to.toISOString().slice(0, 10);
-    fetch(`/api/rooms/rates?roomId=${selectedRoomId}&planId=${selectedPlanId}&checkIn=${ci}&checkOut=${co}`)
+    fetch(`/api/rooms/rates?roomId=${selectedRoomId}&planId=${selectedPlanId}&checkIn=${ci}&checkOut=${co}&adults=${guests.adults}&children=${guests.children}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (!cancelled && d && d.ok) setDayRates({ nights: d.nights, subtotal: d.subtotal }); })
+      .then((d) => { if (!cancelled && d && d.ok) setDayRates({ nights: d.nights, subtotal: d.subtotal, closedDates: d.closedDates || [] }); })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [open, selectedRoomId, selectedPlanId, dateRange.from, dateRange.to]);
+  }, [open, selectedRoomId, selectedPlanId, dateRange.from, dateRange.to, guests.adults, guests.children]);
 
   const nights = useMemo(() => {
     if (!dateRange.from || !dateRange.to) return 0;
@@ -188,23 +192,35 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
 
   const pricing = useMemo(() => {
     if (!selectedRoom || nights === 0) return null;
-    const perNight = selectedPlan ? selectedPlan.pricePerNight : selectedRoom.basePrice;
+    // Occupancy-adjusted nightly base: 1 adult → single rate, 2+ → double,
+    // plus per-night extras for adults beyond 2 and for children.
+    const extrasPerNight = selectedPlan
+      ? Math.max(0, guests.adults - 2) * (selectedPlan.extraAdultPrice || 0) + guests.children * (selectedPlan.extraChildPrice || 0)
+      : 0;
+    const planRoomRate = selectedPlan
+      ? guests.adults <= 1
+        ? Math.min(selectedPlan.priceSingle || selectedPlan.pricePerNight, selectedPlan.pricePerNight)
+        : selectedPlan.pricePerNight
+      : selectedRoom.basePrice;
+    const perNight = planRoomRate + extrasPerNight;
+    const extrasTotal = extrasPerNight * nights;
     const subtotal = dayRates ? dayRates.subtotal : perNight * nights;
     const discountAmt = discountInfo ? Math.round(subtotal * (discountInfo.pct / 100)) : 0;
     const subtotalAfterDiscount = subtotal - discountAmt;
     const taxes = Math.round(subtotalAfterDiscount * GST_RATE);
     const total = subtotalAfterDiscount + taxes;
     const hasDayRates = !!dayRates && dayRates.nights.some((n) => n.override);
+    const closedDates = dayRates?.closedDates || [];
     return {
       subtotal, discountAmt, subtotalAfterDiscount, taxes, total,
-      perNight, hasDayRates,
+      perNight, hasDayRates, extrasTotal, closedDates, planClosed: closedDates.length > 0,
       planName: selectedPlan?.name || null,
       planCode: selectedPlan?.code || null,
       discountPct: discountInfo?.pct || 0,
     };
-  }, [selectedRoom, selectedPlan, dayRates, nights, discountInfo]);
+  }, [selectedRoom, selectedPlan, dayRates, nights, discountInfo, guests.adults, guests.children]);
 
-  const canProceedDates = !!dateRange.from && !!dateRange.to && !!selectedRoomId && nights > 0;
+  const canProceedDates = !!dateRange.from && !!dateRange.to && !!selectedRoomId && nights > 0 && !pricing?.planClosed;
   const canProceedGuests =
     contact.name.length > 1 &&
     /^\S+@\S+\.\S+$/.test(contact.email) &&
@@ -510,6 +526,8 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
                       <div className="grid gap-2 sm:grid-cols-2">
                         {selectedRoom.plans.map((p) => {
                           const sel = p.id === selectedPlanId;
+                          const single = p.priceSingle || p.pricePerNight;
+                          const soloDeal = single < p.pricePerNight;
                           return (
                             <button
                               key={p.id}
@@ -531,6 +549,13 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
                                 </span>
                               </div>
                               <div className="mt-1.5 font-display text-xs font-semibold text-charcoal">{p.name}</div>
+                              {/* Occupancy rates — 1 person can be cheaper than 2 */}
+                              <div className="mt-1 flex flex-wrap gap-x-3 font-display text-[10px] text-charcoal-soft">
+                                <span>2 guests ₹{p.pricePerNight.toLocaleString("en-IN")}</span>
+                                {soloDeal && <span className="font-semibold text-teal">1 guest ₹{single.toLocaleString("en-IN")}</span>}
+                                {p.extraAdultPrice > 0 && <span>+1 adult ₹{p.extraAdultPrice.toLocaleString("en-IN")}</span>}
+                                {p.extraChildPrice > 0 && <span>+1 child ₹{p.extraChildPrice.toLocaleString("en-IN")}</span>}
+                              </div>
                               {p.inclusions.length > 0 && (
                                 <div className="mt-0.5 font-display text-[10px] leading-relaxed text-charcoal-soft">
                                   {p.inclusions.join(" · ")}
@@ -559,27 +584,45 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
                           <div className="mb-1 flex items-center gap-1.5">
                             <span className="rounded bg-teal px-1.5 py-0.5 font-display text-[9px] font-bold tracking-wider text-ivory">{pricing.planCode}</span>
                             <span className="font-display text-xs text-charcoal">{pricing.planName}</span>
+                            <span className="font-display text-[10px] text-charcoal-soft">
+                              · {guests.adults} {guests.adults === 1 ? "adult" : "adults"}{guests.children > 0 ? ` · ${guests.children} ${guests.children === 1 ? "child" : "children"}` : ""}
+                            </span>
                           </div>
                         )}
-                        <Row
-                          label={pricing.hasDayRates ? "Nightly rates (day-wise)" : `₹${pricing.perNight.toLocaleString("en-IN")} × ${nights}`}
-                          value={`₹${pricing.subtotal.toLocaleString("en-IN")}`}
-                        />
-                        {pricing.discountAmt > 0 && (
+                        {pricing.planClosed ? (
+                          <div className="rounded-xl border border-marsala/30 bg-marsala/5 p-3 font-display text-xs text-marsala">
+                            This plan is closed by the hotel for {pricing.closedDates.length === 1 ? "one of your nights" : `${pricing.closedDates.length} of your nights`}
+                            {pricing.closedDates.length > 0 && ` (${pricing.closedDates.map((d) => new Date(d + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" })).join(", ")})`}. Please pick another plan or change your dates.
+                          </div>
+                        ) : (
+                          <Row
+                            label={pricing.hasDayRates ? "Nightly rates (day-wise)" : `₹${pricing.perNight.toLocaleString("en-IN")} × ${nights}`}
+                            value={`₹${pricing.subtotal.toLocaleString("en-IN")}`}
+                          />
+                        )}
+                        {!pricing.planClosed && pricing.extrasTotal > 0 && (
+                          <Row
+                            label={`Extra guests (${Math.max(0, guests.adults - 2) > 0 ? `${guests.adults - 2} adult${guests.adults - 2 > 1 ? "s" : ""}` : ""}${Math.max(0, guests.adults - 2) > 0 && guests.children > 0 ? " + " : ""}${guests.children > 0 ? `${guests.children} child${guests.children > 1 ? "ren" : ""}` : ""})`}
+                            value={`₹${pricing.extrasTotal.toLocaleString("en-IN")}`}
+                          />
+                        )}
+                        {!pricing.planClosed && pricing.discountAmt > 0 && (
                           <Row label={`Discount (${pricing.discountPct}%)`} value={`-₹${pricing.discountAmt.toLocaleString("en-IN")}`} />
                         )}
-                        <Row label="GST (5%)" value={`₹${pricing.taxes.toLocaleString("en-IN")}`} />
-                        {pricing.hasDayRates && (
+                        {!pricing.planClosed && <Row label="GST (5%)" value={`₹${pricing.taxes.toLocaleString("en-IN")}`} />}
+                        {!pricing.planClosed && pricing.hasDayRates && (
                           <div className="font-display text-[10px] text-charcoal-soft/70">
                             Includes festival / weekend day-wise rates set by the hotel.
                           </div>
                         )}
-                        <div className="mt-2 flex items-center justify-between border-t border-charcoal/10 pt-2">
-                          <span className="font-serif text-base font-semibold text-charcoal">Total</span>
-                          <span className="font-serif text-xl font-bold text-teal">
-                            ₹{pricing.total.toLocaleString("en-IN")}
-                          </span>
-                        </div>
+                        {!pricing.planClosed && (
+                          <div className="mt-2 flex items-center justify-between border-t border-charcoal/10 pt-2">
+                            <span className="font-serif text-base font-semibold text-charcoal">Total</span>
+                            <span className="font-serif text-xl font-bold text-teal">
+                              ₹{pricing.total.toLocaleString("en-IN")}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -744,6 +787,11 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
                           label={pricing.planCode ? `Room subtotal · ${pricing.planCode} ${pricing.planName || ""}` : "Room subtotal"}
                           value={`₹${pricing.subtotal.toLocaleString("en-IN")}`}
                         />
+                        {pricing.extrasTotal > 0 && (
+                          <div className="font-display text-[10px] text-charcoal-soft/70">
+                            Includes ₹{pricing.extrasTotal.toLocaleString("en-IN")} extra-guest charges ({guests.adults} adults{guests.children > 0 ? ` · ${guests.children} children` : ""}).
+                          </div>
+                        )}
                         {pricing.discountAmt > 0 && (
                           <Row label={`Discount (${pricing.discountPct}%)`} value={`-₹${pricing.discountAmt.toLocaleString("en-IN")}`} />
                         )}

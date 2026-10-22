@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "prebuild": "node scripts/patch-pdfkit-fonts.cjs",
-    "build": "prisma generate && next build",
+    "build": "prisma db push --skip-generate && prisma generate && next build",
     "postinstall": "prisma generate && node scripts/patch-pdfkit-fonts.cjs",
     "start": "next start",
     "lint": "eslint .",

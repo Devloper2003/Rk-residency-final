@@ -110,12 +110,15 @@ export function RoomDetailPage({
   const gallery = images.length > 0 ? images : ["/images/heritage-room.webp"];
 
   // OTA-style rate plans: "from" price = the cheapest sellable option.
+  // With occupancy pricing, a 1-person rate can be lower than the double rate,
+  // so "from ₹" considers each plan's single rate too.
   const planList = plans;
+  const planMin = (p: PublicPlan) => Math.min(p.priceSingle || p.pricePerNight, p.pricePerNight);
   const cheapestPlan = planList.length
-    ? planList.reduce((a, b) => (a.pricePerNight <= b.pricePerNight ? a : b))
+    ? planList.reduce((a, b) => (planMin(a) <= planMin(b) ? a : b))
     : null;
   const fromPrice = cheapestPlan
-    ? Math.min(cheapestPlan.pricePerNight, room.basePrice)
+    ? Math.min(planMin(cheapestPlan), room.basePrice)
     : room.basePrice;
 
   const nextImage = () => setActiveImage((i) => (i + 1) % gallery.length);
@@ -255,6 +258,19 @@ export function RoomDetailPage({
               const isCheapest = cheapestPlan && p.id === cheapestPlan.id;
               const inclusionIcon = (inc: string) =>
                 /breakfast/i.test(inc) ? Coffee : /lunch|dinner|meal/i.test(inc) ? UtensilsCrossed : Check;
+              // Occupancy rate rows — channel-manager style (x1 / x2 / +1 adult / +1 child)
+              const single = p.priceSingle || p.pricePerNight;
+              const occupancyRows: { label: string; price: number; hint: string }[] = [
+                { label: "1 Person", price: single, hint: single !== p.pricePerNight ? "solo rate" : "" },
+                { label: "2 Persons", price: p.pricePerNight, hint: "standard" },
+                ...(p.extraAdultPrice > 0
+                  ? [{ label: "Extra Adult", price: p.extraAdultPrice, hint: "per guest / night" }]
+                  : []),
+                ...(p.extraChildPrice > 0
+                  ? [{ label: "Extra Child", price: p.extraChildPrice, hint: "per child / night" }]
+                  : []),
+              ];
+              const singleIsDeal = single < p.pricePerNight;
               return (
                 <div
                   key={p.id}
@@ -267,6 +283,11 @@ export function RoomDetailPage({
                       Best value
                     </span>
                   )}
+                  {singleIsDeal && (
+                    <span className="absolute -top-3 right-6 rounded-full bg-teal px-3 py-0.5 font-display text-[10px] font-bold uppercase tracking-wider text-ivory shadow">
+                      Solo friendly
+                    </span>
+                  )}
                   <div className="flex items-start justify-between gap-3">
                     <span className="rounded-md bg-teal px-2 py-1 font-display text-xs font-bold tracking-widest text-ivory">
                       {p.code}
@@ -276,7 +297,7 @@ export function RoomDetailPage({
                         ₹{p.pricePerNight.toLocaleString("en-IN")}
                       </div>
                       <div className="font-display text-[10px] uppercase tracking-wider text-charcoal-soft">
-                        per night + 5% GST
+                        per night · 2 guests + 5% GST
                       </div>
                     </div>
                   </div>
@@ -284,8 +305,34 @@ export function RoomDetailPage({
                   {p.description && (
                     <p className="mt-1 font-display text-xs leading-relaxed text-charcoal-soft">{p.description}</p>
                   )}
+                  {/* Per-occupancy pricing — like an OTA rate grid */}
+                  <div className="mt-4 overflow-hidden rounded-2xl border border-charcoal/10">
+                    {occupancyRows.map((row, idx) => (
+                      <div
+                        key={row.label}
+                        className={`flex items-center justify-between px-3 py-2 ${
+                          idx % 2 === 0 ? "bg-ivory-deep/40" : "bg-white"
+                        } ${idx > 0 ? "border-t border-charcoal/5" : ""}`}
+                      >
+                        <span className="font-display text-xs font-medium text-charcoal">
+                          {row.label}
+                          {row.hint && (
+                            <span className="ml-1.5 text-[9px] uppercase tracking-wider text-charcoal-soft/70">
+                              {row.hint}
+                            </span>
+                          )}
+                        </span>
+                        <span className="font-serif text-sm font-bold text-charcoal">
+                          ₹{row.price.toLocaleString("en-IN")}
+                          {row.label.startsWith("Extra") && (
+                            <span className="ml-1 font-display text-[9px] font-normal uppercase tracking-wider text-charcoal-soft">/night</span>
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                   {p.inclusions.length > 0 && (
-                    <ul className="mt-4 space-y-1.5 border-t border-charcoal/10 pt-4">
+                    <ul className="mt-4 space-y-1.5">
                       {p.inclusions.map((inc) => {
                         const Icon = inclusionIcon(inc);
                         return (

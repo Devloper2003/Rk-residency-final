@@ -42,6 +42,12 @@ model Room {
  * AP = All meals (Full Board). Each plan carries its own base price so the
  * room detail page can show a plan-wise rate table exactly like OTAs.
  * A room with NO active plans simply keeps the classic single base price.
+ *
+ * Occupancy pricing (Phase 6): OTAs quote a different rate for 1 guest vs
+ * 2 guests and charge extra for additional adults/children. pricePerNight
+ * stays the standard DOUBLE (2-person) rate so all existing code keeps
+ * working; priceSingle is the 1-person rate (null = same as double), and
+ * extraAdultPrice / extraChildPrice are per-night add-ons beyond 2 adults.
  */
 model RatePlan {
   id            String   @id @default(cuid())
@@ -51,7 +57,10 @@ model RatePlan {
   name          String   // display name, e.g. "Room Only (EP)"
   description   String?  // one-line summary shown on the plan card
   inclusions    String   @default("[]") // JSON array of inclusion strings
-  pricePerNight Int      // base INR per night for this plan
+  pricePerNight Int      // standard DOUBLE-occupancy (2 persons) INR rate
+  priceSingle   Int?     // 1-person rate (null = same as pricePerNight)
+  extraAdultPrice  Int   @default(0) // per-night charge for each adult beyond 2
+  extraChildPrice  Int   @default(0) // per-night charge per child
   sortOrder     Int      @default(0)
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
@@ -65,13 +74,23 @@ model RatePlan {
  * Day-wise pricing (Phase 5): a specific price for a plan on a specific
  * calendar date (festival surge, weekend pricing, off-season discounts…).
  * No row for a date = the plan's base pricePerNight applies.
+ *
+ * Phase 6 additions: per-occupancy day overrides (priceSingle mirrors the
+ * RatePlan field; extraAdultPrice / extraChildPrice override the plan's
+ * per-night add-ons for that day) and isClosed to STOP SELLING just this
+ * plan on this day (channel-manager style 🚫) while the room itself stays
+ * open on other plans.
  */
 model PlanDayRate {
   id        String   @id @default(cuid())
   planId    String
   plan      RatePlan @relation(fields: [planId], references: [id], onDelete: Cascade)
   date      DateTime // UTC midnight of the priced calendar day
-  price     Int      // INR per night for this plan on this date
+  price     Int      // DOUBLE (2-person) INR rate for this plan on this date
+  priceSingle      Int? // 1-person rate for this day (null = plan default)
+  extraAdultPrice  Int? // per-extra-adult rate for this day (null = plan default)
+  extraChildPrice  Int? // per-child rate for this day (null = plan default)
+  isClosed  Boolean  @default(false) // true = plan not sellable this day
   note      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

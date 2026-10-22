@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { Fragment, useEffect, useState, useCallback } from "react";
 import {
   BedDouble, CalendarDays, AlertTriangle,
-  CheckCircle2, ChevronLeft, ChevronRight,
+  CheckCircle2, ChevronLeft, ChevronRight, ChevronDown,
   Plus, Eye, Lock, LockOpen, IndianRupee, Loader2, X, Save, RotateCcw,
+  Ban, User, Users, UserPlus, Baby,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,18 +30,61 @@ type GridDay = { booked: number; closed: boolean; override: number | null; sella
 type GridRoom = { id: string; name: string; slug: string; totalCount: number; badge: string | null; days: Record<string, GridDay> };
 type GridData = { startDate: string; days: number; keys: string[]; rooms: GridRoom[] };
 
-/* ── Day-wise pricing (Phase 5) — OTA-style per-plan per-date rates ── */
-type PricingPlan = { id: string; roomId: string; roomName: string; code: string; name: string; pricePerNight: number };
-type DayRateRow = { id: string; date: string; price: number; note: string | null };
+/* ── Plan rate calendar (Phase 6) — OTA-style day × plan × occupancy matrix ── */
+type PlanLite = {
+  id: string; roomId: string; roomName: string; code: string; name: string;
+  pricePerNight: number; priceSingle: number | null;
+  extraAdultPrice: number; extraChildPrice: number;
+  isActive: boolean; sortOrder: number;
+};
+type DayRateRow = {
+  id: string; date: string; price: number;
+  priceSingle: number | null; extraAdultPrice: number | null; extraChildPrice: number | null;
+  isClosed: boolean; note: string | null;
+};
+type OccKind = "single" | "double" | "adult" | "child";
 
-function nextKeys(from: string, count: number): string[] {
+/** UTC-anchored ISO day keys — no timezone drift. */
+function dayKeys(startISO: string, count: number): string[] {
   const keys: string[] = [];
-  const d = new Date(from + "T00:00:00");
+  const d = new Date(startISO + "T00:00:00Z");
   for (let i = 0; i < count; i++) {
     keys.push(d.toISOString().slice(0, 10));
-    d.setDate(d.getDate() + 1);
+    d.setUTCDate(d.getUTCDate() + 1);
   }
   return keys;
+}
+
+/** Effective rate for one occupancy kind: day override first, plan base fallback. */
+function effRate(plan: PlanLite, row: DayRateRow | undefined, kind: OccKind): { value: number; isOverride: boolean } {
+  const base =
+    kind === "double" ? plan.pricePerNight
+    : kind === "single" ? (plan.priceSingle && plan.priceSingle > 0 ? plan.priceSingle : plan.pricePerNight)
+    : kind === "adult" ? (plan.extraAdultPrice || 0)
+    : (plan.extraChildPrice || 0);
+  if (!row) return { value: base, isOverride: false };
+  const o =
+    kind === "double" ? row.price
+    : kind === "single" ? row.priceSingle
+    : kind === "adult" ? row.extraAdultPrice
+    : row.extraChildPrice;
+  if (o != null && o > 0) return { value: o, isOverride: true };
+  return { value: base, isOverride: false };
+}
+
+const OCC_ROWS: { kind: OccKind; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
+  { kind: "single", label: "1 Person", Icon: User },
+  { kind: "double", label: "2 Persons", Icon: Users },
+  { kind: "adult", label: "+1 Adult", Icon: UserPlus },
+  { kind: "child", label: "+1 Child", Icon: Baby },
+];
+
+function fmtDayHeader(key: string) {
+  const d = new Date(key + "T00:00:00Z");
+  return {
+    weekday: d.toLocaleDateString("en-IN", { weekday: "short", timeZone: "UTC" }),
+    day: d.toLocaleDateString("en-IN", { day: "numeric", timeZone: "UTC" }),
+  };
 }
 
 export function InventoryTab() {
@@ -55,18 +99,26 @@ export function InventoryTab() {
   const [grid, setGrid] = useState<GridData | null>(null);
   const [gridSaving, setGridSaving] = useState<string | null>(null); // "roomId:date"
 
-  // Day-wise pricing state
-  const [plans, setPlans] = useState<PricingPlan[]>([]);
-  const [pricingPlanId, setPricingPlanId] = useState("");
-  const [priceStrip, setPriceStrip] = useState<Record<string, DayRateRow>>({});
-  const [priceLoading, setPriceLoading] = useState(false);
-  const [priceModalDate, setPriceModalDate] = useState<string | null>(null);
+  // ── Plan rate calendar state (OTA matrix) ──
+  const [plans, setPlans] = useState<PlanLite[]>([]);
+  const [matrixRoomId, setMatrixRoomId] = useState("");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [rateMaps, setRateMaps] = useState<Record<string, Record<string, DayRateRow>>>({});
+  const [matrixLoading, setMatrixLoading] = useState(false);
+  const [savingCell, setSavingCell] = useState<string | null>(null); // "planId:date" quick toggles
+  const [editor, setEditor] = useState<{ planId: string; date: string } | null>(null);
+  // Bulk tools
+  const [bulkPlanSel, setBulkPlanSel] = useState("all");
   const [bulkFrom, setBulkFrom] = useState(() => new Date().toISOString().slice(0, 10));
   const [bulkTo, setBulkTo] = useState(() => {
     const d = new Date(); d.setDate(d.getDate() + 13);
     return d.toISOString().slice(0, 10);
   });
-  const [bulkPrice, setBulkPrice] = useState(0);
+  const [bulkDouble, setBulkDouble] = useState(0);
+  const [bulkSingle, setBulkSingle] = useState(0);
+  const [bulkAdult, setBulkAdult] = useState(0);
+  const [bulkChild, setBulkChild] = useState(0);
+  const [bulkClosed, setBulkClosed] = useState<"any" | "open" | "closed">("any");
   const [bulkWeekend, setBulkWeekend] = useState(false);
   const [bulkSaving, setBulkSaving] = useState(false);
 
@@ -89,58 +141,100 @@ export function InventoryTab() {
 
   useEffect(() => { const c = load(); return c; }, [load]);
 
-  // Load active rate plans once (cross-room) for the pricing panel.
+  // Load ALL rate plans once (cross-room, incl. occupancy rates) for the matrix.
   useEffect(() => {
     let cancelled = false;
     adminFetch("/api/admin/plans").then((d: any) => {
       if (cancelled || !d) return;
-      const list: PricingPlan[] = (d.plans || []).map((p: any) => ({
-        id: p.id, roomId: p.roomId, roomName: p.roomName || "", code: p.code, name: p.name, pricePerNight: p.pricePerNight,
+      const list: PlanLite[] = (d.plans || []).map((p: any) => ({
+        id: p.id, roomId: p.roomId, roomName: p.roomName || "", code: p.code, name: p.name,
+        pricePerNight: p.pricePerNight, priceSingle: p.priceSingle ?? null,
+        extraAdultPrice: p.extraAdultPrice || 0, extraChildPrice: p.extraChildPrice || 0,
+        isActive: p.isActive, sortOrder: p.sortOrder || 0,
       }));
       setPlans(list);
-      if (list.length > 0) setPricingPlanId((cur) => (cur && list.some((p) => p.id === cur) ? cur : list[0].id));
+      setMatrixRoomId((cur) => (cur && list.some((p) => p.roomId === cur) ? cur : list[0]?.roomId || ""));
     }).catch(() => {});
     return () => { cancelled = true; };
   }, []);
 
-  // Load the 14-day price strip for the selected plan.
-  const loadPriceStrip = useCallback(async () => {
-    if (!pricingPlanId) { setPriceStrip({}); return; }
-    setPriceLoading(true);
+  const roomPlans = plans.filter((p) => p.roomId === matrixRoomId);
+  const planRooms = (() => {
+    const map = new Map<string, string>();
+    for (const p of plans) if (!map.has(p.roomId)) map.set(p.roomId, p.roomName);
+    return Array.from(map.entries()).map(([roomId, roomName]) => ({
+      roomId, roomName, count: plans.filter((p) => p.roomId === roomId).length,
+    }));
+  })();
+  const keys = dayKeys(viewDate, 14);
+
+  /** Load the 14-day override rows for every plan of the selected room. */
+  const loadMatrix = useCallback(async () => {
+    if (!matrixRoomId) { setRateMaps({}); return; }
+    const targets = plans.filter((p) => p.roomId === matrixRoomId);
+    if (targets.length === 0) { setRateMaps({}); return; }
+    setMatrixLoading(true);
+    const end = dayKeys(viewDate, 14)[13];
     try {
-      const end = new Date(viewDate + "T00:00:00");
-      end.setDate(end.getDate() + 13);
-      const d = await adminFetch(`/api/admin/plans/day-rates?planId=${pricingPlanId}&startDate=${viewDate}&endDate=${end.toISOString().slice(0, 10)}`);
-      if (d && !d.error) {
-        const map: Record<string, DayRateRow> = {};
-        for (const r of d.rates || []) map[r.date] = r;
-        setPriceStrip(map);
+      const results = await Promise.all(targets.map(async (p) => {
+        try {
+          const d = await adminFetch(`/api/admin/plans/day-rates?planId=${p.id}&startDate=${viewDate}&endDate=${end}`);
+          const map: Record<string, DayRateRow> = {};
+          for (const r of d?.rates || []) map[r.date] = r;
+          return [p.id, map] as const;
+        } catch { return [p.id, {}] as const; }
+      }));
+      setRateMaps(Object.fromEntries(results));
+    } finally { setMatrixLoading(false); }
+  }, [matrixRoomId, plans, viewDate]);
+
+  useEffect(() => { loadMatrix(); }, [loadMatrix]);
+
+  /** Quick open/close a plan for one day (channel-manager 🚫). */
+  const quickToggleClosed = async (plan: PlanLite, date: string, currentlyClosed: boolean) => {
+    const key = `${plan.id}:${date}`;
+    setSavingCell(key);
+    try {
+      const r = await adminFetch("/api/admin/plans/day-rates", {
+        method: "POST",
+        body: JSON.stringify({ planId: plan.id, date, isClosed: !currentlyClosed }),
+      });
+      if (r && !r.error) {
+        toast.success(`${plan.code} ${currentlyClosed ? "reopened" : "closed"} for ${date}`, {
+          description: currentlyClosed ? "Plan reopened — sellable again." : "Plan closed — guests cannot book it for this day.",
+        });
+        loadMatrix();
       }
-    } catch { /* strip is auxiliary */ }
-    finally { setPriceLoading(false); }
-  }, [pricingPlanId, viewDate]);
+    } finally { setSavingCell(null); }
+  };
 
-  useEffect(() => { loadPriceStrip(); }, [loadPriceStrip]);
-
-  const pricingPlan = plans.find((p) => p.id === pricingPlanId) || null;
-  const priceKeys = nextKeys(viewDate, 14);
-
-  /** Bulk-set or bulk-clear day rates for the selected plan. */
+  /** Bulk set / reset for a date range (one plan or every plan of the room). */
   const applyBulk = async (reset: boolean) => {
-    if (!pricingPlan) return;
-    if (!reset && (!bulkPrice || bulkPrice <= 0)) { toast.error("Enter a price per night first"); return; }
+    if (!matrixRoomId) return;
+    if (!reset) {
+      const anyValue = bulkDouble > 0 || bulkSingle > 0 || bulkAdult > 0 || bulkChild > 0 || bulkClosed !== "any";
+      if (!anyValue) { toast.error("Enter at least one rate (or choose open/close)"); return; }
+    }
     if (new Date(bulkTo) < new Date(bulkFrom)) { toast.error("'To' must be on or after 'From'"); return; }
     setBulkSaving(true);
     try {
-      const res = await adminFetch("/api/admin/plans/day-rates", {
-        method: "POST",
-        body: JSON.stringify(reset
-          ? { planId: pricingPlan.id, from: bulkFrom, to: bulkTo, reset: true }
-          : { planId: pricingPlan.id, from: bulkFrom, to: bulkTo, price: bulkPrice, onlyDays: bulkWeekend ? "weekend" : "all" }),
-      });
+      const body: Record<string, unknown> = {
+        from: bulkFrom, to: bulkTo,
+        onlyDays: bulkWeekend ? "weekend" : "all",
+      };
+      if (bulkPlanSel === "all") body.roomId = matrixRoomId; else body.planId = bulkPlanSel;
+      if (reset) body.reset = true;
+      else {
+        if (bulkDouble > 0) body.price = bulkDouble;
+        if (bulkSingle > 0) body.priceSingle = bulkSingle;
+        if (bulkAdult > 0) body.extraAdultPrice = bulkAdult;
+        if (bulkChild > 0) body.extraChildPrice = bulkChild;
+        if (bulkClosed !== "any") body.isClosed = bulkClosed === "closed";
+      }
+      const res = await adminFetch("/api/admin/plans/day-rates", { method: "POST", body: JSON.stringify(body) });
       if (res && !res.error) {
-        toast.success(res.reset ? `Cleared overrides for ${res.count} days` : `Set ₹${bulkPrice}/night for ${res.count} days${bulkWeekend ? " (weekends)" : ""}`);
-        await loadPriceStrip();
+        toast.success(res.reset ? `Cleared overrides for ${res.count} plan-days` : `Updated ${res.count} plan-days`);
+        loadMatrix();
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Bulk update failed");
@@ -232,7 +326,7 @@ export function InventoryTab() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-serif text-2xl font-bold text-charcoal">Room Inventory</h2>
-          <p className="font-display text-xs text-charcoal-soft">Real-time room availability &amp; occupancy management</p>
+          <p className="font-display text-xs text-charcoal-soft">Real-time room availability, day-wise pricing &amp; OTA-style rate calendar</p>
         </div>
         <button onClick={() => setShowBookingModal(true)} className="inline-flex items-center gap-1.5 rounded-full bg-teal px-4 py-2 font-display text-xs font-semibold text-ivory hover:bg-teal-deep">
           <Plus className="h-3.5 w-3.5" /> Manual Booking
@@ -411,83 +505,187 @@ export function InventoryTab() {
         </div>
       )}
 
-      {/* Day-wise pricing (Phase 5) — OTA-style per-plan rates */}
+      {/* ===== Plan rate calendar — OTA-style day × plan × occupancy matrix (Phase 6) ===== */}
       <div className="rounded-2xl border border-charcoal/10 bg-white p-4">
-        <div className="mb-3">
-          <h3 className="font-serif text-sm font-semibold text-charcoal">Day-wise pricing (OTA rates)</h3>
-          <p className="mt-0.5 font-display text-[11px] text-charcoal-soft">
-            Set a different price for any day — festival surge, weekend rates, offers. Guests see these exact prices at checkout.
-          </p>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="font-serif text-sm font-semibold text-charcoal">Plan rate calendar — day-wise pricing &amp; open/close</h3>
+            <p className="mt-0.5 font-display text-[11px] text-charcoal-soft">
+              Channel-manager style: click a price to edit 1-person / 2-person / extra-guest rates for that day — or the stop button to open/close a plan. Guests see these exact prices.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 font-display text-[10px] text-charcoal-soft">
+            <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-teal/30" /> plan base rate</span>
+            <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-gold/50" /> custom day rate</span>
+            <span className="inline-flex items-center gap-1"><Ban className="h-3 w-3 text-marsala" /> plan closed</span>
+          </div>
         </div>
 
         {plans.length === 0 ? (
           <div className="rounded-xl border border-dashed border-charcoal/15 bg-ivory-deep/20 p-6 text-center">
             <p className="font-display text-xs text-charcoal-soft">
-              No rate plans yet. Create EP / CP / MAP / AP plans in <b>Rooms → Plans</b> first — then day-wise pricing can be set per plan here.
+              No rate plans yet. Create EP / CP / MAP / AP plans in <b>Rooms → Plans</b> first — then this calendar lets you set day-wise prices and open/close each plan.
             </p>
           </div>
         ) : (
           <>
-            {/* Plan selector pills */}
+            {/* Room selector pills */}
             <div className="mb-3 flex flex-wrap items-center gap-1.5">
-              {plans.map((p) => {
-                const sel = p.id === pricingPlanId;
+              {planRooms.map((r) => {
+                const sel = r.roomId === matrixRoomId;
                 return (
                   <button
-                    key={p.id}
-                    onClick={() => setPricingPlanId(p.id)}
+                    key={r.roomId}
+                    onClick={() => setMatrixRoomId(r.roomId)}
                     className={`rounded-full border px-3 py-1.5 font-display text-[11px] font-semibold transition-colors ${
                       sel ? "border-teal bg-teal text-ivory" : "border-charcoal/15 bg-white text-charcoal-soft hover:border-teal/40"
                     }`}
                   >
-                    {p.code} · {p.roomName} · ₹{p.pricePerNight.toLocaleString("en-IN")}
+                    {r.roomName} · {r.count} plan{r.count === 1 ? "" : "s"}
                   </button>
                 );
               })}
             </div>
 
-            {/* 14-day price strip */}
-            <div className="overflow-x-auto">
-              <div className="flex min-w-[900px] gap-1">
-                {priceKeys.map((key) => {
-                  const d = new Date(key + "T00:00:00");
-                  const row = priceStrip[key];
-                  const isOverride = !!row;
-                  const eff = row ? row.price : pricingPlan?.pricePerNight ?? 0;
-                  const isSel = key === viewDate;
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => setPriceModalDate(key)}
-                      className={`relative min-w-[60px] flex-1 rounded-lg border p-1.5 text-center transition-all ${
-                        isOverride ? "border-gold/60 bg-gold/10" : "border-charcoal/8 bg-ivory-deep/20 hover:border-teal/40"
-                      } ${isSel ? "ring-1 ring-teal" : ""}`}
-                      title={`${key} — click to edit price for ${pricingPlan?.code || "plan"}`}
-                    >
-                      <div className="font-display text-[8px] uppercase text-charcoal-soft">{d.toLocaleDateString("en-IN", { weekday: "short" })}</div>
-                      <div className="font-serif text-[11px] font-bold text-charcoal">{d.getDate()}</div>
-                      {priceLoading ? (
-                        <Loader2 className="mx-auto h-3 w-3 animate-spin text-charcoal-soft" />
-                      ) : (
-                        <div className={`font-display text-[10px] font-bold ${isOverride ? "text-gold-deep" : "text-teal"}`}>
-                          ₹{eff.toLocaleString("en-IN")}
-                        </div>
-                      )}
-                      {isOverride && <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-gold-deep" />}
-                    </button>
-                  );
-                })}
+            {matrixLoading ? (
+              <div className="flex h-24 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-teal" /></div>
+            ) : roomPlans.length === 0 ? (
+              <p className="py-4 text-center font-display text-xs text-charcoal-soft">No plans for this room.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[980px] border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="sticky left-0 z-10 bg-white px-2 py-2 text-left font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Plan</th>
+                      {keys.map((key) => {
+                        const h = fmtDayHeader(key);
+                        return (
+                          <th key={key} className={`px-0.5 py-2 text-center font-display text-[9px] uppercase tracking-wider ${key === viewDate ? "text-teal" : "text-charcoal-soft"}`}>
+                            <div>{h.weekday}</div>
+                            <div className="font-serif text-xs font-bold text-charcoal">{h.day}</div>
+                          </th>
+                        );
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {roomPlans.map((plan) => {
+                      const rates = rateMaps[plan.id] || {};
+                      const isOpen = !!expanded[plan.id];
+                      return (
+                        <Fragment key={plan.id}>
+                          {/* Plan header row — 2-person sellable rate + stop-sale toggle */}
+                          <tr className="border-t border-charcoal/10">
+                            <td className="sticky left-0 z-10 bg-ivory-deep/60 px-2 py-1.5">
+                              <button onClick={() => setExpanded((e) => ({ ...e, [plan.id]: !isOpen }))} className="flex items-center gap-1.5 text-left" title={isOpen ? "Hide 1p / 2p / extra-guest rows" : "Show 1p / 2p / extra-guest rows"}>
+                                {isOpen ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-charcoal-soft" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-charcoal-soft" />}
+                                <span className="rounded bg-teal px-1.5 py-0.5 font-display text-[9px] font-bold tracking-widest text-ivory">{plan.code}</span>
+                                <span className="font-serif text-xs font-semibold text-charcoal">{plan.name}</span>
+                                {!plan.isActive && <span className="rounded-full bg-charcoal/10 px-1.5 py-0.5 font-display text-[8px] uppercase text-charcoal-soft">hidden</span>}
+                              </button>
+                              <div className="mt-0.5 pl-5 font-display text-[9px] leading-tight text-charcoal-soft">
+                                2p ₹{plan.pricePerNight.toLocaleString("en-IN")}
+                                {plan.priceSingle ? ` · 1p ₹${plan.priceSingle.toLocaleString("en-IN")}` : ""}
+                                {plan.extraAdultPrice > 0 ? ` · +A ₹${plan.extraAdultPrice.toLocaleString("en-IN")}` : ""}
+                                {plan.extraChildPrice > 0 ? ` · +C ₹${plan.extraChildPrice.toLocaleString("en-IN")}` : ""}
+                              </div>
+                            </td>
+                            {keys.map((key) => {
+                              const row = rates[key];
+                              const closed = !!row?.isClosed;
+                              const eff = effRate(plan, row, "double");
+                              const saving = savingCell === `${plan.id}:${key}`;
+                              return (
+                                <td key={key} className="px-0.5 py-1 align-top">
+                                  <div className="flex flex-col gap-0.5">
+                                    <button
+                                      onClick={() => setEditor({ planId: plan.id, date: key })}
+                                      className={`h-7 w-full min-w-[48px] rounded-md font-serif text-[11px] font-bold transition-colors ${
+                                        closed
+                                          ? "bg-marsala/15 text-marsala/60 line-through"
+                                          : eff.isOverride
+                                            ? "bg-gold/20 text-gold-deep ring-1 ring-inset ring-gold/40"
+                                            : "bg-teal/10 text-teal hover:bg-teal hover:text-ivory"
+                                      }`}
+                                      title={`${plan.code} · ${key}\n2-person: ₹${eff.value}${eff.isOverride ? " (custom)" : " (base)"}${closed ? " · CLOSED" : ""}\nClick to edit all rates for this day`}
+                                    >
+                                      {closed ? "—" : `₹${eff.value.toLocaleString("en-IN")}`}
+                                    </button>
+                                    <button
+                                      onClick={() => quickToggleClosed(plan, key, closed)}
+                                      disabled={saving}
+                                      className={`mx-auto grid h-4 w-4 place-items-center rounded transition-colors disabled:opacity-40 ${
+                                        closed ? "bg-marsala text-ivory" : "bg-charcoal/8 text-charcoal-soft hover:bg-marsala hover:text-ivory"
+                                      }`}
+                                      title={closed ? "Plan closed this day — click to OPEN" : "Stop-sale: close this plan for this day"}
+                                    >
+                                      {saving ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Ban className="h-2.5 w-2.5" />}
+                                    </button>
+                                  </div>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                          {/* Expanded occupancy rows — 1 Person / 2 Persons / +1 Adult / +1 Child */}
+                          {isOpen && OCC_ROWS.map(({ kind, label, Icon }) => (
+                            <tr key={kind} className="border-t border-charcoal/5">
+                              <td className="sticky left-0 z-10 bg-white px-2 py-0.5 pl-7">
+                                <span className="flex items-center gap-1.5 font-display text-[10px] text-charcoal-soft">
+                                  <Icon className="h-3 w-3 text-teal/60" /> {label}
+                                </span>
+                              </td>
+                              {keys.map((key) => {
+                                const row = rates[key];
+                                const closed = !!row?.isClosed;
+                                const eff = effRate(plan, row, kind);
+                                return (
+                                  <td key={key} className="px-0.5 py-0.5">
+                                    <button
+                                      onClick={() => setEditor({ planId: plan.id, date: key })}
+                                      className={`h-6 w-full min-w-[48px] rounded-md font-display text-[10px] font-semibold transition-colors ${
+                                        closed
+                                          ? "bg-charcoal/5 text-charcoal/30"
+                                          : eff.isOverride
+                                            ? "bg-gold/15 text-gold-deep"
+                                            : "bg-white text-charcoal-soft ring-1 ring-inset ring-charcoal/8 hover:ring-teal/40"
+                                      }`}
+                                      title={`${plan.code} · ${label} · ${key}\n₹${eff.value}${eff.isOverride ? " (custom)" : " (plan base)"}${closed ? " · plan CLOSED" : ""}\nClick to edit`}
+                                    >
+                                      {closed ? "—" : eff.value > 0 ? `₹${eff.value.toLocaleString("en-IN")}` : "free"}
+                                    </button>
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-3 font-display text-[9px] text-charcoal-soft">
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-teal/40" /> plan base price</span>
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-gold/50" /> custom day price</span>
-              <span>Click any day to edit — prices apply to the selected plan</span>
-            </div>
+            )}
 
-            {/* Bulk range tools */}
+            {/* Bulk tools — date range across one plan or all plans of the room */}
             <div className="mt-3 rounded-xl border border-charcoal/10 bg-ivory-deep/20 p-3">
               <div className="mb-2 font-display text-[10px] font-semibold uppercase tracking-wider text-charcoal-soft">Bulk set — date range</div>
+              <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                <button
+                  onClick={() => setBulkPlanSel("all")}
+                  className={`rounded-full border px-2.5 py-1 font-display text-[10px] font-semibold ${bulkPlanSel === "all" ? "border-teal bg-teal text-ivory" : "border-charcoal/15 bg-white text-charcoal-soft hover:border-teal/40"}`}
+                >
+                  All plans of room
+                </button>
+                {roomPlans.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => setBulkPlanSel(p.id)}
+                    className={`rounded-full border px-2.5 py-1 font-display text-[10px] font-semibold ${bulkPlanSel === p.id ? "border-teal bg-teal text-ivory" : "border-charcoal/15 bg-white text-charcoal-soft hover:border-teal/40"}`}
+                  >
+                    {p.code}
+                  </button>
+                ))}
+              </div>
               <div className="flex flex-wrap items-end gap-2">
                 <div>
                   <label className="mb-1 block font-display text-[9px] uppercase tracking-wider text-charcoal-soft">From</label>
@@ -498,35 +696,63 @@ export function InventoryTab() {
                   <input type="date" value={bulkTo} onChange={(e) => setBulkTo(e.target.value)} className="rounded-lg border border-charcoal/10 bg-white px-2 py-1.5 font-display text-xs text-charcoal focus:border-teal focus:outline-none" />
                 </div>
                 <div>
-                  <label className="mb-1 block font-display text-[9px] uppercase tracking-wider text-charcoal-soft">Price ₹/night</label>
-                  <input type="number" min={0} value={bulkPrice || ""} onChange={(e) => setBulkPrice(parseInt(e.target.value) || 0)} placeholder="e.g. 6500" className="w-28 rounded-lg border border-charcoal/10 bg-white px-2 py-1.5 font-display text-xs text-charcoal focus:border-teal focus:outline-none" />
+                  <label className="mb-1 block font-display text-[9px] uppercase tracking-wider text-charcoal-soft">2-person ₹</label>
+                  <input type="number" min={0} value={bulkDouble || ""} onChange={(e) => setBulkDouble(parseInt(e.target.value) || 0)} placeholder="skip" className="w-20 rounded-lg border border-charcoal/10 bg-white px-2 py-1.5 font-display text-xs text-charcoal focus:border-teal focus:outline-none" />
+                </div>
+                <div>
+                  <label className="mb-1 block font-display text-[9px] uppercase tracking-wider text-charcoal-soft">1-person ₹</label>
+                  <input type="number" min={0} value={bulkSingle || ""} onChange={(e) => setBulkSingle(parseInt(e.target.value) || 0)} placeholder="skip" className="w-20 rounded-lg border border-charcoal/10 bg-white px-2 py-1.5 font-display text-xs text-charcoal focus:border-teal focus:outline-none" />
+                </div>
+                <div>
+                  <label className="mb-1 block font-display text-[9px] uppercase tracking-wider text-charcoal-soft">+1 Adult ₹</label>
+                  <input type="number" min={0} value={bulkAdult || ""} onChange={(e) => setBulkAdult(parseInt(e.target.value) || 0)} placeholder="skip" className="w-20 rounded-lg border border-charcoal/10 bg-white px-2 py-1.5 font-display text-xs text-charcoal focus:border-teal focus:outline-none" />
+                </div>
+                <div>
+                  <label className="mb-1 block font-display text-[9px] uppercase tracking-wider text-charcoal-soft">+1 Child ₹</label>
+                  <input type="number" min={0} value={bulkChild || ""} onChange={(e) => setBulkChild(parseInt(e.target.value) || 0)} placeholder="skip" className="w-20 rounded-lg border border-charcoal/10 bg-white px-2 py-1.5 font-display text-xs text-charcoal focus:border-teal focus:outline-none" />
+                </div>
+                <div>
+                  <label className="mb-1 block font-display text-[9px] uppercase tracking-wider text-charcoal-soft">Plan status</label>
+                  <select
+                    value={bulkClosed}
+                    onChange={(e) => setBulkClosed(e.target.value as "any" | "open" | "closed")}
+                    className="rounded-lg border border-charcoal/10 bg-white px-2 py-1.5 font-display text-xs text-charcoal focus:border-teal focus:outline-none"
+                  >
+                    <option value="any">— leave as is</option>
+                    <option value="open">Open (sellable)</option>
+                    <option value="closed">Closed (stop sale)</option>
+                  </select>
                 </div>
                 <label className="flex cursor-pointer items-center gap-1.5 pb-1.5 font-display text-[11px] text-charcoal">
                   <input type="checkbox" checked={bulkWeekend} onChange={(e) => setBulkWeekend(e.target.checked)} className="h-3.5 w-3.5 rounded border-charcoal/30" />
                   Weekends only
                 </label>
-                <Button onClick={() => applyBulk(false)} disabled={bulkSaving || !pricingPlan} className="rounded-full bg-teal px-4 py-1.5 text-xs text-ivory hover:bg-teal-deep">
+                <Button onClick={() => applyBulk(false)} disabled={bulkSaving || !matrixRoomId} className="rounded-full bg-teal px-4 py-1.5 text-xs text-ivory hover:bg-teal-deep">
                   {bulkSaving ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <IndianRupee className="mr-1 h-3.5 w-3.5" />} Apply
                 </Button>
-                <Button onClick={() => applyBulk(true)} disabled={bulkSaving || !pricingPlan} variant="outline" className="rounded-full border-charcoal/20 px-4 py-1.5 text-xs text-charcoal-soft hover:border-marsala/40 hover:text-marsala">
+                <Button onClick={() => applyBulk(true)} disabled={bulkSaving || !matrixRoomId} variant="outline" className="rounded-full border-charcoal/20 px-4 py-1.5 text-xs text-charcoal-soft hover:border-marsala/40 hover:text-marsala">
                   <RotateCcw className="mr-1 h-3.5 w-3.5" /> Reset range
                 </Button>
               </div>
+              <p className="mt-2 font-display text-[9px] text-charcoal-soft/70">Leave a rate blank to skip it — only the filled values are applied to every selected day.</p>
             </div>
           </>
         )}
       </div>
 
-      {/* Single-day price editor */}
-      {priceModalDate && pricingPlan && (
-        <DayPriceEditor
-          plan={pricingPlan}
-          date={priceModalDate}
-          existing={priceStrip[priceModalDate] || null}
-          onClose={() => setPriceModalDate(null)}
-          onSaved={() => { setPriceModalDate(null); loadPriceStrip(); }}
-        />
-      )}
+      {/* Single-day plan rate editor */}
+      {editor && (() => {
+        const plan = plans.find((p) => p.id === editor.planId);
+        return plan ? (
+          <PlanDayEditor
+            plan={plan}
+            date={editor.date}
+            existing={rateMaps[plan.id]?.[editor.date] || null}
+            onClose={() => setEditor(null)}
+            onSaved={() => { setEditor(null); loadMatrix(); }}
+          />
+        ) : null;
+      })()}
 
       <div className="rounded-2xl border border-charcoal/10 bg-white p-4">
         <h3 className="mb-3 font-serif text-sm font-semibold text-charcoal">7-Day Occupancy Forecast</h3>
@@ -550,45 +776,70 @@ export function InventoryTab() {
   );
 }
 
-/* ── Single-day price editor for the selected rate plan ── */
-function DayPriceEditor({ plan, date, existing, onClose, onSaved }: {
-  plan: PricingPlan;
+/* ── Single-day plan rate editor — 1p / 2p / extra-guest rates + open/close ── */
+function PlanDayEditor({ plan, date, existing, onClose, onSaved }: {
+  plan: PlanLite;
   date: string;
   existing: DayRateRow | null;
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [price, setPrice] = useState(existing ? existing.price : plan.pricePerNight);
+  const [double, setDouble] = useState(existing && existing.price > 0 ? existing.price : plan.pricePerNight);
+  const [single, setSingle] = useState(existing?.priceSingle || 0); // 0 = plan default
+  const [adult, setAdult] = useState(existing?.extraAdultPrice || 0);
+  const [child, setChild] = useState(existing?.extraChildPrice || 0);
+  const [closed, setClosed] = useState(existing?.isClosed || false);
   const [note, setNote] = useState(existing?.note || "");
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
+    if (double <= 0 && !closed) {
+      toast.error("Enter the 2-person price (or close the day with stop-sale)");
+      return;
+    }
     setSaving(true);
     try {
-      await adminFetch("/api/admin/plans/day-rates", {
+      const res = await adminFetch("/api/admin/plans/day-rates", {
         method: "POST",
-        body: JSON.stringify({ planId: plan.id, date, price, note }),
+        body: JSON.stringify({
+          planId: plan.id, date,
+          price: double > 0 ? double : 0,
+          priceSingle: single > 0 ? single : 0,
+          extraAdultPrice: adult > 0 ? adult : 0,
+          extraChildPrice: child > 0 ? child : 0,
+          isClosed: closed,
+          note,
+        }),
       });
-      toast.success(`${date}: ₹${price.toLocaleString("en-IN")}/night saved for ${plan.code}`);
-      onSaved();
+      if (res && !res.error) {
+        toast.success(`${plan.code} · ${date} saved`, {
+          description: closed ? "Plan closed for this day." : `2p ₹${double.toLocaleString("en-IN")}${single > 0 ? ` · 1p ₹${single.toLocaleString("en-IN")}` : ""}${adult > 0 ? ` · +A ₹${adult.toLocaleString("en-IN")}` : ""}${child > 0 ? ` · +C ₹${child.toLocaleString("en-IN")}` : ""}`,
+        });
+        onSaved();
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to save");
     } finally { setSaving(false); }
   };
 
-  const removeOverride = async () => {
+  const resetDay = async () => {
     setSaving(true);
     try {
-      await adminFetch("/api/admin/plans/day-rates", {
+      const res = await adminFetch("/api/admin/plans/day-rates", {
         method: "POST",
-        body: JSON.stringify({ planId: plan.id, date, price: 0 }),
+        body: JSON.stringify({ planId: plan.id, date, reset: true }),
       });
-      toast.success(`${date}: reverted to plan base (₹${plan.pricePerNight.toLocaleString("en-IN")})`);
-      onSaved();
+      if (res && !res.error) {
+        toast.success(`${date}: reverted to plan defaults`, { description: "All rates back to base and day reopened." });
+        onSaved();
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed");
     } finally { setSaving(false); }
   };
+
+  const parsed = new Date(date + "T00:00:00Z");
+  const dateLabel = parsed.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
 
   return (
     <div className="fixed inset-0 z-[80] grid place-items-center bg-charcoal/60 p-4 backdrop-blur-sm" onClick={onClose}>
@@ -597,25 +848,48 @@ function DayPriceEditor({ plan, date, existing, onClose, onSaved }: {
           <span className="rounded-md bg-teal px-2 py-0.5 font-display text-[10px] font-bold tracking-widest text-ivory">{plan.code}</span>
           <span className="font-serif text-sm font-semibold text-charcoal">{plan.roomName}</span>
         </div>
-        <h3 className="font-serif text-lg font-semibold text-charcoal">
-          {new Date(date + "T00:00:00").toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
-        </h3>
+        <h3 className="font-serif text-lg font-semibold text-charcoal">{dateLabel}</h3>
         <p className="mb-3 font-display text-[11px] text-charcoal-soft">
-          Plan base: ₹{plan.pricePerNight.toLocaleString("en-IN")}/night{existing ? " · custom price set" : ""}
+          Plan base — 2p ₹{plan.pricePerNight.toLocaleString("en-IN")} · 1p ₹{(plan.priceSingle || plan.pricePerNight).toLocaleString("en-IN")} · +A ₹{(plan.extraAdultPrice || 0).toLocaleString("en-IN")} · +C ₹{(plan.extraChildPrice || 0).toLocaleString("en-IN")}
+          {existing ? " · custom day values set" : ""}
         </p>
-        <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Price ₹/night</label>
-        <Input type="number" min={0} value={price} onChange={(e) => setPrice(parseInt(e.target.value) || 0)} className="bg-white" />
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">2 persons ₹/night</label>
+            <Input type="number" min={0} value={double} onChange={(e) => setDouble(parseInt(e.target.value) || 0)} className="bg-white" />
+          </div>
+          <div>
+            <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">1 person ₹/night</label>
+            <Input type="number" min={0} value={single || ""} onChange={(e) => setSingle(parseInt(e.target.value) || 0)} placeholder={`default ₹${(plan.priceSingle || plan.pricePerNight).toLocaleString("en-IN")}`} className="bg-white" />
+          </div>
+          <div>
+            <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">+1 Adult ₹/night</label>
+            <Input type="number" min={0} value={adult || ""} onChange={(e) => setAdult(parseInt(e.target.value) || 0)} placeholder={`default ₹${(plan.extraAdultPrice || 0).toLocaleString("en-IN")}`} className="bg-white" />
+          </div>
+          <div>
+            <label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">+1 Child ₹/night</label>
+            <Input type="number" min={0} value={child || ""} onChange={(e) => setChild(parseInt(e.target.value) || 0)} placeholder={`default ₹${(plan.extraChildPrice || 0).toLocaleString("en-IN")}`} className="bg-white" />
+          </div>
+        </div>
+
+        <label className="mt-3 flex cursor-pointer items-center gap-2 font-display text-xs text-charcoal">
+          <input type="checkbox" checked={closed} onChange={(e) => setClosed(e.target.checked)} className="h-4 w-4 rounded border-charcoal/30" />
+          <Ban className="h-3.5 w-3.5 text-marsala" /> Stop sale — close this plan for this day
+        </label>
+
         <label className="mb-1 mt-3 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Note (optional)</label>
         <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Janmashtami surge" className="bg-white" />
+
         <div className="mt-4 flex items-center justify-between">
           {existing ? (
-            <Button onClick={removeOverride} disabled={saving} variant="outline" className="rounded-full border-marsala/30 text-marsala hover:bg-marsala hover:text-ivory">
-              <RotateCcw className="mr-1 h-3.5 w-3.5" /> Use base price
+            <Button onClick={resetDay} disabled={saving} variant="outline" className="rounded-full border-marsala/30 text-marsala hover:bg-marsala hover:text-ivory">
+              <RotateCcw className="mr-1 h-3.5 w-3.5" /> Use plan defaults
             </Button>
           ) : <span />}
           <div className="flex gap-2">
             <Button onClick={onClose} variant="outline" className="rounded-full">Cancel</Button>
-            <Button onClick={save} disabled={saving || price <= 0} className="rounded-full bg-teal px-5 text-ivory hover:bg-teal-deep">
+            <Button onClick={save} disabled={saving} className="rounded-full bg-teal px-5 text-ivory hover:bg-teal-deep">
               <Save className="mr-1.5 h-4 w-4" /> Save
             </Button>
           </div>

@@ -3,6 +3,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { checkRangeAvailability } from "@/lib/inventory";
+import { nightlyOccupancyPrice, type PlanBaseRates } from "@/lib/rate-plans";
 
 export const dynamic = "force-dynamic";
 
@@ -93,17 +94,34 @@ export async function POST(req: Request) {
       if (chosenPlanId) {
         const plan = await tx.ratePlan.findUnique({
           where: { id: chosenPlanId },
-          select: { id: true, code: true, name: true, pricePerNight: true, isActive: true, roomId: true },
+          select: {
+            id: true, code: true, name: true, pricePerNight: true,
+            priceSingle: true, extraAdultPrice: true, extraChildPrice: true,
+            isActive: true, roomId: true,
+          },
         });
         if (!plan || !plan.isActive || plan.roomId !== room.id) throw new Error("PLAN_INVALID");
 
+        const planBase: PlanBaseRates = {
+          pricePerNight: plan.pricePerNight,
+          priceSingle: plan.priceSingle && plan.priceSingle > 0 ? plan.priceSingle : plan.pricePerNight,
+          extraAdultPrice: plan.extraAdultPrice || 0,
+          extraChildPrice: plan.extraChildPrice || 0,
+        };
+
         const dayRates = await tx.planDayRate.findMany({
           where: { planId: plan.id, date: { gte: checkIn, lt: checkOut } },
-          select: { date: true, price: true },
+          select: { date: true, price: true, priceSingle: true, extraAdultPrice: true, extraChildPrice: true, isClosed: true },
         });
-        const overrideMap = new Map<string, number>();
+        const overrideMap = new Map<string, { price: number; priceSingle: number | null; extraAdultPrice: number | null; extraChildPrice: number | null; isClosed: boolean }>();
         for (const o of dayRates) {
-          overrideMap.set(o.date.toISOString().slice(0, 10), o.price);
+          overrideMap.set(o.date.toISOString().slice(0, 10), {
+            price: o.price,
+            priceSingle: o.priceSingle,
+            extraAdultPrice: o.extraAdultPrice,
+            extraChildPrice: o.extraChildPrice,
+            isClosed: o.isClosed,
+          });
         }
 
         subtotal = 0;
@@ -114,8 +132,10 @@ export async function POST(req: Request) {
         end.setUTCHours(0, 0, 0, 0);
         while (cur < end) {
           const key = cur.toISOString().slice(0, 10);
-          const p = overrideMap.get(key);
-          subtotal += p !== undefined && p > 0 ? p : plan.pricePerNight;
+          const day = overrideMap.get(key) || null;
+          // Admin closed this plan for this day — block the booking.
+          if (day?.isClosed) throw new Error(`PLAN_CLOSED:${key}`);
+          subtotal += nightlyOccupancyPrice(planBase, day, adults, children);
           counted++;
           cur.setUTCDate(cur.getUTCDate() + 1);
         }
@@ -262,6 +282,13 @@ export async function POST(req: Request) {
     }
     if (msg === "PLAN_INVALID") {
       return NextResponse.json({ error: "The selected rate plan is no longer available. Please pick another plan." }, { status: 400 });
+    }
+    if (msg.startsWith("PLAN_CLOSED:")) {
+      const d = msg.slice("PLAN_CLOSED:".length);
+      return NextResponse.json(
+        { error: `This rate plan is closed for ${new Date(d + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}. Please pick another plan or dates.` },
+        { status: 409 }
+      );
     }
     if (msg === "NIGHTS_MISMATCH") {
       return NextResponse.json({ error: "Date mismatch. Please re-select your dates." }, { status: 400 });
