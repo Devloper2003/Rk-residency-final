@@ -169,6 +169,8 @@ model Booking {
   paymentMethod   String? // PREPAID, PARTIAL_PAID, PAY_AT_HOTEL (legacy rows: RAZORPAY, STRIPE)
   paidAmount      Int            @default(0) // money collected so far (advance for PARTIAL_PAID, full for PAID)
   paymentRef      String?
+  razorpayOrderId String? // Razorpay order linked at gateway open — enables server-side payment reconciliation for abandoned sessions
+  syncedAt        DateTime? // last automatic payment-status sync (webhook / verify / sweep)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   downloadToken   String?        @unique // Optional — NULL for legacy rows, set for new bookings

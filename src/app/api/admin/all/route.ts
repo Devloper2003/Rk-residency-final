@@ -130,6 +130,18 @@ export async function GET(req: Request) {
       }
 
       case "bookings": {
+        // Automatic payment lifecycle sweep — cancels abandoned gateway sessions
+        // and pulls Razorpay truth for pending orders. Cheap no-op when nothing
+        // is pending; wrapped so the admin panel never breaks on sweep errors.
+        try {
+          const { sweepBookings } = await import("@/lib/booking-sync");
+          const sweep = await sweepBookings();
+          if (sweep.cancelled || sweep.reconciledPaid) {
+            console.log(`[/api/admin/all] sweep: cancelled=${sweep.cancelled} reconciled=${sweep.reconciledPaid}`);
+          }
+        } catch (sweepErr) {
+          console.error("[/api/admin/all] booking sweep failed:", sweepErr);
+        }
         const limit = Math.min(parseInt(url.searchParams.get("limit") || "20", 10) || 20, 100);
         const offset = Math.max(parseInt(url.searchParams.get("offset") || "0", 10) || 0, 0);
         const where: any = {};

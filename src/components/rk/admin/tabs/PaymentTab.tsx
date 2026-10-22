@@ -16,6 +16,12 @@ const PAYMENT_KEYS = [
   { key: "razorpay_mode", label: "Mode (sandbox/live)", category: "razorpay", type: "text" },
   { key: "razorpay_success_url", label: "Success URL", category: "razorpay", type: "text" },
   { key: "razorpay_failure_url", label: "Failure URL", category: "razorpay", type: "text" },
+  // WhatsApp owner notifications (CallMeBot)
+  { key: "whatsapp_enabled", label: "Enable WhatsApp owner alerts", category: "whatsapp", type: "boolean" },
+  { key: "whatsapp_owner_phone", label: "Owner WhatsApp number (91XXXXXXXXXX)", category: "whatsapp", type: "text" },
+  { key: "whatsapp_api_key", label: "CallMeBot API key", category: "whatsapp", type: "secret" },
+  // Booking lifecycle
+  { key: "bookings_pending_cancel_minutes", label: "Auto-cancel unpaid bookings after (minutes)", category: "whatsapp", type: "text" },
   // Stripe
   { key: "stripe_enabled", label: "Enable Stripe", category: "stripe", type: "boolean" },
   { key: "stripe_publishable_key", label: "Stripe Publishable Key", category: "stripe", type: "text" },
@@ -34,6 +40,10 @@ const DEFAULTS: Record<string, string> = {
   razorpay_mode: "sandbox",
   razorpay_success_url: "/booking/success",
   razorpay_failure_url: "/booking/failure",
+  whatsapp_enabled: "false",
+  whatsapp_owner_phone: "",
+  whatsapp_api_key: "",
+  bookings_pending_cancel_minutes: "30",
   stripe_enabled: "false",
   stripe_publishable_key: "",
   stripe_secret_key: "",

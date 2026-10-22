@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verifyCronOrAdmin } from "@/lib/cron-auth";
 import { revalidatePostPaths } from "@/lib/blog-publish";
+import { sweepBookings } from "@/lib/booking-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +64,17 @@ async function runScheduler() {
   }
   if (due.length === 0) revalidatePostPaths();
 
-  return { ok: true, publishedNow, healedLegacy: legacy.length, at: now.toISOString() };
+  // 3) Booking payment lifecycle sweep — auto-cancel abandoned gateway
+  // sessions + reconcile pending Razorpay orders (daily safety net; real-time
+  // correctness comes from the webhook + admin panel loads).
+  let bookingSweep = { cancelled: 0, reconciledPaid: 0, skipped: false };
+  try {
+    bookingSweep = await sweepBookings();
+  } catch (e) {
+    console.error("[/api/cron/publish-posts] booking sweep failed:", e);
+  }
+
+  return { ok: true, publishedNow, healedLegacy: legacy.length, bookingSweep, at: now.toISOString() };
 }
 
 export async function GET(req: Request) {

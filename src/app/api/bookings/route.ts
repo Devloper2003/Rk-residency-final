@@ -5,6 +5,7 @@ import { z } from "zod";
 import { checkRangeAvailability } from "@/lib/inventory";
 import { nightlyOccupancyPrice, type PlanBaseRates } from "@/lib/rate-plans";
 import { payableNow } from "@/lib/payment-modes";
+import { notifyOwnerWhatsApp, bookingWhatsAppText } from "@/lib/booking-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -257,6 +258,15 @@ export async function POST(req: Request) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ bookingId: result.booking.id }),
     }).catch(() => {});
+
+    // Owner WhatsApp — new website booking with full detail (non-fatal)
+    try {
+      await notifyOwnerWhatsApp(
+        bookingWhatsAppText(result.booking, result.room.name, "NEW")
+      );
+    } catch (waErr) {
+      console.error("[/api/bookings] whatsapp notify failed:", waErr);
+    }
 
     return NextResponse.json({
       ok: true,

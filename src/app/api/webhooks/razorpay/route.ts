@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { db } from "@/lib/db";
-import { payableNow } from "@/lib/payment-modes";
+import { applyCapturedPayment } from "@/lib/booking-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -89,29 +89,28 @@ export async function POST(req: Request) {
 
     // 5. Handle different events
     if (eventType === "payment.captured" && status === "captured") {
-      // Mode-aware: PARTIAL_PAID advance → PARTIAL (20% collected);
-      // PREPAID / legacy online → PAID (full). Idempotent — safe to replay.
-      const existing = await db.booking.findUnique({ where: { id: bookingId } });
+      // Mode-aware, idempotent (verify + webhook + sweep all share this path):
+      // PARTIAL_PAID advance → PARTIAL (20% collected); PREPAID / legacy → PAID.
+      // Owner WhatsApp "payment received" fires inside applyCapturedPayment.
+      const existing = await db.booking.findUnique({ where: { id: bookingId }, include: { room: { select: { name: true } } } });
       if (existing) {
-        await db.booking.update({
-          where: { id: bookingId },
-          data: {
-            paymentStatus: existing.paymentMethod === "PARTIAL_PAID" ? "PARTIAL" : "PAID",
-            paidAmount: payableNow(existing.paymentMethod || "PREPAID", existing.totalAmount),
-            paymentRef: paymentId,
-          },
-        });
-        console.log(`[/api/webhooks/razorpay] Booking ${bookingId} marked ${existing.paymentMethod === "PARTIAL_PAID" ? "PARTIAL" : "PAID"} via webhook (${paymentId})`);
+        // Backfill the order link if an older booking row never stored it.
+        if (!existing.razorpayOrderId && orderId) {
+          await db.booking.update({ where: { id: bookingId }, data: { razorpayOrderId: orderId } });
+        }
+        const changed = await applyCapturedPayment(bookingId, paymentId, { notifyRoomName: existing.room?.name });
+        console.log(`[/api/webhooks/razorpay] Booking ${bookingId} ${changed ? "settled via webhook" : "already settled"} (${paymentId})`);
       }
     }
 
     if (eventType === "payment.failed") {
-      // Cancel the booking on payment failure
+      // Cancel the booking on explicit payment failure (FAILED ≠ REFUNDED).
       await db.booking.update({
         where: { id: bookingId },
         data: {
           status: "CANCELLED",
-          paymentStatus: "REFUNDED",
+          paymentStatus: "FAILED",
+          syncedAt: new Date(),
         },
       });
       console.log(`[/api/webhooks/razorpay] Booking ${bookingId} CANCELLED due to failed payment (${paymentId})`);

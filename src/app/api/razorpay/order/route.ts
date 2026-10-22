@@ -87,6 +87,11 @@ export async function POST(req: Request) {
       },
     });
 
+    // Link the order to the booking — this is what lets the server-side
+    // reconciliation sweep pull payment truth straight from Razorpay when a
+    // guest abandons the gateway or the browser closes before the callback.
+    await db.booking.update({ where: { id: booking.id }, data: { razorpayOrderId: order.id } });
+
     // 4. Return order details to frontend
     return NextResponse.json({
       ok: true,

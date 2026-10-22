@@ -24,6 +24,7 @@ const PAY_COLORS: Record<string, string> = {
   PAID: "bg-teal/10 text-teal border-teal/30",
   PARTIAL: "bg-gold/15 text-gold-deep border-gold/40",
   PENDING: "bg-charcoal/5 text-charcoal-soft border-charcoal/20",
+  FAILED: "bg-marsala/10 text-marsala border-marsala/30",
   REFUNDED: "bg-marsala/10 text-marsala border-marsala/30",
 };
 
