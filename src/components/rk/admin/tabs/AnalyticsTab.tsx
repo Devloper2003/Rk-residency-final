@@ -37,13 +37,13 @@ export function AnalyticsTab() {
           <div><h3 className="font-serif text-base font-semibold text-charcoal">Visitor traffic</h3><p className="font-display text-xs text-charcoal-soft">Last 7 days</p></div>
           <TrendingUp className="h-5 w-5 text-teal" />
         </div>
-        <div className="flex h-48 items-end justify-between gap-2 sm:gap-4">
+        <div className="flex h-48 items-stretch justify-between gap-2 sm:gap-4">
           {data.last7Days.map((d: any) => {
             const max = Math.max(...data.last7Days.map((x: any) => x.pageViews), 1);
             return (
               <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
                 <div className="text-[10px] font-semibold text-charcoal-soft">{d.pageViews}</div>
-                <div className="flex w-full flex-1 items-end gap-1">
+                <div className="flex w-full flex-1 items-end gap-1 border-b border-charcoal/10">
                   <div className="flex-1 rounded-t-md bg-teal transition-all" style={{ height: `${Math.max(4, (d.pageViews / max) * 100)}%` }} />
                   <div className="flex-1 rounded-t-md bg-gold transition-all" style={{ height: `${Math.max(4, (d.uniqueVisitors / max) * 100)}%` }} />
                 </div>

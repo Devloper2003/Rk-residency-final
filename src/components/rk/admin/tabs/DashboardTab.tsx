@@ -38,14 +38,14 @@ export function DashboardTab() {
           <div><h3 className="font-serif text-base font-semibold text-charcoal">Revenue trend</h3><p className="font-display text-xs text-charcoal-soft">Last 7 days</p></div>
           <TrendingUp className="h-5 w-5 text-teal" />
         </div>
-        <div className="flex h-44 items-end justify-between gap-2 sm:gap-4">
+        <div className="flex h-44 items-stretch justify-between gap-2 sm:gap-4">
           {stats.revenueTrend.map((d: any) => {
             const max = Math.max(...stats.revenueTrend.map((x: any) => x.revenue), 1);
             const h = Math.max(4, (d.revenue / max) * 100);
             return (
               <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
                 <div className="text-[10px] font-semibold text-charcoal-soft">{d.revenue > 0 ? `₹${(d.revenue / 1000).toFixed(0)}k` : ""}</div>
-                <div className="flex w-full flex-1 items-end"><div className="w-full rounded-t-md bg-gradient-to-t from-teal to-teal-soft transition-all" style={{ height: `${h}%` }} title={`${d.bookings} bookings · ₹${d.revenue}`} /></div>
+                <div className="flex w-full flex-1 items-end border-b border-charcoal/10"><div className="w-full rounded-t-md bg-gradient-to-t from-teal to-teal-soft transition-all" style={{ height: `${h}%` }} title={`${d.bookings} bookings · ₹${d.revenue}`} /></div>
                 <div className="font-display text-[10px] uppercase tracking-wider text-charcoal-soft">{d.label}</div>
               </div>
             );
