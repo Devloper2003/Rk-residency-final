@@ -370,6 +370,18 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ ok: true, setting });
       }
 
+      case "whatsapp_test": {
+        // Fire a real test message to the owner via the shared CallMeBot
+        // gateway so the admin can verify number + API key without creating
+        // a booking. sent=false means config is missing/incorrect.
+        const { notifyOwnerWhatsApp } = await import("@/lib/booking-sync");
+        const sent = await notifyOwnerWhatsApp(
+          "*TEST MESSAGE — RK Residency*\nWhatsApp alerts bilkul sahi kaam kar rahe hain. Ab aapko har website booking ki full detail (guest, room, dates, amount) yahin aayegi."
+        );
+        await db.auditLog.create({ data: { adminId: admin.id, action: "WHATSAPP_TEST", entity: "SiteSetting", entityId: "whatsapp-test", details: sent ? "Owner WhatsApp test delivered" : "Owner WhatsApp test failed — check whatsapp_enabled/owner_phone/api_key" } });
+        return NextResponse.json({ ok: true, sent });
+      }
+
       default:
         return NextResponse.json({ error: "Unknown action" }, { status: 400 });
     }

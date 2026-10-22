@@ -10,7 +10,9 @@ import { payableNow, modeLabel } from "@/lib/payment-modes";
  *   2. Client verify (/api/razorpay/verify)           — instant, on-callback
  *   3. Reconciliation sweep (sweepBookings)           — heals anything missed:
  *        a. pending online bookings whose gateway session died → auto-CANCELLED
- *           after a configurable window (default 30 min) so inventory frees up
+ *           after a configurable window (default 30 min; set the
+ *           bookings_pending_cancel_minutes setting to 0 to never cancel) so
+ *           inventory frees up
  *        b. pending bookings with a Razorpay order → payment status pulled
  *           straight from the Razorpay API (captures the "paid but webhook
  *           lost / browser closed before callback" cases)
@@ -202,34 +204,44 @@ export async function sweepBookings(): Promise<SweepResult> {
   const result: SweepResult = { cancelled: 0, reconciledPaid: 0, skipped: false };
   try {
     const cfg = await getSettings(["bookings_pending_cancel_minutes"]);
-    const minutes = Math.max(5, parseInt(cfg.bookings_pending_cancel_minutes || "", 10) || SWEEP_DEFAULT_CANCEL_MINUTES);
-    const cutoff = new Date(Date.now() - minutes * 60_000);
+    const rawMinutes = parseInt(cfg.bookings_pending_cancel_minutes || "", 10);
+    // 0 (or negative) = auto-cancel DISABLED — unpaid online bookings stay
+    // PENDING so the owner can follow up / collect manually. Inventory can
+    // always be freed by cancelling the booking from the admin panel.
+    const minutes: number | null =
+      Number.isFinite(rawMinutes) && rawMinutes <= 0
+        ? null
+        : Math.max(5, rawMinutes || SWEEP_DEFAULT_CANCEL_MINUTES);
     const oldest = new Date(Date.now() - RECONCILE_MAX_AGE_DAYS * 86_400_000);
 
     // (a) abandoned gateway sessions → CANCELLED + release inventory
-    const abandoned = await db.booking.findMany({
-      where: {
-        status: "CONFIRMED",
-        paymentStatus: "PENDING",
-        paymentMethod: { in: ["PREPAID", "PARTIAL_PAID"] },
-        createdAt: { lt: cutoff },
-      },
-      select: { id: true, referenceCode: true },
-      take: 25,
-    });
-    if (abandoned.length > 0) {
-      const upd = await db.booking.updateMany({
-        where: { id: { in: abandoned.map((b) => b.id) } },
-        data: { status: "CANCELLED", paymentStatus: "FAILED", syncedAt: new Date() },
+    //     (skipped entirely when the window is 0 = never auto-cancel)
+    if (minutes !== null) {
+      const cutoff = new Date(Date.now() - minutes * 60_000);
+      const abandoned = await db.booking.findMany({
+        where: {
+          status: "CONFIRMED",
+          paymentStatus: "PENDING",
+          paymentMethod: { in: ["PREPAID", "PARTIAL_PAID"] },
+          createdAt: { lt: cutoff },
+        },
+        select: { id: true, referenceCode: true },
+        take: 25,
       });
-      result.cancelled = upd.count;
-      for (const b of abandoned) {
-        console.log(`[booking-sync] auto-cancelled ${b.referenceCode} (no payment in ${minutes} min)`);
-        await notifyOwnerWhatsApp(
-          `*BOOKING AUTO-CANCELLED — RK Residency*\n` +
-          `Ref: ${b.referenceCode}\n` +
-          `Reason: online payment not completed within ${minutes} min. Inventory released.`
-        );
+      if (abandoned.length > 0) {
+        const upd = await db.booking.updateMany({
+          where: { id: { in: abandoned.map((b) => b.id) } },
+          data: { status: "CANCELLED", paymentStatus: "FAILED", syncedAt: new Date() },
+        });
+        result.cancelled = upd.count;
+        for (const b of abandoned) {
+          console.log(`[booking-sync] auto-cancelled ${b.referenceCode} (no payment in ${minutes} min)`);
+          await notifyOwnerWhatsApp(
+            `*BOOKING AUTO-CANCELLED — RK Residency*\n` +
+            `Ref: ${b.referenceCode}\n` +
+            `Reason: online payment not completed within ${minutes} min. Inventory released.`
+          );
+        }
       }
     }
 

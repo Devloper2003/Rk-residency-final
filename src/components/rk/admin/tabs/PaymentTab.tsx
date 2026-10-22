@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Check, Loader2, CreditCard, Shield, Eye, EyeOff } from "lucide-react";
+import { Check, Loader2, CreditCard, Shield, Eye, EyeOff, MessageCircle, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { adminApi, LoadingSpinner } from "./_shared";
@@ -21,7 +21,7 @@ const PAYMENT_KEYS = [
   { key: "whatsapp_owner_phone", label: "Owner WhatsApp number (91XXXXXXXXXX)", category: "whatsapp", type: "text" },
   { key: "whatsapp_api_key", label: "CallMeBot API key", category: "whatsapp", type: "secret" },
   // Booking lifecycle
-  { key: "bookings_pending_cancel_minutes", label: "Auto-cancel unpaid bookings after (minutes)", category: "whatsapp", type: "text" },
+  { key: "bookings_pending_cancel_minutes", label: "Auto-cancel unpaid bookings after (minutes, 0 = never)", category: "whatsapp", type: "text" },
   // Stripe
   { key: "stripe_enabled", label: "Enable Stripe", category: "stripe", type: "boolean" },
   { key: "stripe_publishable_key", label: "Stripe Publishable Key", category: "stripe", type: "text" },
@@ -59,6 +59,30 @@ export function PaymentTab() {
   const [editing, setEditing] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
+  const [testingWa, setTestingWa] = useState(false);
+
+  /** Sends a test WhatsApp to the owner via the shared CallMeBot gateway. */
+  const sendWhatsAppTest = async () => {
+    setTestingWa(true);
+    try {
+      const res = await fetch("/api/admin/all", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("rk_admin_token")}` },
+        body: JSON.stringify({ action: "whatsapp_test" }),
+      });
+      const data = await res.json();
+      if (res.ok && data.sent) {
+        toast.success("Test message sent — apna WhatsApp check karo!");
+      } else if (res.ok) {
+        toast.error("Send failed — Enable ON + number (91XXXXXXXXXX) + CallMeBot API key teeno sahi hone chahiye.");
+      } else {
+        throw new Error(data.error || "Test failed");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Test failed");
+    }
+    setTestingWa(false);
+  };
 
   useEffect(() => {
     let c = false;
@@ -232,6 +256,35 @@ export function PaymentTab() {
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {PAYMENT_KEYS.filter((k) => k.category === "razorpay").map(renderField)}
+        </div>
+      </div>
+
+      {/* WhatsApp owner alerts (CallMeBot) */}
+      <div>
+        <div className="mb-3 flex items-center gap-2">
+          <MessageCircle className="h-5 w-5 text-[#25D366]" />
+          <h3 className="font-serif text-lg font-semibold text-charcoal">WhatsApp Alerts</h3>
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${getValue("whatsapp_enabled") === "true" ? "bg-teal/10 text-teal" : "bg-marsala/10 text-marsala"}`}>
+            {getValue("whatsapp_enabled") === "true" ? "Active" : "Inactive"}
+          </span>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {PAYMENT_KEYS.filter((k) => k.category === "whatsapp").map(renderField)}
+        </div>
+        <div className="mt-3 rounded-xl border border-[#25D366]/30 bg-[#25D366]/5 px-4 py-3">
+          <p className="font-display text-xs text-charcoal-soft">
+            <strong className="text-[#25D366]">Setup (free, 2 min):</strong> Apne WhatsApp se{" "}
+            <strong className="text-charcoal">+34 644 51 95 23</strong> par ye message bhejo:{" "}
+            <em className="font-mono not-italic text-charcoal">I allow callmebot to send me messages</em>{" "}
+            — turant reply mein API key milegi. Wo <strong>CallMeBot API key</strong> field mein paste karo, number <span className="font-mono">919760814931</span> likho aur Enable ON karke Save karo. Iske baad har website booking ki full detail (guest naam, phone, room, dates, amount, payment status) isi number par aayegi.
+          </p>
+          <Button
+            onClick={sendWhatsAppTest}
+            disabled={testingWa}
+            className="mt-3 rounded-full bg-[#25D366] px-4 py-1.5 text-xs text-white hover:bg-[#1eb857]"
+          >
+            {testingWa ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Sending…</> : <><Send className="mr-1 h-3 w-3" /> Test WhatsApp bhejo</>}
+          </Button>
         </div>
       </div>
 
