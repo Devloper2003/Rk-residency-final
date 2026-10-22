@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { checkRangeAvailability } from "@/lib/inventory";
+import { maybeSweepBookings } from "@/lib/booking-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +80,10 @@ export async function POST(req: Request) {
     const taxesGst = Math.round(subtotal * 0.05); // 5% GST
     const serviceFee = 250 * nights;
     const totalAmount = subtotal + taxesGst + serviceFee;
+
+    // Availability checks are the site's highest-traffic endpoint — use them
+    // to keep the auto-cancel / reconciliation sweep warm (throttled inside).
+    after(() => maybeSweepBookings());
 
     return NextResponse.json({
       available,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     X, Calendar, Users, Check, Loader2, ChevronRight, ChevronLeft, FileText,
@@ -227,6 +227,10 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
     /^\S+@\S+\.\S+$/.test(contact.email) &&
     contact.phone.length >= 8;
 
+  // Set the moment Razorpay reports success — guards the dismiss handler from
+  // cancelling a booking whose payment actually went through.
+  const paidRef = useRef(false);
+
   const handleConfirm = async () => {
     if (!selectedRoom || !dateRange.from || !dateRange.to) return;
     setSubmitting(true);
@@ -286,17 +290,34 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
           },
           modal: {
             ondismiss: () => {
-              // User closed the modal without paying
-              toast.error("Payment cancelled", {
-                description: paymentMethod === "PARTIAL_PAID"
-                  ? "Your booking is saved. Pay the 20% advance later or at the hotel."
-                  : "Your booking is saved. You can pay later at the hotel.",
-              });
+              if (paidRef.current) {
+                // Payment already succeeded — nothing to cancel.
+                setSubmitting(false);
+                return;
+              }
+              // Owner preference: cancel IMMEDIATELY when the guest closes the
+              // payment window without paying — inventory frees up right away.
+              fetch("/api/bookings/abandon", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ bookingId: data.bookingId }),
+              })
+                .then((r) => r.json())
+                .then((j: { cancelled?: boolean }) => {
+                  if (j?.cancelled) {
+                    toast.error("Booking cancelled", {
+                      description:
+                        "Payment wasn't completed, so this booking was cancelled and the room released. Please start a new booking to try again.",
+                    });
+                  }
+                })
+                .catch(() => {});
               setSubmitting(false);
             },
           },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           handler: async (response: any) => {
+            paidRef.current = true;
             // 3. Verify payment signature on server
             try {
               const verifyRes = await fetch("/api/razorpay/verify", {

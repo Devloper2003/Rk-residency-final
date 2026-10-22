@@ -10,9 +10,12 @@ import { payableNow, modeLabel } from "@/lib/payment-modes";
  *   2. Client verify (/api/razorpay/verify)           — instant, on-callback
  *   3. Reconciliation sweep (sweepBookings)           — heals anything missed:
  *        a. pending online bookings whose gateway session died → auto-CANCELLED
- *           after a configurable window (default 30 min; set the
- *           bookings_pending_cancel_minutes setting to 0 to never cancel) so
- *           inventory frees up
+ *           after a configurable window (default 5 min — owner wants
+ *           near-immediate release; set bookings_pending_cancel_minutes to 0
+ *           to never cancel) so inventory frees up. Closing the Razorpay modal
+ *           cancels the booking INSTANTLY via /api/bookings/abandon — this
+ *           sweep is the safety net for closed tabs, re-driven on ordinary
+ *           site traffic through maybeSweepBookings().
  *        b. pending bookings with a Razorpay order → payment status pulled
  *           straight from the Razorpay API (captures the "paid but webhook
  *           lost / browser closed before callback" cases)
@@ -22,7 +25,7 @@ import { payableNow, modeLabel } from "@/lib/payment-modes";
  * Settings → WhatsApp Notifications.
  */
 
-export const SWEEP_DEFAULT_CANCEL_MINUTES = 30;
+export const SWEEP_DEFAULT_CANCEL_MINUTES = 5;
 // Never sweep Razorpay lookups for orders older than this — legacy/noise guard.
 const RECONCILE_MAX_AGE_DAYS = 7;
 // Bound a single sweep so admin page loads stay snappy.
@@ -142,10 +145,58 @@ export async function applyCapturedPayment(
     return false;
   }
   const paid = payableNow(existing.paymentMethod || "PREPAID", existing.totalAmount);
+  const settledStatus = existing.paymentMethod === "PARTIAL_PAID" ? "PARTIAL" : "PAID";
+
+  // ── Money arrived for a booking that was already auto-cancelled ──
+  // (guest was mid-payment when the immediate/short-window cancel fired).
+  // Revive the booking if the slot is still free; otherwise keep it cancelled
+  // and raise a loud refund alert instead of silently marking a dead row paid.
+  if (existing.status === "CANCELLED") {
+    const clash = await db.booking.findFirst({
+      where: {
+        roomId: existing.roomId,
+        id: { not: existing.id },
+        status: { not: "CANCELLED" },
+        AND: [{ checkIn: { lt: existing.checkOut } }, { checkOut: { gt: existing.checkIn } }],
+      },
+      select: { id: true },
+    });
+    if (clash) {
+      await notifyOwnerWhatsApp(
+        `*⚠ PAYMENT RECEIVED ON CANCELLED BOOKING — RK Residency*\n` +
+        `Ref: ${existing.referenceCode}\n` +
+        `Guest: ${existing.guestName} (${existing.guestPhone})\n` +
+        `${fmtDate(existing.checkIn)} → ${fmtDate(existing.checkOut)}\n` +
+        `Amount received: ${fmtINR(paid)} (payment ref ${paymentRef})\n` +
+        `Slot is no longer free — PLEASE REFUND this amount from the Razorpay dashboard.`
+      );
+      return false;
+    }
+    // Slot still free → bring the booking back as if the guest paid in time.
+    await db.booking.update({
+      where: { id: bookingId },
+      data: {
+        status: "CONFIRMED",
+        paymentStatus: settledStatus,
+        paidAmount: paid,
+        paymentRef,
+        syncedAt: new Date(),
+      },
+    });
+    console.log(`[booking-sync] re-activated cancelled booking ${existing.referenceCode} — late payment captured`);
+    if (opts?.notifyRoomName) {
+      await notifyOwnerWhatsApp(
+        `*PAYMENT RECEIVED — booking auto re-activated — RK Residency*\n` +
+        bookingWhatsAppText({ ...existing, paidAmount: paid, paymentStatus: settledStatus }, opts.notifyRoomName, "PAID")
+      );
+    }
+    return true;
+  }
+
   await db.booking.update({
     where: { id: bookingId },
     data: {
-      paymentStatus: existing.paymentMethod === "PARTIAL_PAID" ? "PARTIAL" : "PAID",
+      paymentStatus: settledStatus,
       paidAmount: paid,
       paymentRef,
       syncedAt: new Date(),
@@ -153,7 +204,7 @@ export async function applyCapturedPayment(
   });
   if (opts?.notifyRoomName) {
     await notifyOwnerWhatsApp(
-      bookingWhatsAppText({ ...existing, paidAmount: paid, paymentStatus: existing.paymentMethod === "PARTIAL_PAID" ? "PARTIAL" : "PAID" }, opts.notifyRoomName, "PAID")
+      bookingWhatsAppText({ ...existing, paidAmount: paid, paymentStatus: settledStatus }, opts.notifyRoomName, "PAID")
     );
   }
   return true;
@@ -208,6 +259,9 @@ export async function sweepBookings(): Promise<SweepResult> {
     // 0 (or negative) = auto-cancel DISABLED — unpaid online bookings stay
     // PENDING so the owner can follow up / collect manually. Inventory can
     // always be freed by cancelling the booking from the admin panel.
+    // Floor of 5 min protects guests who are mid-payment (UPI/card can take
+    // a couple of minutes); applyCapturedPayment revives a cancelled booking
+    // if money still lands while the slot is free.
     const minutes: number | null =
       Number.isFinite(rawMinutes) && rawMinutes <= 0
         ? null
@@ -267,4 +321,27 @@ export async function sweepBookings(): Promise<SweepResult> {
     result.skipped = true;
   }
   return result;
+}
+
+// ---------------------------------------------------------------------------
+// Frequent light sweep — piggybacked on ordinary public traffic via after(),
+// so the short auto-cancel window actually fires without waiting for cron or
+// an admin panel visit.
+// ---------------------------------------------------------------------------
+
+const SWEEP_THROTTLE_MS = 60_000;
+let lastSweepAt = 0;
+let sweeping = false;
+
+/** Fire-and-forget, throttled to at most one run per minute per instance. */
+export function maybeSweepBookings(): void {
+  const now = Date.now();
+  if (sweeping || now - lastSweepAt < SWEEP_THROTTLE_MS) return;
+  lastSweepAt = now;
+  sweeping = true;
+  sweepBookings()
+    .catch((e) => console.error("[booking-sync] maybeSweep failed:", e))
+    .finally(() => {
+      sweeping = false;
+    });
 }

@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { checkRangeAvailability } from "@/lib/inventory";
 import { nightlyOccupancyPrice, type PlanBaseRates } from "@/lib/rate-plans";
 import { payableNow } from "@/lib/payment-modes";
-import { notifyOwnerWhatsApp, bookingWhatsAppText } from "@/lib/booking-sync";
+import { notifyOwnerWhatsApp, bookingWhatsAppText, maybeSweepBookings } from "@/lib/booking-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -267,6 +267,10 @@ export async function POST(req: Request) {
     } catch (waErr) {
       console.error("[/api/bookings] whatsapp notify failed:", waErr);
     }
+
+    // Keep the auto-cancel / reconciliation sweep warm on real traffic so the
+    // short pending window fires without waiting for cron or an admin visit.
+    after(() => maybeSweepBookings());
 
     return NextResponse.json({
       ok: true,
