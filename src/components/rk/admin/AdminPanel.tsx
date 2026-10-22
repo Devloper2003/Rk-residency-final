@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, lazy, Suspense } from "react";
+import { useEffect, useState, useCallback, useRef, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, CalendarDays, BedDouble, Star, Mail,
@@ -101,6 +101,13 @@ export function AdminPanel() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const mainRef = useRef<HTMLElement>(null);
+
+  // Independent content scroller: reset to top whenever the tab changes so a
+  // deep-scrolled list (e.g. Bookings) never lands mid-page on the next tab.
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0 });
+  }, [tab]);
 
   useEffect(() => {
     setStored(getAdmin());
@@ -167,7 +174,7 @@ export function AdminPanel() {
     : TABS;
 
   return (
-    <div className="flex min-h-screen bg-ivory">
+    <div className="flex h-screen overflow-hidden bg-ivory supports-[height:100dvh]:h-dvh">
       {/* ============ SIDEBAR ============ */}
       <aside
         className={`fixed inset-y-0 left-0 z-30 w-64 transform bg-charcoal text-ivory shadow-2xl transition-transform lg:static lg:translate-x-0 ${
@@ -252,7 +259,7 @@ export function AdminPanel() {
       {sidebarOpen && <div className="fixed inset-0 z-20 bg-charcoal/60 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
       {/* ============ MAIN ============ */}
-      <main className="scrollbar-thin flex-1 overflow-y-auto">
+      <main ref={mainRef} className="scrollbar-thin min-w-0 flex-1 overflow-y-auto">
         {/* Topbar */}
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-charcoal/10 bg-ivory/90 px-4 py-3 backdrop-blur sm:px-6">
           <div className="flex items-center gap-3">
