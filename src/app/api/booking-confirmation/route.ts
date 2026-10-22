@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { modeLabel, paidAmountOf, dueAtHotel } from "@/lib/payment-modes";
 
 export const dynamic = "force-dynamic";
 
@@ -175,7 +176,7 @@ export async function POST(req: Request) {
       </div>
 
       <div style="text-align:right;margin-top:8px;">
-        <span style="color:${booking.paymentStatus === "PAID" ? "#2E7D32" : "#D4A056"};font-size:12px;font-weight:600;background:${booking.paymentStatus === "PAID" ? "#E8F5E9" : "#FFF8E1"};padding:4px 12px;border-radius:10px;">${booking.paymentStatus}</span>
+        <span style="color:${booking.paymentStatus === "PAID" ? "#2E7D32" : "#D4A056"};font-size:12px;font-weight:600;background:${booking.paymentStatus === "PAID" ? "#E8F5E9" : "#FFF8E1"};padding:4px 12px;border-radius:10px;">${booking.paymentStatus === "PARTIAL" ? "20% ADVANCE RECEIVED" : booking.paymentStatus}</span>
       </div>
     </div>
 
@@ -195,9 +196,13 @@ export async function POST(req: Request) {
         <span style="color:#231F1C;font-size:14px;margin-left:8px;">${booking.guestPhone}</span>
       </div>
       <div>
-        <span style="color:#6B6560;font-size:13px;">Payment Method:</span>
-        <span style="color:#231F1C;font-size:14px;margin-left:8px;">${booking.paymentMethod || "N/A"}</span>
+        <span style="color:#6B6560;font-size:13px;">Payment Mode:</span>
+        <span style="color:#231F1C;font-size:14px;margin-left:8px;">${modeLabel(booking.paymentMethod)}</span>
       </div>
+      ${booking.paymentStatus === "PARTIAL" || booking.paymentStatus === "PENDING" ? `
+      <div style="margin-top:10px;background:#FFF8E1;border:1px solid #D4A056;border-radius:8px;padding:10px 14px;">
+        <span style="color:#8B6914;font-size:12px;font-weight:600;">Balance due at hotel: ₹${dueAtHotel(booking.paymentMethod || "PAY_AT_HOTEL", booking.totalAmount).toLocaleString("en-IN")}</span>
+      </div>` : ""}
     </div>
 
     <!-- ── BANK DETAILS ── -->
@@ -258,7 +263,7 @@ export async function POST(req: Request) {
     <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Dates</td><td style="padding:8px;border-bottom:1px solid #eee;">${fmt(new Date(booking.checkIn))} → ${fmt(new Date(booking.checkOut))}</td></tr>
     <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Nights</td><td style="padding:8px;border-bottom:1px solid #eee;">${nights}</td></tr>
     <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Amount</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">₹${booking.totalAmount.toLocaleString("en-IN")}</td></tr>
-    <tr><td style="padding:8px;color:#666;">Payment</td><td style="padding:8px;">${booking.paymentStatus} (${booking.paymentMethod || "N/A"})</td></tr>
+    <tr><td style="padding:8px;color:#666;">Payment</td><td style="padding:8px;">${booking.paymentStatus === "PARTIAL" ? `PARTIAL — ₹${paidAmountOf(booking).toLocaleString("en-IN")} received, ₹${(booking.totalAmount - paidAmountOf(booking)).toLocaleString("en-IN")} due at hotel` : booking.paymentStatus} (${modeLabel(booking.paymentMethod)})</td></tr>
   </table>
   ${couponCreated ? `<p style="margin-top:12px;color:#2E7D32;font-size:13px;">Coupon generated: <strong>${couponCode}</strong></p>` : ""}
   <p style="margin-top:16px;"><a href="https://rkresidencyvrindavan.in/admin" style="background:#0E4C4F;color:white;padding:10px 20px;text-decoration:none;border-radius:8px;">View in Admin</a></p>

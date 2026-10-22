@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { z } from "zod";
 import { checkRangeAvailability } from "@/lib/inventory";
 import { nightlyOccupancyPrice, type PlanBaseRates } from "@/lib/rate-plans";
+import { payableNow } from "@/lib/payment-modes";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,9 @@ const schema = z.object({
   guestPhone: z.string().min(6).max(30),
   planId: z.string().max(64).optional().or(z.literal("")), // OTA rate plan (null = classic base price)
   specialRequests: z.string().max(2000).optional().or(z.literal("")),
-  paymentMethod: z.enum(["RAZORPAY", "STRIPE", "PAY_AT_HOTEL"]).default("PAY_AT_HOTEL"),
+  // Exactly three settlement modes: Prepaid (100% online), Partial Paid (20% online,
+  // balance at hotel), Pay at Hotel (100% on arrival). Razorpay is the online rail.
+  paymentMethod: z.enum(["PREPAID", "PARTIAL_PAID", "PAY_AT_HOTEL"]).default("PREPAID"),
     discountCode: z.string().max(30).optional().or(z.literal("")),
 });
 
@@ -228,9 +231,11 @@ export async function POST(req: Request) {
           serviceFee,
           totalAmount,
           status: "CONFIRMED",
-          // Always PENDING for prepaid methods.
-          // Razorpay/Stripe verification or webhook will flip this to PAID.
+          // Always starts PENDING with zero collected — Razorpay verify/webhook
+          // flips PREPAID to PAID (full) and PARTIAL_PAID to PARTIAL (20%).
+          // PAY_AT_HOTEL stays PENDING until the front desk collects.
           paymentStatus: "PENDING",
+          paidAmount: 0,
           paymentMethod,
         },
       });
@@ -263,6 +268,8 @@ export async function POST(req: Request) {
       nights: result.booking.nights,
       totalAmount: result.booking.totalAmount,
       paymentStatus: result.booking.paymentStatus,
+      paymentMode: result.booking.paymentMethod,
+      payableNow: payableNow(result.booking.paymentMethod || "PAY_AT_HOTEL", result.booking.totalAmount),
     });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Booking failed";

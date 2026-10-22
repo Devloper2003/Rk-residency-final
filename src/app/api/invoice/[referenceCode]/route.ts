@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import PDFDocument from "pdfkit";
 import { C, PW, PH, MX, drawHeader, drawFooter, hline, fmtDate, rs } from "@/lib/pdf-utils";
+import { modeLabel, paidAmountOf } from "@/lib/payment-modes";
 
 export const dynamic = "force-dynamic";
 
@@ -108,9 +109,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ refe
       y += 28;
       doc.font("Helvetica-Bold").fontSize(10)
         .fillColor(booking.paymentStatus === "PAID" ? C.green : C.gold)
-        .text(`Payment: ${booking.paymentStatus}`, MX, y, { continued: true })
+        .text(`Payment: ${booking.paymentStatus === "PARTIAL" ? `PARTIAL — ${rs(paidAmountOf(booking))} received, ${rs(booking.totalAmount - paidAmountOf(booking))} due at hotel` : booking.paymentStatus}`, MX, y, { continued: true })
         .font("Helvetica").fillColor(C.gray)
-        .text(`    Method: ${booking.paymentMethod || "N/A"}`);
+        .text(`    Mode: ${modeLabel(booking.paymentMethod)}`);
 
       /* Bank Details */
       y += 32;

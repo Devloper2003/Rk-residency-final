@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verifyAdmin } from "@/lib/admin-auth";
 import { checkRangeAvailability } from "@/lib/inventory";
+import { payableNow } from "@/lib/payment-modes";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +23,9 @@ const createSchema = z.object({
   serviceFee: z.number().int().min(0),
   totalAmount: z.number().int().min(0),
   specialRequests: z.string().optional(),
-  paymentMethod: z.string().default("PAY_AT_HOTEL"),
+  // Only the three settlement modes — Prepaid (full received), Partial Paid
+  // (20% received, balance at hotel), Pay at Hotel (nothing received).
+  paymentMethod: z.enum(["PREPAID", "PARTIAL_PAID", "PAY_AT_HOTEL"]).default("PAY_AT_HOTEL"),
 });
 
 export async function POST(req: Request) {
@@ -57,8 +60,11 @@ export async function POST(req: Request) {
     const lastNum = lastBooking ? parseInt(lastBooking.referenceCode.split("-").pop() || "0", 10) : 0;
     const referenceCode = `RK-VRD-${year}-${String(lastNum + 1).padStart(4, "0")}`;
 
+    const paymentStatus = d.paymentMethod === "PREPAID" ? "PAID" : d.paymentMethod === "PARTIAL_PAID" ? "PARTIAL" : "PENDING";
+    const paidAmount = payableNow(d.paymentMethod, d.totalAmount);
+
     const booking = await db.booking.create({
-      data: { referenceCode, roomId: d.roomId, guestId: guest.id, checkIn, checkOut, nights: d.nights, adults: d.adults, children: d.children, guestName: d.guestName, guestEmail: d.guestEmail.toLowerCase(), guestPhone: d.guestPhone, specialRequests: d.specialRequests || null, pricePerNight: d.pricePerNight, subtotal: d.subtotal, taxesGst: d.taxesGst, serviceFee: d.serviceFee, totalAmount: d.totalAmount, status: "CONFIRMED", paymentStatus: "PENDING", paymentMethod: d.paymentMethod },
+      data: { referenceCode, roomId: d.roomId, guestId: guest.id, checkIn, checkOut, nights: d.nights, adults: d.adults, children: d.children, guestName: d.guestName, guestEmail: d.guestEmail.toLowerCase(), guestPhone: d.guestPhone, specialRequests: d.specialRequests || null, pricePerNight: d.pricePerNight, subtotal: d.subtotal, taxesGst: d.taxesGst, serviceFee: d.serviceFee, totalAmount: d.totalAmount, status: "CONFIRMED", paymentStatus, paidAmount, paymentMethod: d.paymentMethod },
     });
 
     await db.auditLog.create({ data: { adminId: admin.id, action: "BOOKING_CREATED_MANUAL", entity: "Booking", entityId: booking.id, details: `Manual booking ${referenceCode} for ${d.guestName} — ${room.name} x ${d.nights} nights = Rs.${d.totalAmount}` } });

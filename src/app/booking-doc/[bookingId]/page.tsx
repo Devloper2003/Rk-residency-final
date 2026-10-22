@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { PrintButton } from "../PrintButton";
 import { BUSINESS, SITE_URL } from "@/lib/site.config";
+import { modeLabel, paidAmountOf } from "@/lib/payment-modes";
 
 export const dynamic = "force-dynamic";
 
@@ -207,8 +208,11 @@ function VoucherLayout({ booking, cfg, logoDataUrl, fmt }: {
             </tbody>
           </table>
           <div style={{ marginTop: 10, fontSize: 11, color: "#6B6560" }}>
-            Payment Status: <strong style={{ color: booking.paymentStatus === "PAID" ? "#0E4C4F" : "#B8860B" }}>{booking.paymentStatus}</strong>
-            <span style={{ marginLeft: 16 }}>Method: {booking.paymentMethod || "N/A"}</span>
+            Payment Status: <strong style={{ color: booking.paymentStatus === "PAID" ? "#0E4C4F" : "#B8860B" }}>{booking.paymentStatus === "PARTIAL" ? "20% ADVANCE RECEIVED" : booking.paymentStatus}</strong>
+            <span style={{ marginLeft: 16 }}>Mode: {modeLabel(booking.paymentMethod)}</span>
+            {paidAmountOf(booking) > 0 && booking.paymentStatus !== "PAID" && (
+              <span style={{ marginLeft: 16 }}>Received: Rs. {paidAmountOf(booking).toLocaleString("en-IN")} · Due at hotel: Rs. {(booking.totalAmount - paidAmountOf(booking)).toLocaleString("en-IN")}</span>
+            )}
           </div>
         </div>
 
@@ -265,7 +269,7 @@ function InvoiceLayout({ booking, cfg, logoDataUrl, fmt }: {
   const cgst = Math.floor(booking.taxesGst / 2);
   const sgst = booking.taxesGst - cgst;
   const invNo = `INV-${booking.referenceCode.split("-").slice(-2).join("-")}`;
-  const amountPaid = booking.paymentStatus === "PAID" ? booking.totalAmount : 0;
+  const amountPaid = paidAmountOf(booking);
   const balance = booking.totalAmount - amountPaid;
 
   return (
@@ -398,7 +402,7 @@ function InvoiceLayout({ booking, cfg, logoDataUrl, fmt }: {
             </thead>
             <tbody>
               <tr>
-                <td style={{ padding: "10px 12px", fontWeight: 600 }}>{booking.paymentStatus}</td>
+                <td style={{ padding: "10px 12px", fontWeight: 600 }}>{booking.paymentStatus === "PARTIAL" ? "PARTIAL (20%)" : booking.paymentStatus}</td>
                 <td style={{ padding: "10px 12px", textAlign: "right" }}>Rs. {amountPaid.toLocaleString("en-IN")}</td>
                 <td style={{ padding: "10px 12px", textAlign: "right", color: "#C2410C", fontWeight: 600 }}>Rs. {balance.toLocaleString("en-IN")}</td>
                 <td style={{ padding: "10px 12px", textAlign: "right", color: "#0E4C4F", fontWeight: 600 }}>Rs. {booking.totalAmount.toLocaleString("en-IN")}</td>

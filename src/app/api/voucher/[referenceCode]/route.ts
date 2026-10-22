@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import PDFDocument from "pdfkit";
 import { C, PW, PH, MX, drawHeader, drawFooter, hline, fmtDate, rs } from "@/lib/pdf-utils";
+import { dueAtHotel } from "@/lib/payment-modes";
 
 export const dynamic = "force-dynamic";
 
@@ -83,7 +84,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ refe
       y += 20;
       doc.font("Helvetica-Bold").fontSize(10)
         .fillColor(booking.paymentStatus === "PAID" ? C.green : C.gold)
-        .text(booking.paymentStatus, 200, y);
+        .text(booking.paymentStatus === "PARTIAL" ? "20% ADVANCE RECEIVED" : booking.paymentStatus, 200, y);
+      if (booking.paymentStatus === "PARTIAL" || booking.paymentStatus === "PENDING") {
+        y += 16;
+        doc.font("Helvetica").fontSize(9).fillColor(C.gray)
+          .text(`Balance due at hotel: ${rs(dueAtHotel(booking.paymentMethod || "PAY_AT_HOTEL", booking.totalAmount))}`, 200, y);
+      }
 
       /* Coupon card */
       if (coupon && coupon.isActive) {

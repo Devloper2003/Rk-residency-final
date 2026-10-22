@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { adminFetch, getAdminToken } from "@/lib/admin-client";
+import { modeLabel, paidAmountOf } from "@/lib/payment-modes";
 import { toast } from "sonner";
 
 type Props = {
@@ -61,7 +62,8 @@ const STATUS_BADGE: Record<string, string> = {
 };
 const PAY_BADGE: Record<string, string> = {
   PAID: "bg-teal/10 text-teal border-teal/30",
-  PENDING: "bg-gold/15 text-gold-deep border-gold/40",
+  PARTIAL: "bg-gold/15 text-gold-deep border-gold/40",
+  PENDING: "bg-charcoal/5 text-charcoal-soft border-charcoal/20",
   REFUNDED: "bg-marsala/10 text-marsala border-marsala/30",
 };
 
@@ -174,12 +176,12 @@ export function BookingDetailModal({ bookingId, onClose }: Props) {
                 <span className={`inline-block rounded-full border px-3 py-1 text-xs font-semibold ${STATUS_BADGE[booking.status]}`}>
                   {booking.status.replace(/_/g, " ")}
                 </span>
-                <span className={`inline-block rounded-full border px-3 py-1 text-xs font-semibold ${PAY_BADGE[booking.paymentStatus]}`}>
-                  {booking.paymentStatus}
+                <span className={`inline-block rounded-full border px-3 py-1 text-xs font-semibold ${PAY_BADGE[booking.paymentStatus] || "bg-charcoal/5 text-charcoal-soft border-charcoal/20"}`}>
+                  {booking.paymentStatus === "PARTIAL" ? "20% PAID" : booking.paymentStatus}
                 </span>
                 {booking.paymentMethod && (
                   <span className="inline-flex items-center gap-1 rounded-full border border-charcoal/15 bg-white px-3 py-1 text-xs text-charcoal-soft">
-                    <CreditCard className="h-3 w-3" /> {booking.paymentMethod.replace(/_/g, " ")}
+                    <CreditCard className="h-3 w-3" /> {modeLabel(booking.paymentMethod)}
                   </span>
                 )}
                 <span className="ml-auto font-display text-xs text-charcoal-soft">
@@ -244,20 +246,29 @@ export function BookingDetailModal({ bookingId, onClose }: Props) {
                   </div>
                   <div className="mt-2 flex items-center justify-between rounded-lg bg-ivory-deep px-3 py-2">
                     <span className="font-display text-[10px] uppercase tracking-wider text-charcoal-soft">
-                      Payment {booking.paymentStatus}
+                      Payment {booking.paymentStatus === "PARTIAL" ? "advance received" : booking.paymentStatus}
                     </span>
                     {booking.paymentStatus === "PAID" ? (
                       <span className="inline-flex items-center gap-1 font-serif text-sm font-semibold text-teal">
-                        <CheckCircle2 className="h-3.5 w-3.5" /> {inr(booking.totalAmount)} received
+                        <CheckCircle2 className="h-3.5 w-3.5" /> {inr(paidAmountOf(booking))} received
+                      </span>
+                    ) : booking.paymentStatus === "PARTIAL" ? (
+                      <span className="inline-flex items-center gap-1 font-serif text-sm font-semibold text-gold-deep">
+                        <AlertCircle className="h-3.5 w-3.5" /> {inr(paidAmountOf(booking))} paid · {inr(booking.totalAmount - paidAmountOf(booking))} due at hotel
                       </span>
                     ) : booking.paymentStatus === "REFUNDED" ? (
                       <span className="font-serif text-sm font-semibold text-marsala">Refunded</span>
                     ) : (
                       <span className="inline-flex items-center gap-1 font-serif text-sm font-semibold text-gold-deep">
-                        <AlertCircle className="h-3.5 w-3.5" /> {inr(booking.totalAmount)} pending
+                        <AlertCircle className="h-3.5 w-3.5" /> {inr(booking.totalAmount)} due at hotel
                       </span>
                     )}
                   </div>
+                  {(booking.paymentStatus === "PARTIAL" || booking.paymentStatus === "PENDING") && booking.status !== "CANCELLED" && (
+                    <p className="mt-1 font-display text-[10px] text-charcoal-soft">
+                      Collect the balance at the front desk, then set the payment mode in the bookings list.
+                    </p>
+                  )}
                   {booking.paymentRef && (
                     <p className="mt-1 font-display text-[10px] text-charcoal-soft">
                       Payment reference: <span className="font-mono">{booking.paymentRef}</span>

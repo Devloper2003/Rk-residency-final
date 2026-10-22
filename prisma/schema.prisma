@@ -11,29 +11,29 @@ datasource db {
 }
 
 model Room {
-  id            String   @id @default(cuid())
-  slug          String   @unique
-  name          String
-  tagline       String
-  description   String
+  id              String             @id @default(cuid())
+  slug            String             @unique
+  name            String
+  tagline         String
+  description     String
   longDescription String
-  basePrice     Int      // INR per night
-  maxGuests     Int
-  sizeSqft      Int
-  bedType       String
-  view          String
-  imageUrls     String   // JSON-encoded array
-  amenities     String   // JSON-encoded array
-  totalCount    Int      @default(4) // total inventory
-  badge         String?
-  featured      Boolean  @default(false)
-  sortOrder     Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  bookings      Booking[]
-  rateOverrides RateOverride[]
-  inventoryDays RoomInventoryDay[]
-  ratePlans     RatePlan[]
+  basePrice       Int // INR per night
+  maxGuests       Int
+  sizeSqft        Int
+  bedType         String
+  view            String
+  imageUrls       String // JSON-encoded array
+  amenities       String // JSON-encoded array
+  totalCount      Int                @default(4) // total inventory
+  badge           String?
+  featured        Boolean            @default(false)
+  sortOrder       Int                @default(0)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  bookings        Booking[]
+  rateOverrides   RateOverride[]
+  inventoryDays   RoomInventoryDay[]
+  ratePlans       RatePlan[]
 }
 
 /**
@@ -42,7 +42,6 @@ model Room {
  * AP = All meals (Full Board). Each plan carries its own base price so the
  * room detail page can show a plan-wise rate table exactly like OTAs.
  * A room with NO active plans simply keeps the classic single base price.
- *
  * Occupancy pricing (Phase 6): OTAs quote a different rate for 1 guest vs
  * 2 guests and charge extra for additional adults/children. pricePerNight
  * stays the standard DOUBLE (2-person) rate so all existing code keeps
@@ -50,22 +49,22 @@ model Room {
  * extraAdultPrice / extraChildPrice are per-night add-ons beyond 2 adults.
  */
 model RatePlan {
-  id            String   @id @default(cuid())
-  roomId        String
-  room          Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  code          String   // short badge: EP, CP, MAP, AP, or a custom code
-  name          String   // display name, e.g. "Room Only (EP)"
-  description   String?  // one-line summary shown on the plan card
-  inclusions    String   @default("[]") // JSON array of inclusion strings
-  pricePerNight Int      // standard DOUBLE-occupancy (2 persons) INR rate
-  priceSingle   Int?     // 1-person rate (null = same as pricePerNight)
-  extraAdultPrice  Int   @default(0) // per-night charge for each adult beyond 2
-  extraChildPrice  Int   @default(0) // per-night charge per child
-  sortOrder     Int      @default(0)
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  dayRates      PlanDayRate[]
+  id              String        @id @default(cuid())
+  roomId          String
+  room            Room          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  code            String // short badge: EP, CP, MAP, AP, or a custom code
+  name            String // display name, e.g. "Room Only (EP)"
+  description     String? // one-line summary shown on the plan card
+  inclusions      String        @default("[]") // JSON array of inclusion strings
+  pricePerNight   Int // standard DOUBLE-occupancy (2 persons) INR rate
+  priceSingle     Int? // 1-person rate (null = same as pricePerNight)
+  extraAdultPrice Int           @default(0) // per-night charge for each adult beyond 2
+  extraChildPrice Int           @default(0) // per-night charge per child
+  sortOrder       Int           @default(0)
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  dayRates        PlanDayRate[]
 
   @@index([roomId])
 }
@@ -74,7 +73,6 @@ model RatePlan {
  * Day-wise pricing (Phase 5): a specific price for a plan on a specific
  * calendar date (festival surge, weekend pricing, off-season discounts…).
  * No row for a date = the plan's base pricePerNight applies.
- *
  * Phase 6 additions: per-occupancy day overrides (priceSingle mirrors the
  * RatePlan field; extraAdultPrice / extraChildPrice override the plan's
  * per-night add-ons for that day) and isClosed to STOP SELLING just this
@@ -82,18 +80,18 @@ model RatePlan {
  * open on other plans.
  */
 model PlanDayRate {
-  id        String   @id @default(cuid())
-  planId    String
-  plan      RatePlan @relation(fields: [planId], references: [id], onDelete: Cascade)
-  date      DateTime // UTC midnight of the priced calendar day
-  price     Int      // DOUBLE (2-person) INR rate for this plan on this date
-  priceSingle      Int? // 1-person rate for this day (null = plan default)
-  extraAdultPrice  Int? // per-extra-adult rate for this day (null = plan default)
-  extraChildPrice  Int? // per-child rate for this day (null = plan default)
-  isClosed  Boolean  @default(false) // true = plan not sellable this day
-  note      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  planId          String
+  plan            RatePlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  date            DateTime // UTC midnight of the priced calendar day
+  price           Int // DOUBLE (2-person) INR rate for this plan on this date
+  priceSingle     Int? // 1-person rate for this day (null = plan default)
+  extraAdultPrice Int? // per-extra-adult rate for this day (null = plan default)
+  extraChildPrice Int? // per-child rate for this day (null = plan default)
+  isClosed        Boolean  @default(false) // true = plan not sellable this day
+  note            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@unique([planId, date])
   @@index([planId, date])
@@ -107,87 +105,88 @@ model PlanDayRate {
  * behaviour is unchanged when no rows exist.
  */
 model RoomInventoryDay {
-  id        String   @id @default(cuid())
-  roomId    String
-  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  date      DateTime // UTC midnight of the controlled calendar day
-  isClosed  Boolean  @default(false) // true = stop selling this room type that day
+  id               String   @id @default(cuid())
+  roomId           String
+  room             Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  date             DateTime // UTC midnight of the controlled calendar day
+  isClosed         Boolean  @default(false) // true = stop selling this room type that day
   sellableOverride Int? // optional: how many rooms are sellable that day (0..n)
-  note      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  note             String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@unique([roomId, date])
 }
 
 // Festival / seasonal surge pricing (Janmashtami, Holi, Radhashtami, weekends)
 model RateOverride {
-  id        String   @id @default(cuid())
-  roomId    String
-  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  name      String   // "Janmashtami Surge", "Weekend", etc.
-  startDate DateTime
-  endDate   DateTime
+  id            String   @id @default(cuid())
+  roomId        String
+  room          Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  name          String // "Janmashtami Surge", "Weekend", etc.
+  startDate     DateTime
+  endDate       DateTime
   pricePerNight Int
-  createdAt DateTime @default(now())
+  createdAt     DateTime @default(now())
 }
 
 model Guest {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   fullName  String
-  email     String   @unique
+  email     String    @unique
   phone     String
   country   String?
   city      String?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
   bookings  Booking[]
 }
 
 model Booking {
-  id            String   @id @default(cuid())
-  referenceCode String   @unique // e.g. RK-VRD-2026-0001
-  roomId        String
-  room          Room     @relation(fields: [roomId], references: [id])
-  guestId       String
-  guest         Guest    @relation(fields: [guestId], references: [id])
-  checkIn       DateTime
-  checkOut      DateTime
-  nights        Int
-  adults        Int      @default(2)
-  children      Int      @default(0)
-  guestName     String
-  guestEmail    String
-  guestPhone    String
-  planId        String?  // RatePlan booked (null = classic room base price)
-  planName      String?  // snapshot of the plan name/code for booking history
+  id              String         @id @default(cuid())
+  referenceCode   String         @unique // e.g. RK-VRD-2026-0001
+  roomId          String
+  room            Room           @relation(fields: [roomId], references: [id])
+  guestId         String
+  guest           Guest          @relation(fields: [guestId], references: [id])
+  checkIn         DateTime
+  checkOut        DateTime
+  nights          Int
+  adults          Int            @default(2)
+  children        Int            @default(0)
+  guestName       String
+  guestEmail      String
+  guestPhone      String
+  planId          String? // RatePlan booked (null = classic room base price)
+  planName        String? // snapshot of the plan name/code for booking history
   specialRequests String?
-  pricePerNight Int
-  subtotal      Int
-  taxesGst      Int      // 5% GST
-  serviceFee    Int
-  totalAmount   Int
-  status        String   @default("CONFIRMED") // CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED, NO_SHOW
-  paymentStatus String   @default("PENDING") // PENDING, PAID, REFUNDED
-  paymentMethod String?  // RAZORPAY, STRIPE, PAY_AT_HOTEL
-  paymentRef    String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  downloadToken String?  @unique  // Optional — NULL for legacy rows, set for new bookings
-  discountCode DiscountCode[] @relation("DiscountCreatedBy")
+  pricePerNight   Int
+  subtotal        Int
+  taxesGst        Int // 5% GST
+  serviceFee      Int
+  totalAmount     Int
+  status          String         @default("CONFIRMED") // CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED, NO_SHOW
+  paymentStatus   String         @default("PENDING") // PENDING, PARTIAL (advance received), PAID, REFUNDED
+  paymentMethod   String? // PREPAID, PARTIAL_PAID, PAY_AT_HOTEL (legacy rows: RAZORPAY, STRIPE)
+  paidAmount      Int            @default(0) // money collected so far (advance for PARTIAL_PAID, full for PAID)
+  paymentRef      String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  downloadToken   String?        @unique // Optional — NULL for legacy rows, set for new bookings
+  discountCode    DiscountCode[] @relation("DiscountCreatedBy")
 }
 
 model Review {
-  id          String   @id @default(cuid())
-  guestName   String
+  id            String   @id @default(cuid())
+  guestName     String
   guestLocation String?
-  rating      Int      // 1-5
-  title       String
-  body        String
-  source      String   @default("DIRECT") // DIRECT, GOOGLE, TRIPADVISOR
-  verified    Boolean  @default(true)
-  approved    Boolean  @default(true)
-  roomId      String?
-  createdAt   DateTime @default(now())
+  rating        Int // 1-5
+  title         String
+  body          String
+  source        String   @default("DIRECT") // DIRECT, GOOGLE, TRIPADVISOR
+  verified      Boolean  @default(true)
+  approved      Boolean  @default(true)
+  roomId        String?
+  createdAt     DateTime @default(now())
 }
 
 model Offer {
@@ -196,12 +195,12 @@ model Offer {
   title       String
   tagline     String
   description String
-  perks       String   // JSON array
+  perks       String // JSON array
   discountPct Int?
   validFrom   DateTime
   validUntil  DateTime
   imageUrl    String?
-  badge       String?  // e.g. "Janmashtami", "Holi"
+  badge       String? // e.g. "Janmashtami", "Holi"
   featured    Boolean  @default(false)
   createdAt   DateTime @default(now())
 }
@@ -226,23 +225,23 @@ model ContactMessage {
 }
 
 model BlogPost {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  title       String
-  excerpt     String
-  body        String
-  category    String   // TEMPLE_GUIDE, FESTIVAL, LOCAL_TIP, EXPERIENCE
-  tags        String   // JSON array
-  imageUrl    String?
-  published   Boolean  @default(false)
-  publishedAt DateTime?
+  id              String           @id @default(cuid())
+  slug            String           @unique
+  title           String
+  excerpt         String
+  body            String
+  category        String // TEMPLE_GUIDE, FESTIVAL, LOCAL_TIP, EXPERIENCE
+  tags            String // JSON array
+  imageUrl        String?
+  published       Boolean          @default(false)
+  publishedAt     DateTime?
   // Scheduling (Task 3): status replaces the single Published checkbox.
   // 'published' is kept in sync (published = status === "PUBLISHED") so all
   // legacy queries keep working; existing rows are backfilled by
   // scripts/migrate-blog-status.ts and self-heal on the first cron run.
-  status      String   @default("DRAFT") // DRAFT | SCHEDULED | PUBLISHED
-  publishOn   DateTime? // when a SCHEDULED post goes live (cron publishes it)
-  readingMins Int      @default(4)
+  status          String           @default("DRAFT") // DRAFT | SCHEDULED | PUBLISHED
+  publishOn       DateTime? // when a SCHEDULED post goes live (cron publishes it)
+  readingMins     Int              @default(4)
   // --- Blog automation (Phase 3) — all additions are nullable/defaulted so
   // --- existing rows keep working untouched. ---
   metaTitle       String? // SEO <title>, max 60 chars (auto from title when empty)
@@ -251,95 +250,95 @@ model BlogPost {
   targetKeyword   String? // target keyword for the SEO checklist (Task 2)
   calendarId      String? // ContentCalendar row this post was generated for (plain ref; the live link lives on ContentCalendar.linkedPostId)
   // AI draft generator (Task 5)
-  aiGenerated     Boolean @default(false) // true for drafts created by the AI generator
+  aiGenerated     Boolean          @default(false) // true for drafts created by the AI generator
   coverImageTitle String? // design brief: cover image title (owner designs the image)
   coverImageBrief String? // design brief: 1600x900 composition + mood description
-  readingMinsAuto Boolean @default(true) // auto-calculate readingMins from body
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  calendarRow ContentCalendar?
+  readingMinsAuto Boolean          @default(true) // auto-calculate readingMins from body
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  calendarRow     ContentCalendar?
 }
 
 // Content calendar (Task 4) — planned posts around the Braj festival year.
 // Dates are entered as "YYYY-MM"; suggested rows start with TODO notes until
 // the owner confirms the exact tithi/date for each festival.
 model ContentCalendar {
-  id             String   @id @default(cuid())
-  month          String   // "YYYY-MM" (e.g. "2026-08") — TODO dates to be confirmed by the owner
-  event          String   // e.g. "Janmashtami", "Holi & Lathmar Holi"
-  targetKeywords String   @default("[]") // JSON array of target keyword phrases
-  category       String   @default("FESTIVAL") // TEMPLE_GUIDE, FESTIVAL, LOCAL_TIP, EXPERIENCE
-  status         String   @default("PLANNED") // PLANNED | DRAFTED | PUBLISHED
-  linkedPostId   String?  @unique // BlogPost created for this row (draft or published)
+  id             String    @id @default(cuid())
+  month          String // "YYYY-MM" (e.g. "2026-08") — TODO dates to be confirmed by the owner
+  event          String // e.g. "Janmashtami", "Holi & Lathmar Holi"
+  targetKeywords String    @default("[]") // JSON array of target keyword phrases
+  category       String    @default("FESTIVAL") // TEMPLE_GUIDE, FESTIVAL, LOCAL_TIP, EXPERIENCE
+  status         String    @default("PLANNED") // PLANNED | DRAFTED | PUBLISHED
+  linkedPostId   String?   @unique // BlogPost created for this row (draft or published)
   linkedPost     BlogPost? @relation(fields: [linkedPostId], references: [id], onDelete: SetNull)
-  notes          String?  // e.g. "Date TODO — confirm exact tithi"
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  notes          String? // e.g. "Date TODO — confirm exact tithi"
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }
 
 model AdminUser {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
+  id           String     @id @default(cuid())
+  email        String     @unique
+  name         String
   passwordHash String
-  role      String   @default("MANAGER") // SUPER_ADMIN, MANAGER, FRONT_DESK
-  createdAt DateTime @default(now())
-  auditLogs AuditLog[]
+  role         String     @default("MANAGER") // SUPER_ADMIN, MANAGER, FRONT_DESK
+  createdAt    DateTime   @default(now())
+  auditLogs    AuditLog[]
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   adminId   String?
   admin     AdminUser? @relation(fields: [adminId], references: [id], onDelete: SetNull)
-  action    String   // e.g. "BOOKING_CANCELLED", "ROOM_UPDATED"
-  entity    String   // e.g. "Booking", "Room"
+  action    String // e.g. "BOOKING_CANCELLED", "ROOM_UPDATED"
+  entity    String // e.g. "Booking", "Room"
   entityId  String?
   details   String?
   ipAddress String?
-  createdAt DateTime @default(now())
+  createdAt DateTime   @default(now())
 }
 
 // Visitor tracking — one row per page view
 model PageView {
   id        String   @id @default(cuid())
-  path      String   // e.g. "/", "/rooms", "/rooms/yamuna-suite"
+  path      String // e.g. "/", "/rooms", "/rooms/yamuna-suite"
   referrer  String?
   userAgent String?
   ipAddress String?
   country   String?
   city      String?
-  sessionId String?  // anonymous session ID (per browser)
+  sessionId String? // anonymous session ID (per browser)
   isBot     Boolean  @default(false)
   createdAt DateTime @default(now())
 }
 
 // Aggregated daily analytics — one row per day
 model DailyAnalytics {
-  id        String   @id @default(cuid())
-  date      String   @unique // YYYY-MM-DD
-  pageViews Int      @default(0)
-  uniqueVisitors Int @default(0)
-  sessions  Int      @default(0)
-  bookings Int       @default(0)
-  revenue   Int      @default(0)
-  newsletterSignups Int @default(0)
-  contactMessages Int @default(0)
-  topPages  String   // JSON: [{path, views}]
-  topReferrers String // JSON: [{source, visits}]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String   @id @default(cuid())
+  date              String   @unique // YYYY-MM-DD
+  pageViews         Int      @default(0)
+  uniqueVisitors    Int      @default(0)
+  sessions          Int      @default(0)
+  bookings          Int      @default(0)
+  revenue           Int      @default(0)
+  newsletterSignups Int      @default(0)
+  contactMessages   Int      @default(0)
+  topPages          String // JSON: [{path, views}]
+  topReferrers      String // JSON: [{source, visits}]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 // SEO keyword tracking (what people searched to find us)
 model SEOKeyword {
-  id        String   @id @default(cuid())
-  keyword   String
-  position  Int?     // SERP position
-  clicks    Int      @default(0)
-  impressions Int    @default(0)
-  ctr       Float?   // click-through rate
-  country   String?
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  keyword     String
+  position    Int? // SERP position
+  clicks      Int      @default(0)
+  impressions Int      @default(0)
+  ctr         Float? // click-through rate
+  country     String?
+  createdAt   DateTime @default(now())
 }
 
 // Editable site content — key/value pairs for every text on the website
@@ -347,10 +346,10 @@ model SEOKeyword {
 model SiteContent {
   id        String   @id @default(cuid())
   key       String   @unique // e.g. "hero.headline", "about.title", "contact.phone"
-  value     String   // the editable text
-  section   String   // e.g. "hero", "about", "rooms", "dining", "contact", "footer"
+  value     String // the editable text
+  section   String // e.g. "hero", "about", "rooms", "dining", "contact", "footer"
   type      String   @default("text") // text, textarea, richtext, image, link
-  label     String?  // human-readable label for admin UI
+  label     String? // human-readable label for admin UI
   updatedAt DateTime @updatedAt
 }
 
@@ -359,7 +358,7 @@ model SiteSetting {
   id        String   @id @default(cuid())
   key       String   @unique // e.g. "ga_measurement_id", "whatsapp_number", "instagram_url"
   value     String
-  label     String?  // human-readable label
+  label     String? // human-readable label
   category  String   @default("general") // general, analytics, social, contact, seo
   updatedAt DateTime @updatedAt
 }
@@ -368,7 +367,7 @@ model SiteSetting {
 model ThemeSetting {
   id        String   @id @default(cuid())
   key       String   @unique // e.g. "primary_color", "accent_color", "bg_color"
-  value     String   // hex color e.g. "#0E4C4F"
+  value     String // hex color e.g. "#0E4C4F"
   label     String?
   updatedAt DateTime @updatedAt
 }
@@ -378,27 +377,26 @@ model ThemeSetting {
 model MediaAsset {
   id          String   @id @default(cuid())
   filename    String   @unique // descriptive slug, e.g. "rk-residency-vrindavan-deluxe-room.webp" — used in /uploads/... URLs
-  alt         String?  // accessibility + SEO alt text (required for new uploads)
+  alt         String? // accessibility + SEO alt text (required for new uploads)
   contentHash String?  @unique // sha256 of the processed bytes — used to dedupe identical uploads
-  mimeType    String   // e.g. "image/webp"
-  data        Bytes    // the actual image bytes
-  size        Int      // file size in bytes
+  mimeType    String // e.g. "image/webp"
+  data        Bytes // the actual image bytes
+  size        Int // file size in bytes
   createdAt   DateTime @default(now())
 }
 
-
 // Discount codes — generated on booking confirmation, valid for repeat guests
 model DiscountCode {
-  id            String   @id @default(cuid())
-  code          String   @unique
-  discountPct   Int
-  createdByBooking String
-  createdByBookingRel Booking @relation("DiscountCreatedBy", fields: [createdByBooking], references: [id])
-  createdByGuest  String
-  usedByBooking   String?
-  usedAt        DateTime?
-  validFrom     DateTime @default(now())
-  validUntil    DateTime
-  isActive       Boolean  @default(true)
-  createdAt     DateTime @default(now())
+  id                  String    @id @default(cuid())
+  code                String    @unique
+  discountPct         Int
+  createdByBooking    String
+  createdByBookingRel Booking   @relation("DiscountCreatedBy", fields: [createdByBooking], references: [id])
+  createdByGuest      String
+  usedByBooking       String?
+  usedAt              DateTime?
+  validFrom           DateTime  @default(now())
+  validUntil          DateTime
+  isActive            Boolean   @default(true)
+  createdAt           DateTime  @default(now())
 }

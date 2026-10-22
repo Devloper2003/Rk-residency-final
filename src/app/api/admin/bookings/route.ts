@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verifyAdmin } from "@/lib/admin-auth";
+import { payableNow } from "@/lib/payment-modes";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -52,7 +53,11 @@ export async function GET(req: Request) {
 
 const updateSchema = z.object({
   id: z.string(),
-  action: z.enum(["CONFIRM", "CHECK_IN", "CHECK_OUT", "CANCEL", "MARK_PAID", "REFUND"]),
+  action: z.enum([
+    "CONFIRM", "CHECK_IN", "CHECK_OUT", "CANCEL", "MARK_PAID", "REFUND",
+    // OTA-style payment mode dropdown — exactly the three settlement modes.
+    "SET_MODE_PREPAID", "SET_MODE_PARTIAL_PAID", "SET_MODE_PAY_AT_HOTEL",
+  ]),
 });
 
 /**
@@ -101,9 +106,27 @@ export async function PATCH(req: Request) {
         logDetails = `Booking ${booking.referenceCode} cancelled`;
         break;
       case "MARK_PAID":
-        update = { paymentStatus: "PAID" };
+        update = { paymentStatus: "PAID", paidAmount: booking.totalAmount };
         logAction = "BOOKING_MARKED_PAID";
         logDetails = `Payment marked as PAID for ${booking.referenceCode}`;
+        break;
+      case "SET_MODE_PREPAID":
+        // Full amount received — booking fully settled online/at counter.
+        update = { paymentMethod: "PREPAID", paymentStatus: "PAID", paidAmount: booking.totalAmount };
+        logAction = "BOOKING_MODE_SET";
+        logDetails = `Payment mode set to Prepaid (PAID, full ${booking.totalAmount}) for ${booking.referenceCode}`;
+        break;
+      case "SET_MODE_PARTIAL_PAID":
+        // 20% advance received — balance stays due at the hotel.
+        update = { paymentMethod: "PARTIAL_PAID", paymentStatus: "PARTIAL", paidAmount: payableNow("PARTIAL_PAID", booking.totalAmount) };
+        logAction = "BOOKING_MODE_SET";
+        logDetails = `Payment mode set to Partial Paid (20% = ${payableNow("PARTIAL_PAID", booking.totalAmount)} received) for ${booking.referenceCode}`;
+        break;
+      case "SET_MODE_PAY_AT_HOTEL":
+        // Nothing collected — the whole amount is due on arrival.
+        update = { paymentMethod: "PAY_AT_HOTEL", paymentStatus: "PENDING", paidAmount: 0 };
+        logAction = "BOOKING_MODE_SET";
+        logDetails = `Payment mode set to Pay at Hotel (nothing collected) for ${booking.referenceCode}`;
         break;
       case "REFUND":
         update = { paymentStatus: "REFUNDED" };

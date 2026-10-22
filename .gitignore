@@ -72,3 +72,6 @@ tool-results/
 # Public uploads (admin-uploaded media)
 /public/uploads/
 backups/
+
+# local embedded-postgres test data
+.pgdata-embedded/

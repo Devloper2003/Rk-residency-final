@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verifyAdmin } from "@/lib/admin-auth";
+import { payableNow } from "@/lib/payment-modes";
 
 export const dynamic = "force-dynamic";
 
@@ -285,14 +286,32 @@ export async function PATCH(req: Request) {
         const { id, bookingAction } = body as { id: string; bookingAction: string };
         const booking = await db.booking.findUnique({ where: { id } });
         if (!booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
-        const updates: Record<string, string> = {};
+        const updates: Record<string, string | number> = {};
         let logAction = "";
         switch (bookingAction) {
           case "CHECK_IN": updates.status = "CHECKED_IN"; logAction = "BOOKING_CHECKED_IN"; break;
           case "CHECK_OUT": updates.status = "CHECKED_OUT"; logAction = "BOOKING_CHECKED_OUT"; break;
           case "CANCEL": updates.status = "CANCELLED"; logAction = "BOOKING_CANCELLED"; break;
-          case "MARK_PAID": updates.paymentStatus = "PAID"; logAction = "BOOKING_MARKED_PAID"; break;
+          case "MARK_PAID":
+            updates.paymentStatus = "PAID"; updates.paidAmount = booking.totalAmount; logAction = "BOOKING_MARKED_PAID"; break;
           case "REFUND": updates.paymentStatus = "REFUNDED"; logAction = "BOOKING_REFUNDED"; break;
+          // OTA-style payment mode dropdown — the ONLY three settlement modes.
+          // Picking a mode records how the booking is settled (money + status together).
+          case "SET_MODE_PREPAID":
+            updates.paymentMethod = "PREPAID";
+            updates.paymentStatus = "PAID";
+            updates.paidAmount = booking.totalAmount;
+            logAction = "BOOKING_MODE_SET"; break;
+          case "SET_MODE_PARTIAL_PAID":
+            updates.paymentMethod = "PARTIAL_PAID";
+            updates.paymentStatus = "PARTIAL";
+            updates.paidAmount = payableNow("PARTIAL_PAID", booking.totalAmount);
+            logAction = "BOOKING_MODE_SET"; break;
+          case "SET_MODE_PAY_AT_HOTEL":
+            updates.paymentMethod = "PAY_AT_HOTEL";
+            updates.paymentStatus = "PENDING";
+            updates.paidAmount = 0;
+            logAction = "BOOKING_MODE_SET"; break;
           default: return NextResponse.json({ error: "Invalid action" }, { status: 400 });
         }
         const updated = await db.booking.update({ where: { id }, data: updates });

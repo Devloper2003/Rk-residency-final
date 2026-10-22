@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   Search, ArrowDownToLine, ArrowUpFromLine, IndianRupee, X,
-  RefreshCw, Inbox, Clock, Users, Filter, ChevronLeft, ChevronRight, Eye,
+  RefreshCw, Inbox, Clock, Users, Filter, ChevronLeft, ChevronRight, Eye, Wallet,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { adminApi, LoadingSpinner, ErrorState } from "./_shared";
 import { ActionBtn } from "./_shared";
 import { BookingDetailModal } from "./BookingDetailModal";
+import { PAYMENT_MODES, MODE_LABELS, modeLabel, paidAmountOf, type PaymentMode } from "@/lib/payment-modes";
 import { toast } from "sonner";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -21,7 +22,8 @@ const STATUS_COLORS: Record<string, string> = {
 };
 const PAY_COLORS: Record<string, string> = {
   PAID: "bg-teal/10 text-teal border-teal/30",
-  PENDING: "bg-gold/15 text-gold-deep border-gold/40",
+  PARTIAL: "bg-gold/15 text-gold-deep border-gold/40",
+  PENDING: "bg-charcoal/5 text-charcoal-soft border-charcoal/20",
   REFUNDED: "bg-marsala/10 text-marsala border-marsala/30",
 };
 
@@ -79,7 +81,11 @@ export function BookingsTab() {
   const action = async (id: string, a: string) => {
     const res = await adminApi.patch("booking_status", { id, bookingAction: a });
     if (res) {
-      toast.success("Booking updated");
+      if (a.startsWith("SET_MODE_")) {
+        toast.success(`Payment mode: ${a.slice("SET_MODE_".length).replace(/_/g, " ").toLowerCase()} recorded`);
+      } else {
+        toast.success("Booking updated");
+      }
       reload(true);
     } else {
       toast.error("Update failed");
@@ -89,10 +95,10 @@ export function BookingsTab() {
   const stats = {
     confirmed: bookings.filter((b) => b.status === "CONFIRMED").length,
     checkedIn: bookings.filter((b) => b.status === "CHECKED_IN").length,
-    pending: bookings.filter((b) => b.paymentStatus === "PENDING").length,
+    pending: bookings.filter((b) => b.paymentStatus === "PENDING" || b.paymentStatus === "PARTIAL").length,
     revenue: bookings
       .filter((b) => b.status !== "CANCELLED")
-      .reduce((s, b) => s + b.totalAmount, 0),
+      .reduce((s, b) => s + paidAmountOf(b), 0),
   };
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -106,8 +112,8 @@ export function BookingsTab() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatChip icon={Clock} label="Confirmed" value={stats.confirmed} accent="teal" />
         <StatChip icon={Users} label="Checked-in" value={stats.checkedIn} accent="gold" />
-        <StatChip icon={IndianRupee} label="Pending pay" value={stats.pending} accent="marsala" />
-        <StatChip icon={IndianRupee} label="Page revenue" value={`₹${stats.revenue.toLocaleString("en-IN")}`} accent="teal" />
+        <StatChip icon={Wallet} label="Pay due (pending + partial)" value={stats.pending} accent="marsala" />
+        <StatChip icon={IndianRupee} label="Collected (page)" value={`₹${stats.revenue.toLocaleString("en-IN")}`} accent="teal" />
       </div>
 
       {/* Toolbar */}
@@ -203,15 +209,46 @@ export function BookingsTab() {
                     </td>
                     <td className="px-4 py-3">
                       <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-semibold ${PAY_COLORS[b.paymentStatus] || "bg-charcoal/10 border-charcoal/20"}`}>
-                        {b.paymentStatus}
+                        {b.paymentStatus === "PARTIAL" ? "20% PAID" : b.paymentStatus}
                       </span>
+                      {b.paymentStatus === "PARTIAL" && (
+                        <div className="mt-0.5 text-[10px] text-marsala">
+                          Due ₹{(b.totalAmount - paidAmountOf(b)).toLocaleString("en-IN")}
+                        </div>
+                      )}
+                      {b.paymentStatus === "PENDING" && b.status !== "CANCELLED" && (
+                        <div className="mt-0.5 text-[10px] text-charcoal-soft">
+                          Due ₹{b.totalAmount.toLocaleString("en-IN")}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap items-center gap-1">
                         <ActionBtn label="View" icon={Eye} onClick={() => setDetailId(b.id)} />
                         {b.status === "CONFIRMED" && <ActionBtn label="Check-in" icon={ArrowDownToLine} onClick={() => action(b.id, "CHECK_IN")} />}
                         {b.status === "CHECKED_IN" && <ActionBtn label="Check-out" icon={ArrowUpFromLine} onClick={() => action(b.id, "CHECK_OUT")} />}
-                        {b.paymentStatus === "PENDING" && <ActionBtn label="Mark paid" icon={IndianRupee} onClick={() => action(b.id, "MARK_PAID")} />}
+                        {/* OTA-style payment mode dropdown — the only three settlement modes */}
+                        {b.status !== "CANCELLED" && b.paymentStatus !== "REFUNDED" && (
+                          <Select
+                            value={PAYMENT_MODES.includes(b.paymentMethod as PaymentMode) ? (b.paymentMethod as PaymentMode) : undefined}
+                            onValueChange={(v) => action(b.id, `SET_MODE_${v}`)}
+                          >
+                            <SelectTrigger
+                              className="h-7 w-[9.5rem] gap-1 rounded-lg border-charcoal/15 bg-white px-2 text-[10px] font-semibold text-charcoal focus:ring-0"
+                              aria-label="Payment mode"
+                            >
+                              <Wallet className="h-3 w-3 shrink-0 text-teal" />
+                              <SelectValue placeholder={modeLabel(b.paymentMethod)} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PAYMENT_MODES.map((m) => (
+                                <SelectItem key={m} value={m} className="text-xs">
+                                  {MODE_LABELS[m]}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
                         {b.status !== "CANCELLED" && b.status !== "CHECKED_OUT" && <ActionBtn label="Cancel" icon={X} onClick={() => action(b.id, "CANCEL")} color="marsala" />}
                         {b.paymentStatus === "PAID" && <ActionBtn label="Refund" icon={IndianRupee} onClick={() => action(b.id, "REFUND")} color="marsala" />}
                       </div>

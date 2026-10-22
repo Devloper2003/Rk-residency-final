@@ -16,6 +16,7 @@ import {
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { Diya, Lotus } from "./Motifs";
 import type { Room } from "./Rooms";
+import { PARTIAL_PERCENT, payableNow, dueAtHotel } from "@/lib/payment-modes";
 import { toast } from "sonner";
 
 type PlanInfo = {
@@ -54,7 +55,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
   const [dayRates, setDayRates] = useState<{ nights: NightRate[]; subtotal: number; closedDates: string[] } | null>(null);
   const [guests, setGuests] = useState({ adults: 2, children: 0 });
   const [contact, setContact] = useState({ name: "", email: "", phone: "", requests: "" });
-  const [paymentMethod, setPaymentMethod] = useState<"RAZORPAY" | "STRIPE" | "PAY_AT_HOTEL">("RAZORPAY");
+  const [paymentMethod, setPaymentMethod] = useState<"PREPAID" | "PARTIAL_PAID" | "PAY_AT_HOTEL">("PREPAID");
     const [submitting, setSubmitting] = useState(false);
   const [discountCode, setDiscountCode] = useState("");
   const [discountInfo, setDiscountInfo] = useState<{ code: string; pct: number } | null>(null);
@@ -254,8 +255,8 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Booking failed");
 
-       // ── STEP B: If RAZORPAY → open checkout modal ──
-      if (paymentMethod === "RAZORPAY") {
+       // ── STEP B: If PREPAID or PARTIAL_PAID → open Razorpay checkout ──
+      if (paymentMethod === "PREPAID" || paymentMethod === "PARTIAL_PAID") {
         // 1. Create Razorpay order on server
         const orderRes = await fetch("/api/razorpay/order", {
           method: "POST",
@@ -287,7 +288,9 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
             ondismiss: () => {
               // User closed the modal without paying
               toast.error("Payment cancelled", {
-                description: "Your booking is saved. You can pay later at the hotel.",
+                description: paymentMethod === "PARTIAL_PAID"
+                  ? "Your booking is saved. Pay the 20% advance later or at the hotel."
+                  : "Your booking is saved. You can pay later at the hotel.",
               });
               setSubmitting(false);
             },
@@ -316,8 +319,10 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
               setConfirmedRef(data.referenceCode);
               setConfirmedBookingId(data.bookingId);
               setStep(3);
-              toast.success("Payment successful!", {
-                description: `Reference ${data.referenceCode} · Paid via Razorpay`,
+              toast.success(paymentMethod === "PARTIAL_PAID" ? "Advance payment successful!" : "Payment successful!", {
+                description: paymentMethod === "PARTIAL_PAID"
+                  ? `Reference ${data.referenceCode} · 20% advance paid, balance at hotel`
+                  : `Reference ${data.referenceCode} · Paid online`,
               });
             } catch (verifyErr: unknown) {
               const msg = verifyErr instanceof Error ? verifyErr.message : "Verification failed";
@@ -336,19 +341,19 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
         return;
       }
 
-      // ── STEP C: If PAY_AT_HOTEL or STRIPE → direct confirm (no gateway) ──
+      // ── STEP C: PAY_AT_HOTEL → direct confirm (no gateway) ──
       setConfirmedRef(data.referenceCode);
       setConfirmedBookingId(data.bookingId);
       setStep(3);
       toast.success("Booking confirmed!", {
-        description: `Reference ${data.referenceCode}`,
+        description: `Reference ${data.referenceCode} · Pay at hotel on arrival`,
       });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Please try again";
       toast.error("Booking failed", { description: msg });
     } finally {
     // Only reset submitting if we're not waiting for Razorpay modal
-      if (paymentMethod !== "RAZORPAY") {
+      if (paymentMethod !== "PREPAID" && paymentMethod !== "PARTIAL_PAID") {
         setSubmitting(false);
       }
     }
@@ -690,13 +695,13 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
                 <div className="space-y-5">
                   <div>
                     <Label className="mb-2 flex items-center gap-1.5 font-display text-xs uppercase tracking-wider text-charcoal-soft">
-                      <ShieldCheck className="h-3.5 w-3.5" /> Payment method
+                      <ShieldCheck className="h-3.5 w-3.5" /> Payment mode
                     </Label>
                     <div className="grid gap-2 sm:grid-cols-3">
                       {[
-                        { id: "RAZORPAY" as const, label: "Razorpay", sub: "UPI · Cards · Netbanking", flag: "🇮🇳" },
-                        { id: "STRIPE" as const, label: "Stripe", sub: "International cards", flag: "🌍" },
-                        { id: "PAY_AT_HOTEL" as const, label: "Pay at hotel", sub: "Reserve now, pay on arrival", flag: "🏨" },
+                        { id: "PREPAID" as const, label: "Prepaid", sub: "Pay 100% online now · UPI, cards, netbanking", flag: "⚡" },
+                        { id: "PARTIAL_PAID" as const, label: "Partial Paid", sub: `Pay ${PARTIAL_PERCENT}% online now · balance at hotel`, flag: "💰" },
+                        { id: "PAY_AT_HOTEL" as const, label: "Pay at Hotel", sub: "Reserve now · pay 100% on arrival", flag: "🏨" },
                       ].map((p) => (
                         <button
                           key={p.id}
@@ -710,10 +715,24 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
                         >
                           <div className="text-2xl">{p.flag}</div>
                           <div className="mt-1 font-serif text-sm font-semibold text-charcoal">{p.label}</div>
-                          <div className="font-display text-[10px] text-charcoal-soft">{p.sub}</div>
+                          <div className="font-display text-[10px] leading-snug text-charcoal-soft">{p.sub}</div>
                         </button>
                       ))}
                     </div>
+                    {pricing && (
+                      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-teal/5 px-3 py-2 font-display text-xs">
+                        {paymentMethod === "PARTIAL_PAID" ? (
+                          <>
+                            <span className="text-charcoal-soft">Pay now: <strong className="text-teal">₹{payableNow(paymentMethod, pricing.total).toLocaleString("en-IN")}</strong> ({PARTIAL_PERCENT}%)</span>
+                            <span className="text-charcoal-soft">Due at hotel: <strong className="text-marsala">₹{dueAtHotel(paymentMethod, pricing.total).toLocaleString("en-IN")}</strong></span>
+                          </>
+                        ) : paymentMethod === "PAY_AT_HOTEL" ? (
+                          <span className="text-charcoal-soft">Nothing online — <strong className="text-marsala">₹{dueAtHotel(paymentMethod, pricing.total).toLocaleString("en-IN")}</strong> payable at the hotel</span>
+                        ) : (
+                          <span className="text-charcoal-soft">Pay now: <strong className="text-teal">₹{payableNow(paymentMethod, pricing.total).toLocaleString("en-IN")}</strong> — fully settled online</span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                                     {/* Coupon code input */}
@@ -809,9 +828,10 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
                   <div className="flex items-start gap-2 rounded-xl border border-marsala/20 bg-marsala/5 p-3">
                     <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-marsala" />
                     <p className="font-display text-xs leading-relaxed text-charcoal-soft">
-                      Payment is processed via secure server-verified webhooks.
-                      We never see or store your card details. Free cancellation
-                      up to 72 hours before check-in.
+                      Online payments run through Razorpay with server-verified
+                      webhooks — we never see or store your card details. Partial
+                      Paid collects {PARTIAL_PERCENT}% now and the balance is settled at the
+                      front desk. Free cancellation up to 72 hours before check-in.
                     </p>
                   </div>
                 </div>
@@ -883,9 +903,26 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
                         )}
                         {pricing && (
                           <div className="flex justify-between">
-                            <span>Paid</span>
+                            <span>
+                              {paymentMethod === "PARTIAL_PAID"
+                                ? `Paid (advance ${PARTIAL_PERCENT}%)`
+                                : paymentMethod === "PAY_AT_HOTEL"
+                                  ? "Due at hotel"
+                                  : "Paid"}
+                            </span>
                             <span className="font-semibold text-teal">
-                              ₹{pricing.total.toLocaleString("en-IN")}
+                              ₹{(paymentMethod === "PAY_AT_HOTEL"
+                                ? dueAtHotel(paymentMethod, pricing.total)
+                                : payableNow(paymentMethod, pricing.total)
+                              ).toLocaleString("en-IN")}
+                            </span>
+                          </div>
+                        )}
+                        {pricing && paymentMethod === "PARTIAL_PAID" && (
+                          <div className="flex justify-between">
+                            <span>Due at hotel</span>
+                            <span className="font-semibold text-marsala">
+                              ₹{dueAtHotel(paymentMethod, pricing.total).toLocaleString("en-IN")}
                             </span>
                           </div>
                         )}
@@ -973,7 +1010,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
                   ) : (
                     <>
                       <ShieldCheck className="mr-1.5 h-4 w-4" />
-                      Confirm &amp; Pay
+                      {paymentMethod === "PAY_AT_HOTEL" ? "Confirm Booking" : "Confirm & Pay"}
                     </>
                   )}
                 </Button>

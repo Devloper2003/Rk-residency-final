@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { db } from "@/lib/db";
+import { payableNow } from "@/lib/payment-modes";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Booking already paid." }, { status: 400 });
     }
 
+    if (booking.paymentMethod === "PAY_AT_HOTEL") {
+      return NextResponse.json(
+        { error: "This booking is set to Pay at Hotel — nothing to pay online." },
+        { status: 400 }
+      );
+    }
+
     // 2. Read Razorpay keys from SiteSetting (admin-managed, NOT .env)
     const keyId = await getSetting("razorpay_key_id");
     const keySecret = await getSetting("razorpay_key_secret");
@@ -57,8 +65,10 @@ export async function POST(req: Request) {
     }
 
     // 3. Create Razorpay order
+    // PREPAID → charge the full total; PARTIAL_PAID → charge only the 20% advance.
     // Razorpay expects amount in paise (₹1 = 100 paise)
-    const amountInPaise = booking.totalAmount * 100;
+    const chargeNow = payableNow(booking.paymentMethod || "PREPAID", booking.totalAmount);
+    const amountInPaise = chargeNow * 100;
 
     const razorpay = new Razorpay({
       key_id: keyId,
@@ -82,6 +92,8 @@ export async function POST(req: Request) {
       ok: true,
       orderId: order.id,
       amount: amountInPaise,
+      amountDue: chargeNow,
+      paymentMode: booking.paymentMethod,
       currency: "INR",
       keyId,
       bookingId: booking.id,

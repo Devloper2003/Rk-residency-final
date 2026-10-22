@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { db } from "@/lib/db";
+import { payableNow } from "@/lib/payment-modes";
 
 export const dynamic = "force-dynamic";
 
@@ -88,16 +89,20 @@ export async function POST(req: Request) {
 
     // 5. Handle different events
     if (eventType === "payment.captured" && status === "captured") {
-      // Mark booking as PAID (idempotent — safe if already PAID)
-      await db.booking.update({
-        where: { id: bookingId },
-        data: {
-          paymentStatus: "PAID",
-          paymentRef: paymentId,
-          paymentMethod: "RAZORPAY",
-        },
-      });
-      console.log(`[/api/webhooks/razorpay] Booking ${bookingId} marked PAID via webhook (${paymentId})`);
+      // Mode-aware: PARTIAL_PAID advance → PARTIAL (20% collected);
+      // PREPAID / legacy online → PAID (full). Idempotent — safe to replay.
+      const existing = await db.booking.findUnique({ where: { id: bookingId } });
+      if (existing) {
+        await db.booking.update({
+          where: { id: bookingId },
+          data: {
+            paymentStatus: existing.paymentMethod === "PARTIAL_PAID" ? "PARTIAL" : "PAID",
+            paidAmount: payableNow(existing.paymentMethod || "PREPAID", existing.totalAmount),
+            paymentRef: paymentId,
+          },
+        });
+        console.log(`[/api/webhooks/razorpay] Booking ${bookingId} marked ${existing.paymentMethod === "PARTIAL_PAID" ? "PARTIAL" : "PAID"} via webhook (${paymentId})`);
+      }
     }
 
     if (eventType === "payment.failed") {

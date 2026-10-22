@@ -4,6 +4,7 @@ import { verifyAdmin } from "@/lib/admin-auth";
 import PDFDocument from "pdfkit";
 import sharp from "sharp";
 import { AFM_FONTS } from "@/lib/pdfkit-fonts";
+import { modeLabel, paidAmountOf } from "@/lib/payment-modes";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -223,7 +224,7 @@ function buildVoucher(doc: PDFKit.PDFDocument, b: BookingRow, cfg: Cfg, logoBuff
   // 2. Status banner
   doc.rect(LEFT, y, CONTENT_W, 22).fill(TEAL_DEEP);
   doc.fillColor("#F5F2ED").font("Helvetica-Bold").fontSize(10).text(
-    `STATUS:  ${b.status.replace(/_/g, " ")}    ·    PAYMENT:  ${b.paymentStatus}`,
+    `STATUS:  ${b.status.replace(/_/g, " ")}    ·    PAYMENT:  ${b.paymentStatus === "PARTIAL" ? "20% ADVANCE RECEIVED" : b.paymentStatus}  (${modeLabel(b.paymentMethod)})`,
     LEFT, y + 6, { width: CONTENT_W, align: "center" }
   );
   y += 22 + 8;
@@ -518,10 +519,10 @@ function buildInvoice(doc: PDFKit.PDFDocument, b: BookingRow, cfg: Cfg, logoBuff
     cx += payCols[i];
   }
   // body row
-  const amountPaid = b.paymentStatus === "PAID" ? b.totalAmount : 0;
+  const amountPaid = paidAmountOf(b);
   const balance = b.totalAmount - amountPaid;
   doc.fillColor(WHITE).rect(LEFT, payY + 18, CONTENT_W, 22).fill();
-  doc.fillColor(CHARCOAL).font("Helvetica-Bold").fontSize(9).text(b.paymentStatus, LEFT + 6, payY + 24, { width: payCols[0] - 10 });
+  doc.fillColor(CHARCOAL).font("Helvetica-Bold").fontSize(9).text(b.paymentStatus === "PARTIAL" ? "PARTIAL (20%)" : b.paymentStatus, LEFT + 6, payY + 24, { width: payCols[0] - 10 });
   doc.font("Helvetica").text(formatINR(amountPaid), LEFT + payCols[0] + 6, payY + 24, { width: payCols[1] - 10, align: "right" });
   doc.fillColor(MARSALA).font("Helvetica-Bold").text(formatINR(balance), LEFT + payCols[0] + payCols[1] + 6, payY + 24, { width: payCols[2] - 10, align: "right" });
   doc.fillColor(TEAL).font("Helvetica-Bold").text(formatINR(b.totalAmount), LEFT + payCols[0] + payCols[1] + payCols[2] + 6, payY + 24, { width: payCols[3] - 10, align: "right" });

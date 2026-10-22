@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { db } from "@/lib/db";
+import { payableNow } from "@/lib/payment-modes";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,9 @@ async function getSetting(key: string): Promise<string> {
  * POST /api/razorpay/verify
  *
  * Verifies the Razorpay payment signature from the frontend callback.
- * If signature is valid → marks booking as PAID and stores paymentRef.
+ * If signature is valid → marks the booking per its payment mode and stores paymentRef:
+ *   PREPAID (or legacy online) → PAID, paidAmount = total
+ *   PARTIAL_PAID               → PARTIAL, paidAmount = 20% advance
  *
  * Body: {
  *   razorpay_order_id: string,
@@ -62,11 +65,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid payment signature." }, { status: 400 });
     }
 
-    // 4. Update the booking in DB
+    // 4. Update the booking in DB — mode-aware (advance vs full collection)
+    const existing = await db.booking.findUnique({ where: { id: bookingId } });
+    if (!existing) {
+      return NextResponse.json({ error: "Booking not found." }, { status: 404 });
+    }
+    const collected = payableNow(existing.paymentMethod || "PREPAID", existing.totalAmount);
     const booking = await db.booking.update({
       where: { id: bookingId },
       data: {
-        paymentStatus: "PAID",
+        paymentStatus: existing.paymentMethod === "PARTIAL_PAID" ? "PARTIAL" : "PAID",
+        paidAmount: collected,
         paymentRef: razorpay_payment_id,
       },
     });

@@ -18,6 +18,12 @@ export function ManualBookingModal({ preselectedRoomId, onClose, onCreated }: {
     adults: 2, children: 0, specialRequests: "", paymentMethod: "PAY_AT_HOTEL",
   });
 
+  const PAYMENT_MODE_OPTIONS = [
+    { value: "PREPAID", label: "Prepaid — full received" },
+    { value: "PARTIAL_PAID", label: "Partial Paid — 20% received" },
+    { value: "PAY_AT_HOTEL", label: "Pay at Hotel — nothing received" },
+  ];
+
   useEffect(() => {
     setLoading(true);
     adminFetch("/api/admin/all?action=rooms").then((data: any) => {
@@ -33,9 +39,11 @@ export function ManualBookingModal({ preselectedRoomId, onClose, onCreated }: {
   const nights = checkInDate && checkOutDate ? Math.max(1, Math.round((checkOutDate.getTime() - checkInDate.getTime()) / 86400000)) : 0;
   const pricePerNight = selectedRoom?.basePrice || 0;
   const subtotal = nights * pricePerNight;
-  const taxesGst = Math.round(subtotal * 0.12);
-  const serviceFee = Math.round(subtotal * 0.05);
+  // Same price story as the website: room rate + a single 5% GST, no service fee.
+  const taxesGst = Math.round(subtotal * 0.05);
+  const serviceFee = 0;
   const totalAmount = subtotal + taxesGst + serviceFee;
+  const advanceAmount = form.paymentMethod === "PARTIAL_PAID" ? Math.round(totalAmount * 0.2) : form.paymentMethod === "PREPAID" ? totalAmount : 0;
 
   const handleSubmit = async () => {
     if (!form.roomId || !form.guestName || !form.guestEmail || !form.guestPhone || !form.checkIn || !form.checkOut) { setError("Please fill all required fields"); return; }
@@ -72,7 +80,7 @@ export function ManualBookingModal({ preselectedRoomId, onClose, onCreated }: {
               <div><label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft"><User className="mr-1 inline h-3 w-3" /> Guest Name *</label><input type="text" value={form.guestName} onChange={set("guestName")} placeholder="Full name" className="w-full rounded-lg border border-charcoal/10 bg-ivory-deep/30 px-3 py-2 font-display text-sm text-charcoal placeholder:text-charcoal-soft/50 focus:border-teal focus:outline-none" /></div>
               <div><label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft"><Mail className="mr-1 inline h-3 w-3" /> Email *</label><input type="email" value={form.guestEmail} onChange={set("guestEmail")} placeholder="guest@email.com" className="w-full rounded-lg border border-charcoal/10 bg-ivory-deep/30 px-3 py-2 font-display text-sm text-charcoal placeholder:text-charcoal-soft/50 focus:border-teal focus:outline-none" /></div>
               <div><label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft"><Phone className="mr-1 inline h-3 w-3" /> Phone *</label><input type="tel" value={form.guestPhone} onChange={set("guestPhone")} placeholder="+91 98765 43210" className="w-full rounded-lg border border-charcoal/10 bg-ivory-deep/30 px-3 py-2 font-display text-sm text-charcoal placeholder:text-charcoal-soft/50 focus:border-teal focus:outline-none" /></div>
-              <div><label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft"><CalendarDays className="mr-1 inline h-3 w-3" /> Payment Method</label><select value={form.paymentMethod} onChange={set("paymentMethod")} className="w-full rounded-lg border border-charcoal/10 bg-ivory-deep/30 px-3 py-2 font-display text-sm text-charcoal focus:border-teal focus:outline-none"><option value="PAY_AT_HOTEL">Pay at Hotel</option><option value="RAZORPAY">Razorpay (Online)</option></select></div>
+              <div><label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft"><CalendarDays className="mr-1 inline h-3 w-3" /> Payment Mode</label><select value={form.paymentMethod} onChange={set("paymentMethod")} className="w-full rounded-lg border border-charcoal/10 bg-ivory-deep/30 px-3 py-2 font-display text-sm text-charcoal focus:border-teal focus:outline-none">{PAYMENT_MODE_OPTIONS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}</select></div>
             </div>
             <div className="grid gap-3 sm:grid-cols-4">
               <div><label className="mb-1 block font-display text-[10px] uppercase tracking-wider text-charcoal-soft">Check-in *</label><input type="date" value={form.checkIn} onChange={set("checkIn")} min={new Date().toISOString().slice(0, 10)} className="w-full rounded-lg border border-charcoal/10 bg-ivory-deep/30 px-3 py-2 font-display text-sm text-charcoal focus:border-teal focus:outline-none" /></div>
@@ -86,9 +94,14 @@ export function ManualBookingModal({ preselectedRoomId, onClose, onCreated }: {
                 <h4 className="mb-2 font-serif text-sm font-semibold text-charcoal">Price Summary</h4>
                 <div className="space-y-1 font-display text-xs text-charcoal-soft">
                   <div className="flex justify-between"><span>{selectedRoom.name} x {nights} night{nights > 1 ? "s" : ""}</span><span className="text-charcoal">₹{subtotal.toLocaleString("en-IN")}</span></div>
-                  <div className="flex justify-between"><span>GST (12%)</span><span className="text-charcoal">₹{taxesGst.toLocaleString("en-IN")}</span></div>
-                  <div className="flex justify-between"><span>Service Fee (5%)</span><span className="text-charcoal">₹{serviceFee.toLocaleString("en-IN")}</span></div>
+                  <div className="flex justify-between"><span>GST (5%)</span><span className="text-charcoal">₹{taxesGst.toLocaleString("en-IN")}</span></div>
                   <div className="flex justify-between border-t border-charcoal/10 pt-2 font-serif text-sm font-bold text-charcoal"><span>Total</span><span>₹{totalAmount.toLocaleString("en-IN")}</span></div>
+                  {form.paymentMethod === "PARTIAL_PAID" && (
+                    <div className="flex justify-between"><span>Advance now (20%)</span><span className="font-semibold text-teal">₹{advanceAmount.toLocaleString("en-IN")}</span></div>
+                  )}
+                  {form.paymentMethod === "PARTIAL_PAID" && (
+                    <div className="flex justify-between"><span>Due at hotel (80%)</span><span className="font-semibold text-marsala">₹{(totalAmount - advanceAmount).toLocaleString("en-IN")}</span></div>
+                  )}
                 </div>
               </div>
             )}
