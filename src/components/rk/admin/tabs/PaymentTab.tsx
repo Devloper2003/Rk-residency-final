@@ -16,11 +16,12 @@ const PAYMENT_KEYS = [
   { key: "razorpay_mode", label: "Mode (sandbox/live)", category: "razorpay", type: "text" },
   { key: "razorpay_success_url", label: "Success URL", category: "razorpay", type: "text" },
   { key: "razorpay_failure_url", label: "Failure URL", category: "razorpay", type: "text" },
-  // WhatsApp owner notifications (multi-gateway: CallMeBot | UltraMsg | Green API)
+  // WhatsApp owner notifications (multi-gateway: AiSensy | CallMeBot | UltraMsg | Green API)
   { key: "whatsapp_enabled", label: "Enable WhatsApp owner alerts", category: "whatsapp", type: "boolean" },
-  { key: "whatsapp_provider", label: "Gateway provider", category: "whatsapp", type: "select", options: ["callmebot", "ultramsg", "greenapi"] },
+  { key: "whatsapp_provider", label: "Gateway provider", category: "whatsapp", type: "select", options: ["aisensy", "callmebot", "ultramsg", "greenapi"] },
   { key: "whatsapp_owner_phone", label: "Owner WhatsApp number (91XXXXXXXXXX)", category: "whatsapp", type: "text" },
-  { key: "whatsapp_api_key", label: "API key / Token (CallMeBot key · UltraMsg token · Green API token)", category: "whatsapp", type: "secret" },
+  { key: "whatsapp_api_key", label: "API key / Token (AiSensy API key · CallMeBot key · UltraMsg token · Green API token)", category: "whatsapp", type: "secret" },
+  { key: "whatsapp_aisensy_campaign", label: "AiSensy Campaign name (sirf AiSensy ke liye — EXACT naam, case-sensitive)", category: "whatsapp", type: "text" },
   { key: "whatsapp_ultramsg_instance", label: "UltraMsg Instance ID (sirf UltraMsg ke liye, e.g. instance99999)", category: "whatsapp", type: "text" },
   { key: "whatsapp_greenapi_instance", label: "Green API idInstance (sirf Green API ke liye, e.g. 123456)", category: "whatsapp", type: "text" },
   // Booking lifecycle
@@ -49,6 +50,7 @@ const DEFAULTS: Record<string, string> = {
   whatsapp_api_key: "",
   whatsapp_ultramsg_instance: "",
   whatsapp_greenapi_instance: "",
+  whatsapp_aisensy_campaign: "",
   bookings_pending_cancel_minutes: "5",
   stripe_enabled: "false",
   stripe_publishable_key: "",
@@ -67,7 +69,7 @@ export function PaymentTab() {
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
   const [testingWa, setTestingWa] = useState(false);
 
-  /** Sends a test WhatsApp to the owner via the shared CallMeBot gateway. */
+  /** Sends a test WhatsApp to the owner via the selected gateway. */
   const sendWhatsAppTest = async () => {
     setTestingWa(true);
     try {
@@ -80,7 +82,7 @@ export function PaymentTab() {
       if (res.ok && data.sent) {
         toast.success("Test message sent — apna WhatsApp check karo!");
       } else if (res.ok) {
-        toast.error("Send failed — Enable ON + owner number + provider ke saare fields (API key, instance id) sahi hone chahiye. Provider ko bhi check karo (callmebot / ultramsg / greenapi).");
+        toast.error("Send failed — Enable ON + owner number + provider ke saare fields (API key, AiSensy campaign / instance id) sahi hone chahiye. Provider check karo (aisensy / callmebot / ultramsg / greenapi). AiSensy mein template + campaign dono approved hone chahiye.");
       } else {
         throw new Error(data.error || "Test failed");
       }
@@ -290,22 +292,29 @@ export function PaymentTab() {
         </div>
         <div className="mt-3 rounded-xl border border-[#25D366]/30 bg-[#25D366]/5 px-4 py-3">
           <p className="font-display text-xs text-charcoal-soft">
-            <strong className="text-[#25D366]">3 free gateway options — jo chale wo choose karo:</strong>
+            <strong className="text-[#25D366]">4 gateway options — jo chale wo choose karo (AiSensy best):</strong>
           </p>
           <p className="mt-1.5 font-display text-xs text-charcoal-soft">
-            <strong className="text-charcoal">1. CallMeBot</strong> (sabse simple): apne WhatsApp se{" "}
+            <strong className="text-charcoal">1. AiSensy</strong> (RECOMMENDED — Meta ka official WhatsApp Business API, template-approved delivery, CallMeBot jaisa koi registration jhanjhat nahi):{" "}
+            (a) AiSensy dashboard → <strong className="text-charcoal">Developer → API Campaign key → Generate</strong> karke key copy karo → API key field mein paste karo;{" "}
+            (b) <strong className="text-charcoal">Templates → New Template</strong> — category <em className="font-mono not-italic">Utility</em>, body mein sirf <strong className="text-charcoal">ek variable {"{{1}}"}</strong> rakho (poora booking alert isi variable mein aayega) → submit for approval;{" "}
+            (c) <strong className="text-charcoal">Campaigns → API Campaign</strong> banao us template se — campaign ka naam EXACT copy karo (case-sensitive) → AiSensy Campaign field mein daalo;{" "}
+            (d) Provider = <span className="font-mono">aisensy</span>.
+          </p>
+          <p className="mt-1.5 font-display text-xs text-charcoal-soft">
+            <strong className="text-charcoal">2. CallMeBot</strong> (sabse simple, par registration kabhi kabhi fail hoti hai): apne WhatsApp se{" "}
             <strong className="text-charcoal">+34 644 51 95 23</strong> ko pehle contact mein save karo, phir ye message bhejo:{" "}
             <em className="font-mono not-italic text-charcoal">I allow callmebot to send me messages</em> — reply mein API key milegi.{' '}
             Provider = <span className="font-mono">callmebot</span> rakho, API key paste karo.
           </p>
           <p className="mt-1.5 font-display text-xs text-charcoal-soft">
-            <strong className="text-charcoal">2. UltraMsg</strong> (CallMeBot na chale toh — best alternate): ultramsg.com par signup karo → New Instance banao → apne WhatsApp se QR scan karo (WhatsApp → Linked devices → Link a device) → Instance ID + Token mil jayega. Provider = <span className="font-mono">ultramsg</span>, Instance ID field + Token API key field mein daalo.
+            <strong className="text-charcoal">3. UltraMsg</strong> (CallMeBot na chale toh — best alternate): ultramsg.com par signup karo → New Instance banao → apne WhatsApp se QR scan karo (WhatsApp → Linked devices → Link a device) → Instance ID + Token mil jayega. Provider = <span className="font-mono">ultramsg</span>, Instance ID field + Token API key field mein daalo.
           </p>
           <p className="mt-1.5 font-display text-xs text-charcoal-soft">
-            <strong className="text-charcoal">3. Green API</strong>: green-api.com par register karo → instance banao → QR scan karo → idInstance + apiTokenInstance mil jayega. Provider = <span className="font-mono">greenapi</span>.
+            <strong className="text-charcoal">4. Green API</strong>: green-api.com par register karo → instance banao → QR scan karo → idInstance + apiTokenInstance mil jayega. Provider = <span className="font-mono">greenapi</span>.
           </p>
           <p className="mt-1.5 font-display text-xs text-charcoal-soft">
-            Har option mein: number <span className="font-mono">919760814931</span> likho, Enable ON, Save, phir Test button dabao. UltraMsg/Green API mein aapka apna WhatsApp hi linked hota hai — messages usi number se jaate hain.
+            Har option mein: number <span className="font-mono">919760814931</span> likho, Enable ON, Save, phir Test button dabao. AiSensy mein message aapke AiSensy wale WhatsApp API number se owner ke personal number par aata hai. UltraMsg/Green API mein aapka apna WhatsApp hi linked hota hai — messages usi number se jaate hain.
           </p>
           <Button
             onClick={sendWhatsAppTest}

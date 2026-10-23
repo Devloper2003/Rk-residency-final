@@ -21,7 +21,8 @@ import { payableNow, modeLabel } from "@/lib/payment-modes";
  *           lost / browser closed before callback" cases)
  *
  * Owner WhatsApp notifications ride the same events (new booking, payment
- * received, auto-cancel) via CallMeBot — configured in Admin → Payment
+ * received, auto-cancel) via the configured gateway — CallMeBot, UltraMsg,
+ * Green API or AiSensy (Meta official API) — chosen in Admin → Payment
  * Settings → WhatsApp Notifications.
  */
 
@@ -48,7 +49,7 @@ function makeRazorpay(keyId: string, keySecret: string): Razorpay {
 }
 
 // ---------------------------------------------------------------------------
-// WhatsApp owner notifications (multi-gateway: CallMeBot | UltraMsg | Green API)
+// WhatsApp owner notifications (multi-gateway: CallMeBot | UltraMsg | Green API | AiSensy)
 // ---------------------------------------------------------------------------
 
 function waEnabled(cfg: Record<string, string>): boolean {
@@ -61,14 +62,21 @@ function waEnabled(cfg: Record<string, string>): boolean {
 
 /**
  * Send one WhatsApp message to the owner through the configured gateway.
- * Three interchangeable providers (owner's choice in Admin → Payment Settings):
+ * Four interchangeable providers (owner's choice in Admin → Payment Settings):
  *   - callmebot (default)  — key from +34 644 51 95 23 registration, plain GET
  *   - ultramsg             — owner's own WhatsApp linked via QR scan
  *                            POST https://api.ultramsg.com/{instance}/messages/chat
  *   - greenapi             — owner's own WhatsApp linked via QR scan
  *                            POST https://api.green-api.com/waInstance{id}/sendMessage/{token}
- * All three reuse the same SiteSetting keys: whatsapp_enabled,
- * whatsapp_owner_phone, whatsapp_api_key (+ provider-specific instance id).
+ *   - aisensy              — Meta OFFICIAL WhatsApp Business API via AiSensy
+ *                            (delivery guaranteed, template-approved; needs a
+ *                            utility template with ONE body variable {{1}} and
+ *                            an API campaign using it — the whole alert text
+ *                            rides templateParams[0])
+ *                            POST https://backend.aisensy.com/campaign/t1/api/v2
+ * All four reuse the same SiteSetting keys: whatsapp_enabled,
+ * whatsapp_owner_phone, whatsapp_api_key (+ provider-specific campaign/
+ * instance id).
  * Fire-and-forget. Never throws. Returns true only on a provider-confirmed send.
  */
 export async function notifyOwnerWhatsApp(text: string): Promise<boolean> {
@@ -80,6 +88,7 @@ export async function notifyOwnerWhatsApp(text: string): Promise<boolean> {
       "whatsapp_provider",
       "whatsapp_ultramsg_instance",
       "whatsapp_greenapi_instance",
+      "whatsapp_aisensy_campaign",
     ]);
     if (!waEnabled(cfg)) return false;
     const provider = (cfg.whatsapp_provider || "callmebot").trim().toLowerCase();
@@ -129,6 +138,34 @@ export async function notifyOwnerWhatsApp(text: string): Promise<boolean> {
       const parsed: any = await res.json().catch(() => null);
       const ok = res.ok && !!parsed?.idMessage;
       if (!ok) console.error("[whatsapp-notify] Green API responded", res.status, JSON.stringify(parsed)?.slice(0, 200));
+      return ok;
+    }
+
+    if (provider === "aisensy") {
+      const campaign = (cfg.whatsapp_aisensy_campaign || "").trim();
+      if (!campaign) {
+        console.error("[whatsapp-notify] aisensy selected but whatsapp_aisensy_campaign missing");
+        return false;
+      }
+      // AiSensy Campaign API v2 — Meta official WhatsApp Business API.
+      // templateParams render literally (no markdown), so WhatsApp bold/italic
+      // markers are stripped for clean display.
+      const res = await fetch("https://backend.aisensy.com/campaign/t1/api/v2", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          apiKey: key,
+          campaignName: campaign,
+          destination: digits,
+          userName: "RK Residency Owner",
+          source: "website-bookings",
+          templateParams: [text.replace(/[*_~`]/g, "").slice(0, 1024)],
+        }),
+        signal: AbortSignal.timeout(10_000),
+      });
+      const parsed: any = await res.json().catch(() => null);
+      const ok = res.ok && parsed?.success !== false;
+      if (!ok) console.error("[whatsapp-notify] AiSensy responded", res.status, JSON.stringify(parsed)?.slice(0, 200));
       return ok;
     }
 
