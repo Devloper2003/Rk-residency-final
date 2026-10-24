@@ -79,6 +79,19 @@ const OCC_ROWS: { kind: OccKind; label: string; Icon: React.ComponentType<{ clas
   { kind: "child", label: "+1 Child", Icon: Baby },
 ];
 
+/** Weekend (Sat/Sun) day keys inside an inclusive range — for bulk inventory. */
+function weekendDaysIn(fromISO: string, toISO: string): string[] {
+  const out: string[] = [];
+  const d = new Date(fromISO + "T00:00:00Z");
+  const to = new Date(toISO + "T00:00:00Z");
+  while (d <= to && out.length < 200) {
+    const wd = d.getUTCDay();
+    if (wd === 0 || wd === 6) out.push(d.toISOString().slice(0, 10));
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  return out;
+}
+
 function fmtDayHeader(key: string) {
   const d = new Date(key + "T00:00:00Z");
   return {
@@ -121,6 +134,12 @@ export function InventoryTab() {
   const [bulkClosed, setBulkClosed] = useState<"any" | "open" | "closed">("any");
   const [bulkWeekend, setBulkWeekend] = useState(false);
   const [bulkSaving, setBulkSaving] = useState(false);
+  // Per-day inventory row inside the plan-rate matrix (sellable rooms for the selected room type)
+  const [invMap, setInvMap] = useState<Record<string, { id: string | null; override: number | null; closed: boolean; booked: number }>>({});
+  const [invEditing, setInvEditing] = useState<string | null>(null); // date key being edited
+  const [invEditVal, setInvEditVal] = useState("");
+  const [invSaving, setInvSaving] = useState<string | null>(null);
+  const [bulkInventory, setBulkInventory] = useState(0); // 0 = skip inventory in bulk apply
 
   const load = useCallback(() => {
     let cancelled = false;
@@ -167,6 +186,7 @@ export function InventoryTab() {
     }));
   })();
   const keys = dayKeys(viewDate, 14);
+  const matrixTotal = rooms.find((r) => r.id === matrixRoomId)?.totalCount ?? 0;
 
   /** Load the 14-day override rows for every plan of the selected room. */
   const loadMatrix = useCallback(async () => {
@@ -176,19 +196,69 @@ export function InventoryTab() {
     setMatrixLoading(true);
     const end = dayKeys(viewDate, 14)[13];
     try {
-      const results = await Promise.all(targets.map(async (p) => {
-        try {
-          const d = await adminFetch(`/api/admin/plans/day-rates?planId=${p.id}&startDate=${viewDate}&endDate=${end}`);
-          const map: Record<string, DayRateRow> = {};
-          for (const r of d?.rates || []) map[r.date] = r;
-          return [p.id, map] as const;
-        } catch { return [p.id, {}] as const; }
-      }));
+      const [results, inv] = await Promise.all([
+        Promise.all(targets.map(async (p) => {
+          try {
+            const d = await adminFetch(`/api/admin/plans/day-rates?planId=${p.id}&startDate=${viewDate}&endDate=${end}`);
+            const map: Record<string, DayRateRow> = {};
+            for (const r of d?.rates || []) map[r.date] = r;
+            return [p.id, map] as const;
+          } catch { return [p.id, {}] as const; }
+        })),
+        // Day-wise sellable inventory for the selected room (Inventory row in the matrix)
+        adminFetch(`/api/admin/inventory?roomId=${matrixRoomId}&startDate=${viewDate}&endDate=${end}`).catch(() => null),
+      ]);
       setRateMaps(Object.fromEntries(results));
+      const invMapData: Record<string, { id: string | null; override: number | null; closed: boolean; booked: number }> = {};
+      const invOverrides: any[] = inv && !inv.error ? inv.overrides || [] : [];
+      const invBooked: Record<string, number> = inv && !inv.error ? inv.bookedMap || {} : {};
+      for (const k of dayKeys(viewDate, 14)) {
+        const o = invOverrides.find((x) => x.date === k);
+        invMapData[k] = { id: o?.id ?? null, override: o ? o.availableCount : null, closed: !!o?.isClosed, booked: invBooked[k] || 0 };
+      }
+      setInvMap(invMapData);
     } finally { setMatrixLoading(false); }
   }, [matrixRoomId, plans, viewDate]);
 
   useEffect(() => { loadMatrix(); }, [loadMatrix]);
+
+  /** Save the Inventory cell for one day (empty value = reset to default). */
+  const saveInvCell = async (dateKey: string) => {
+    const raw = invEditVal.trim();
+    const n = raw === "" ? NaN : parseInt(raw, 10);
+    if (raw !== "" && (!Number.isInteger(n) || n < 0)) {
+      toast.error("Enter a whole number ≥ 0 — or leave empty to reset to default");
+      return;
+    }
+    setInvSaving(dateKey);
+    try {
+      if (raw === "") {
+        const row = invMap[dateKey];
+        if (row?.id) {
+          await adminFetch(`/api/admin/inventory?id=${row.id}`, { method: "DELETE" });
+          toast.success(`${dateKey}: inventory reverted to default`);
+        } else {
+          toast.info(`${dateKey}: already using default inventory`);
+        }
+      } else {
+        await adminFetch("/api/admin/inventory", {
+          method: "POST",
+          body: JSON.stringify({ roomId: matrixRoomId, date: dateKey, availableCount: n }),
+        });
+        toast.success(`${dateKey}: sellable rooms set to ${n}`);
+      }
+      await loadMatrix();
+      // keep the open/close grid + day view in sync
+      adminFetch(`/api/admin/inventory?startDate=${viewDate}&days=14`).then((g: any) => { if (g && !g.error) setGrid(g); }).catch(() => {});
+      adminApi.get("inventory", { date: viewDate }).then((data: any) => { if (data && !data.error) setRooms(data.rooms || []); }).catch(() => {});
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to save inventory");
+    } finally {
+      setInvSaving(null);
+      setInvEditing(null);
+      setInvEditVal("");
+    }
+  };
 
   /** Quick open/close a plan for one day (channel-manager 🚫). */
   const quickToggleClosed = async (plan: PlanLite, date: string, currentlyClosed: boolean) => {
@@ -212,8 +282,8 @@ export function InventoryTab() {
   const applyBulk = async (reset: boolean) => {
     if (!matrixRoomId) return;
     if (!reset) {
-      const anyValue = bulkDouble > 0 || bulkSingle > 0 || bulkAdult > 0 || bulkChild > 0 || bulkClosed !== "any";
-      if (!anyValue) { toast.error("Enter at least one rate (or choose open/close)"); return; }
+      const anyValue = bulkDouble > 0 || bulkSingle > 0 || bulkAdult > 0 || bulkChild > 0 || bulkClosed !== "any" || bulkInventory > 0;
+      if (!anyValue) { toast.error("Enter at least one rate, inventory, or choose open/close"); return; }
     }
     if (new Date(bulkTo) < new Date(bulkFrom)) { toast.error("'To' must be on or after 'From'"); return; }
     setBulkSaving(true);
@@ -235,6 +305,19 @@ export function InventoryTab() {
       if (res && !res.error) {
         toast.success(res.reset ? `Cleared overrides for ${res.count} plan-days` : `Updated ${res.count} plan-days`);
         loadMatrix();
+      }
+      // Room inventory (independent of plan selection) — same range / weekend filter
+      if (bulkInventory > 0) {
+        if (bulkWeekend) {
+          for (const ds of weekendDaysIn(bulkFrom, bulkTo)) {
+            await adminFetch("/api/admin/inventory", { method: "POST", body: JSON.stringify(reset ? { roomId: matrixRoomId, date: ds, reset: true } : { roomId: matrixRoomId, date: ds, availableCount: bulkInventory }) });
+          }
+        } else {
+          await adminFetch("/api/admin/inventory", { method: "POST", body: JSON.stringify(reset ? { roomId: matrixRoomId, date: bulkFrom, dateTo: bulkTo, reset: true } : { roomId: matrixRoomId, date: bulkFrom, dateTo: bulkTo, availableCount: bulkInventory }) });
+        }
+        toast.success(`Inventory ${reset ? "reset to default" : `set to ${bulkInventory} rooms`} for the range`);
+        adminFetch(`/api/admin/inventory?startDate=${viewDate}&days=14`).then((g: any) => { if (g && !g.error) setGrid(g); }).catch(() => {});
+        adminApi.get("inventory", { date: viewDate }).then((data: any) => { if (data && !data.error) setRooms(data.rooms || []); }).catch(() => {});
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Bulk update failed");
@@ -661,6 +744,74 @@ export function InventoryTab() {
                         </Fragment>
                       );
                     })}
+                    {/* Inventory row — day-wise sellable rooms for the selected room type */}
+                    <tr className="border-t border-charcoal/10 bg-ivory-deep/40">
+                      <td className="sticky left-0 z-10 bg-ivory-deep/90 px-2 py-1.5">
+                        <span className="flex items-center gap-1.5 font-display text-[10px] font-semibold uppercase tracking-wider text-charcoal-soft">
+                          <BedDouble className="h-3 w-3 text-teal/70" /> Inventory
+                        </span>
+                        <span className="mt-0.5 block font-display text-[9px] leading-tight text-charcoal-soft/70">rooms sellable · click to edit</span>
+                      </td>
+                      {keys.map((key) => {
+                        const inv = invMap[key];
+                        const booked = inv?.booked ?? 0;
+                        const override = inv?.override ?? null;
+                        const closed = !!inv?.closed || override === 0;
+                        const sellable = closed ? 0 : (override ?? matrixTotal);
+                        const left = Math.max(0, sellable - booked);
+                        const editing = invEditing === key;
+                        const saving = invSaving === key;
+                        return (
+                          <td key={key} className="px-0.5 py-1 align-top">
+                            {editing ? (
+                              <div className="flex flex-col gap-0.5">
+                                <input
+                                  autoFocus
+                                  type="number"
+                                  min={0}
+                                  value={invEditVal}
+                                  onChange={(e) => setInvEditVal(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") saveInvCell(key);
+                                    if (e.key === "Escape") { setInvEditing(null); setInvEditVal(""); }
+                                  }}
+                                  placeholder={String(override ?? matrixTotal)}
+                                  className="h-7 w-full min-w-[48px] rounded-md border border-teal/50 bg-white px-1 text-center font-serif text-[11px] font-bold text-charcoal focus:border-teal focus:outline-none"
+                                />
+                                <div className="flex gap-0.5">
+                                  <button onClick={() => saveInvCell(key)} disabled={saving} className="flex-1 rounded bg-teal py-0.5 text-ivory disabled:opacity-50" title="Save"><Save className="mx-auto h-2.5 w-2.5" /></button>
+                                  <button onClick={() => { setInvEditing(null); setInvEditVal(""); }} className="flex-1 rounded bg-charcoal/10 py-0.5 text-charcoal-soft" title="Cancel"><X className="mx-auto h-2.5 w-2.5" /></button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => { setInvEditing(key); setInvEditVal(""); }}
+                                disabled={saving}
+                                className={`flex h-7 w-full min-w-[48px] flex-col items-center justify-center rounded-md transition-colors ${
+                                  closed
+                                    ? "bg-marsala/15 text-marsala"
+                                    : override !== null
+                                      ? "bg-gold/20 text-gold-deep ring-1 ring-inset ring-gold/40"
+                                      : "bg-white text-teal ring-1 ring-inset ring-charcoal/8 hover:ring-teal/40"
+                                }`}
+                                title={`Inventory · ${key}\nSellable: ${closed ? "CLOSED" : override !== null ? `${override} (custom)` : `${matrixTotal} (default)`}\nBooked: ${booked}\nClick to edit — empty value resets to default`}
+                              >
+                                {saving ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <>
+                                    <span className="flex items-center gap-0.5 font-serif text-[11px] font-bold leading-none">
+                                      {closed && <Lock className="h-2.5 w-2.5" />}{left}
+                                    </span>
+                                    <span className="font-display text-[8px] leading-none text-charcoal-soft/70">{booked}/{closed ? 0 : (override ?? matrixTotal)}</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -712,6 +863,10 @@ export function InventoryTab() {
                   <input type="number" min={0} value={bulkChild || ""} onChange={(e) => setBulkChild(parseInt(e.target.value) || 0)} placeholder="skip" className="w-20 rounded-lg border border-charcoal/10 bg-white px-2 py-1.5 font-display text-xs text-charcoal focus:border-teal focus:outline-none" />
                 </div>
                 <div>
+                  <label className="mb-1 block font-display text-[9px] uppercase tracking-wider text-charcoal-soft">Inventory</label>
+                  <input type="number" min={0} value={bulkInventory || ""} onChange={(e) => setBulkInventory(parseInt(e.target.value) || 0)} placeholder="skip" className="w-20 rounded-lg border border-charcoal/10 bg-white px-2 py-1.5 font-display text-xs text-charcoal focus:border-teal focus:outline-none" />
+                </div>
+                <div>
                   <label className="mb-1 block font-display text-[9px] uppercase tracking-wider text-charcoal-soft">Plan status</label>
                   <select
                     value={bulkClosed}
@@ -734,7 +889,7 @@ export function InventoryTab() {
                   <RotateCcw className="mr-1 h-3.5 w-3.5" /> Reset range
                 </Button>
               </div>
-              <p className="mt-2 font-display text-[9px] text-charcoal-soft/70">Leave a rate blank to skip it — only the filled values are applied to every selected day.</p>
+              <p className="mt-2 font-display text-[9px] text-charcoal-soft/70">Leave a rate blank to skip it — only the filled values are applied to every selected day. Inventory blank = untouched; fill it to set sellable rooms for the range (Apply), or use Reset range with a value to revert inventory overrides.</p>
             </div>
           </>
         )}
