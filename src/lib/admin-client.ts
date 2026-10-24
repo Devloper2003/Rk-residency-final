@@ -55,7 +55,11 @@ export async function adminFetch<T = any>(url: string, options: RequestInit = {}
       if (res.status === 401) { clearAdminSession(); return null; }
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: "Request failed" }));
-        throw new Error(data.error || `HTTP ${res.status}`);
+        const err = new Error(data.error || `HTTP ${res.status}`);
+        // Attach server-side validation details (e.g. zod fieldErrors) so
+        // admin tabs can show WHICH field failed instead of a silent no-op.
+        (err as any).details = (data as any).details;
+        throw err;
       }
       return res.json();
     } catch (e) {

@@ -301,14 +301,26 @@ export function RoomsTab({ onOpenInventory }: { onOpenInventory?: () => void }) 
     if (!room.slug.trim()) return toast.error("Slug is required");
     if (!room.name.trim()) return toast.error("Name is required");
     const method = room.id ? "PATCH" : "POST";
-    const res = await adminFetch("/api/admin/rooms", { method, body: JSON.stringify(room) });
-    if (res) {
-      toast.success(room.id ? "Room updated" : "Room created");
-      refreshSiteContent();
-      setEditing(null);
-      reload();
-    } else {
-      toast.error("Save failed");
+    try {
+      const res = await adminFetch("/api/admin/rooms", { method, body: JSON.stringify(room) });
+      if (res) {
+        toast.success(room.id ? "Room updated" : "Room created");
+        refreshSiteContent();
+        setEditing(null);
+        reload();
+      } else {
+        toast.error("Save failed — please try again");
+      }
+    } catch (e: any) {
+      // Surface the REAL reason (e.g. which field failed validation) instead
+      // of failing silently — inventory/price edits used to look like no-ops.
+      const fe = e?.details?.fieldErrors as Record<string, string[]> | undefined;
+      const first = fe ? Object.entries(fe)[0] : undefined;
+      toast.error(
+        first
+          ? `Save failed — ${first[0]}: ${first[1]?.[0] ?? "invalid"}`
+          : e?.message || "Save failed"
+      );
     }
   };
 

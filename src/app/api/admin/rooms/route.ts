@@ -23,7 +23,10 @@ const roomSchema = z.object({
   maxGuests: z.number().int().min(1),
   sizeSqft: z.number().int().min(1),
   bedType: z.string().min(1),
-  view: z.string().min(1),
+  // View is optional — every seeded room has view:"" and the Room Editor
+  // leaves the field blank, so min(1) made EVERY room save (inventory,
+  // price, photos) fail with 400 "Invalid room data" and no clear reason.
+  view: z.string().default(""),
   imageUrls: z.string(),
   amenities: z.string(),
   totalCount: z.number().int().min(1),
