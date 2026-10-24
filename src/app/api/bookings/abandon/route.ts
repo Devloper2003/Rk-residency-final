@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     }
 
     const abandonable =
-      booking.status === "CONFIRMED" &&
+      (booking.status === "CONFIRMED" || booking.status === "PENDING") &&
       booking.paymentStatus === "PENDING" &&
       (booking.paymentMethod === "PREPAID" || booking.paymentMethod === "PARTIAL_PAID") &&
       booking.paidAmount === 0;

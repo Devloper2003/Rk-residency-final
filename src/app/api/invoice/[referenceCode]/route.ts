@@ -97,7 +97,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ refe
       doc.fillColor(C.gray).text("Subtotal", 380, y);
       doc.fillColor(C.dark).text(rs(subtotal), 460, y, { width: 80, align: "right" });
       y += 16;
-      doc.fillColor(C.gray).text("GST (18%)", 380, y);
+      doc.fillColor(C.gray).text("GST (5%)", 380, y);
       doc.fillColor(C.dark).text(rs(gstAmount), 460, y, { width: 80, align: "right" });
       y += 6;
       hline(doc, y);

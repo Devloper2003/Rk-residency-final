@@ -237,6 +237,24 @@ export function bookingWhatsAppText(
 // ---------------------------------------------------------------------------
 
 /** Idempotent, mode-aware "money captured" write. Returns true if a state change happened. */
+/**
+ * Fire-and-forget guest confirmation email (voucher + invoice links).
+ * Called only when money actually lands, so the guest never receives a
+ * PENDING voucher — the email renders the settled payment state.
+ */
+export function fireConfirmationEmail(bookingId: string): void {
+  const base = (
+    process.env.SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://www.rkresidencyvrindavan.in"
+  ).replace(/\/+$/, "");
+  fetch(`${base}/api/booking-confirmation`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ bookingId }),
+  }).catch(() => {});
+}
+
 export async function applyCapturedPayment(
   bookingId: string,
   paymentRef: string,
@@ -290,6 +308,8 @@ export async function applyCapturedPayment(
       },
     });
     console.log(`[booking-sync] re-activated cancelled booking ${existing.referenceCode} — late payment captured`);
+    // Money landed → booking is final: email the guest the PAID voucher now.
+    fireConfirmationEmail(bookingId);
     if (opts?.notifyRoomName) {
       await notifyOwnerWhatsApp(
         `*PAYMENT RECEIVED — booking auto re-activated — RK Residency*\n` +
@@ -302,6 +322,10 @@ export async function applyCapturedPayment(
   await db.booking.update({
     where: { id: bookingId },
     data: {
+      // Owner's rule: online bookings (PREPAID / PARTIAL_PAID) are created as
+      // PENDING and only become final (CONFIRMED) when money actually lands.
+      // For bookings that were already CONFIRMED this is a harmless no-op.
+      status: "CONFIRMED",
       paymentStatus: settledStatus,
       paidAmount: paid,
       paymentRef,
@@ -313,6 +337,9 @@ export async function applyCapturedPayment(
       bookingWhatsAppText({ ...existing, paidAmount: paid, paymentStatus: settledStatus }, opts.notifyRoomName, "PAID")
     );
   }
+  // Money landed → booking is final: generate voucher/invoice state and email
+  // the guest (only now — the email never shows PENDING).
+  fireConfirmationEmail(bookingId);
   return true;
 }
 
@@ -380,7 +407,7 @@ export async function sweepBookings(): Promise<SweepResult> {
       const cutoff = new Date(Date.now() - minutes * 60_000);
       const abandoned = await db.booking.findMany({
         where: {
-          status: "CONFIRMED",
+          status: { in: ["PENDING", "CONFIRMED"] },
           paymentStatus: "PENDING",
           paymentMethod: { in: ["PREPAID", "PARTIAL_PAID"] },
           createdAt: { lt: cutoff },
@@ -408,7 +435,7 @@ export async function sweepBookings(): Promise<SweepResult> {
     // (b) paid-at-gateway but DB still PENDING → pull truth from Razorpay
     const pending = await db.booking.findMany({
       where: {
-        status: "CONFIRMED",
+        status: { in: ["PENDING", "CONFIRMED"] },
         paymentStatus: "PENDING",
         razorpayOrderId: { not: null },
         createdAt: { gte: oldest },

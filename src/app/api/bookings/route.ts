@@ -231,7 +231,11 @@ export async function POST(req: Request) {
           taxesGst,
           serviceFee,
           totalAmount,
-          status: "CONFIRMED",
+          // PREPAID / PARTIAL_PAID: booking stays PENDING (NOT final) until
+          // Razorpay verify/webhook captures the money — applyCapturedPayment
+          // then flips it to CONFIRMED, records payment and emails the guest.
+          // PAY_AT_HOTEL is final immediately (owner collects on arrival).
+          status: paymentMethod === "PAY_AT_HOTEL" ? "CONFIRMED" : "PENDING",
           // Always starts PENDING with zero collected — Razorpay verify/webhook
           // flips PREPAID to PAID (full) and PARTIAL_PAID to PARTIAL (20%).
           // PAY_AT_HOTEL stays PENDING until the front desk collects.
@@ -252,20 +256,29 @@ export async function POST(req: Request) {
       return { booking, room, discountPct, discountAmount };
     });
 
-    // Send confirmation email (non-blocking — booking succeeds even if email fails)
-    fetch(`${new URL(req.url).origin}/api/booking-confirmation`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bookingId: result.booking.id }),
-    }).catch(() => {});
+    // Guest confirmation email (voucher + invoice links):
+    //   PAY_AT_HOTEL → sent right away (payment is collected on arrival).
+    //   PREPAID / PARTIAL_PAID → NOT sent here. applyCapturedPayment fires it
+    //   the moment Razorpay money lands, so the guest only ever receives a
+    //   PAID / ADVANCE-RECEIVED voucher — never a PENDING one.
+    if (paymentMethod === "PAY_AT_HOTEL") {
+      fetch(`${new URL(req.url).origin}/api/booking-confirmation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId: result.booking.id }),
+      }).catch(() => {});
+    }
 
-    // Owner WhatsApp — new website booking with full detail (non-fatal)
-    try {
-      await notifyOwnerWhatsApp(
-        bookingWhatsAppText(result.booking, result.room.name, "NEW")
-      );
-    } catch (waErr) {
-      console.error("[/api/bookings] whatsapp notify failed:", waErr);
+    // Owner WhatsApp — only when the booking is actually final. Online bookings
+    // announce themselves via the PAYMENT RECEIVED message on capture.
+    if (paymentMethod === "PAY_AT_HOTEL") {
+      try {
+        await notifyOwnerWhatsApp(
+          bookingWhatsAppText(result.booking, result.room.name, "NEW")
+        );
+      } catch (waErr) {
+        console.error("[/api/bookings] whatsapp notify failed:", waErr);
+      }
     }
 
     // Keep the auto-cancel / reconciliation sweep warm on real traffic so the
