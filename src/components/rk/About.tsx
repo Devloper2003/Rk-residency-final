@@ -39,7 +39,9 @@ export function About({ roomsTotal }: { roomsTotal?: number }) {
     ...(roomsTotal ? [{ end: roomsTotal, suffix: "", label: "Rooms & suites" }] : []),
     { end: bankeBihariWalkMins, suffix: "", label: "Min walk to Banke Bihari Mandir" },
   ];
-  const aboutStats = parseJsonArray(useContentValue("about.stats", "[]"), stats);
+  // Empty DB value must NOT wipe the row (parseJsonArray returns [] for "[]").
+  const parsedStats = parseJsonArray(useContentValue("about.stats", "[]"), stats);
+  const aboutStats = parsedStats.length > 0 ? parsedStats : stats;
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "end start"],

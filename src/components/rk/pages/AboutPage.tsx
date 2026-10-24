@@ -43,14 +43,17 @@ export function AboutPage({ roomsTotal }: { roomsTotal?: number }) {
   const values = parseJsonArray<{ icon: string; title: string; body: string }>(useContentValue("about.values", "[]"), VALUES.map(v => ({ icon: v.icon.name, title: v.title, body: v.body })));
   const timeline = parseJsonArray<{ year: string; title: string; body: string }>(useContentValue("about.timeline", "[]"), TIMELINE);
   const team = parseJsonArray<{ name: string; role: string; bio: string }>(useContentValue("about.team", "[]"), TEAM);
-  const stats = parseJsonArray<{ value: string; suffix: string; label: string }>(useContentValue("about.stats", "[]"), [
+  const statFallback = [
     // Audit H2 — verifiable stats only: years (establishedYear) and live DB
     // room inventory (passed from the server page). The unsourced "48,000+"
     // and "42 countries" claims were removed; "35 rooms" contradicted the
     // real inventory. Re-add counters only with documentable numbers.
     { value: String(new Date().getFullYear() - BUSINESS.establishedYear), suffix: "", label: "Years of heartfelt hospitality" },
     ...(roomsTotal ? [{ value: String(roomsTotal), suffix: "", label: "Rooms, suites & villas" }] : []),
-  ]);
+  ];
+  // Empty DB value must NOT wipe the row (parseJsonArray returns [] for "[]").
+  const parsedStats = parseJsonArray<{ value: string; suffix: string; label: string }>(useContentValue("about.stats", "[]"), statFallback);
+  const stats = parsedStats.length > 0 ? parsedStats : statFallback;
   return (
     <PageShell
       title={`${titleLine1} ${titleLine2}`}
