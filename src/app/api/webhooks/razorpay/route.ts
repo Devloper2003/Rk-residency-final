@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { db } from "@/lib/db";
-import { applyCapturedPayment } from "@/lib/booking-sync";
+import { applyCapturedPayment, notifyOwnerWhatsApp } from "@/lib/booking-sync";
+import { payableNow } from "@/lib/payment-modes";
 
 export const dynamic = "force-dynamic";
 
@@ -94,6 +95,31 @@ export async function POST(req: Request) {
       // Owner WhatsApp "payment received" fires inside applyCapturedPayment.
       const existing = await db.booking.findUnique({ where: { id: bookingId }, include: { room: { select: { name: true } } } });
       if (existing) {
+        // Amount binding: the captured amount must equal what this booking's
+        // payment mode requires (server-derived). A mismatch means a payment
+        // for a DIFFERENT (cheaper) booking landed under this bookingId —
+        // never settle silently; raise a refund alert instead.
+        const expectedPaise = payableNow(existing.paymentMethod || "PREPAID", existing.totalAmount) * 100;
+        if (typeof payment.amount === "number" && payment.amount !== expectedPaise) {
+          console.error(
+            `[/api/webhooks/razorpay] AMOUNT MISMATCH booking=${existing.referenceCode} ` +
+            `expected=${expectedPaise} got=${payment.amount} (${paymentId})`
+          );
+          await notifyOwnerWhatsApp(
+            `*⚠ WRONG AMOUNT RECEIVED — RK Residency*\n` +
+            `Ref: ${existing.referenceCode} (${existing.guestName})\n` +
+            `Expected: ₹${(expectedPaise / 100).toLocaleString("en-IN")}\n` +
+            `Received: ₹${(payment.amount / 100).toLocaleString("en-IN")} (${paymentId})\n` +
+            `Booking NOT auto-confirmed — verify in Razorpay dashboard and refund if needed.`
+          );
+          return NextResponse.json({ ok: true, skipped: "amount_mismatch" });
+        }
+        // Order binding: the webhook payment must belong to the order stored
+        // on this booking (legacy null rows are backfilled and allowed).
+        if (existing.razorpayOrderId && orderId && existing.razorpayOrderId !== orderId) {
+          console.error(`[/api/webhooks/razorpay] ORDER MISMATCH booking=${existing.referenceCode}`);
+          return NextResponse.json({ ok: true, skipped: "order_mismatch" });
+        }
         // Backfill the order link if an older booking row never stored it.
         if (!existing.razorpayOrderId && orderId) {
           await db.booking.update({ where: { id: bookingId }, data: { razorpayOrderId: orderId } });

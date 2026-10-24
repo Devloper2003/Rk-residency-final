@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Home } from "lucide-react";
 import { useRouter, routeHref } from "@/lib/router";
 import { Logo, SectionDivider } from "./Motifs";
+import { WhatsAppFab } from "./WhatsAppFab";
 import { breadcrumbJsonLd } from "@/lib/schema-org";
 
 // Stable year for SSR/client hydration; updated on mount.
@@ -119,6 +120,9 @@ export function PageShell({
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         {children}
       </div>
+
+      {/* Sticky WhatsApp enquiry CTA — guests overwhelmingly enquire there */}
+      <WhatsAppFab />
 
       {/* Footer credit */}
       <footer className="border-t border-charcoal/10 bg-ivory-deep py-6">

@@ -118,7 +118,7 @@ export function buildDocCfg(rows: { key: string; value: string }[]): Cfg {
 
 /* ── Formatters ── */
 function fmtShort(d: Date | string): string {
-  return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Kolkata" });
 }
 /** ₹3,150.00 */
 function m2(n: number): string {
@@ -370,7 +370,7 @@ export async function buildInvoicePdf(d: DocData): Promise<Buffer> {
       const gross = Math.round(d.booking.pricePerNight * (d.booking.nights || 1));
       const discount = Math.max(gross - subtotal, 0);
       const gst = d.booking.taxesGst || Math.round(subtotal * 0.05);
-      const cgst = Math.floor(gst / 2);
+      const cgst = Math.round(gst / 2);
       const sgst = gst - cgst;
       const paid = paidAmountOf(d.booking);
       const balance = Math.max(d.booking.totalAmount - paid, 0);

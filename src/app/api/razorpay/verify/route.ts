@@ -61,8 +61,12 @@ export async function POST(req: Request) {
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
-    // 3. Compare signatures (timing-safe comparison)
-    if (!crypto.timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(razorpay_signature))) {
+    // 3. Compare signatures (length-safe, timing-safe comparison —
+    // crypto.timingSafeEqual THROWS on length mismatch, which used to surface
+    // as a 500 for garbage signatures)
+    const expected = Buffer.from(expectedSignature);
+    const received = Buffer.from(razorpay_signature);
+    if (expected.length !== received.length || !crypto.timingSafeEqual(expected, received)) {
       return NextResponse.json({ error: "Invalid payment signature." }, { status: 400 });
     }
 
@@ -75,6 +79,25 @@ export async function POST(req: Request) {
     });
     if (!existing) {
       return NextResponse.json({ error: "Booking not found." }, { status: 404 });
+    }
+
+    // 5. CRITICAL binding check: the Razorpay order presented in this callback
+    // must be the order that was created FOR THIS booking (the checkout session
+    // stores it on the row). Without this, a valid signature from a cheap
+    // ₹500 payment could mark a ₹50,000 booking as paid. Legacy rows predating
+    // the razorpayOrderId column (null) are allowed through and backfilled.
+    if (existing.razorpayOrderId && existing.razorpayOrderId !== razorpay_order_id) {
+      console.error(
+        `[/api/razorpay/verify] ORDER MISMATCH booking=${existing.referenceCode} ` +
+        `expected=${existing.razorpayOrderId} got=${razorpay_order_id}`
+      );
+      return NextResponse.json({ error: "Payment does not belong to this booking." }, { status: 400 });
+    }
+    if (!existing.razorpayOrderId) {
+      await db.booking.update({
+        where: { id: bookingId },
+        data: { razorpayOrderId: razorpay_order_id },
+      });
     }
     const collected = payableNow(existing.paymentMethod || "PREPAID", existing.totalAmount);
     const changed = await applyCapturedPayment(bookingId, razorpay_payment_id);

@@ -44,6 +44,16 @@ const TRUST = [
   { icon: Globe, label: "EN / हिंदी" },
 ];
 
+
+/** Google "G" brand mark — lucide has no brand icons, so this is inline. */
+function GoogleBadgeIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
+      <path d="M21.35 11.1h-9.17v2.96h5.3c-.23 1.4-1.62 4.1-5.3 4.1a5.9 5.9 0 0 1 0-11.8c1.68 0 2.8.71 3.44 1.32l2.34-2.26A9.02 9.02 0 0 0 12.18 3a9.26 9.26 0 1 0 0 18.52c5.35 0 8.88-3.76 8.88-9.05 0-.6-.06-1.05-.16-1.5z" />
+    </svg>
+  );
+}
+
 export function Footer() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -75,10 +85,14 @@ export function Footer() {
   const termsUrl = "/terms-and-conditions";
   const cancellationUrl = "/cancellation-policy";
 
+  // Owner's official Google Business Profile (share link he supplied).
+  const googleBusinessUrl = BUSINESS.reviews.google;
+
   const SOCIAL = [
     { icon: Instagram, label: "Instagram", href: instagramUrl },
     { icon: Facebook, label: "Facebook", href: facebookUrl },
     { icon: Youtube, label: "YouTube", href: youtubeUrl },
+    { icon: GoogleBadgeIcon, label: "Google", href: googleBusinessUrl },
   ].filter((s) => s.href); // hide socials with empty/placeholder URLs
 
   const onSubscribe = async (e: React.FormEvent) => {

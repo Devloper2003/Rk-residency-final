@@ -22,6 +22,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ refe
     });
     if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
 
+    // Guest-token gate (same as invoice route) — blocks reference-code
+    // enumeration; the confirmation email's links carry the token.
+    const token = new URL(req.url).searchParams.get("token") || "";
+    if (booking.downloadToken && booking.downloadToken !== token) {
+      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+    }
+
     const settings = await db.siteSetting.findMany({
       where: { key: { in: DOC_SETTING_KEYS } },
       select: { key: true, value: true },

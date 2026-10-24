@@ -94,8 +94,7 @@ export function AboutPage({ roomsTotal }: { roomsTotal?: number }) {
 </p>
 
 <p>
-  Since opening our doors, RK Residency has proudly welcomed thousands of
-  pilgrims and travelers from across India. Every room has been thoughtfully
+  Since opening our doors, RK Residency has welcomed pilgrims and travellers from across India and abroad. Every room has been thoughtfully
   designed to provide comfort and tranquility, while our personalized service,
   immaculate cleanliness, and peaceful atmosphere reflect the values upon which
   our hotel was founded.

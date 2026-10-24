@@ -34,7 +34,11 @@ export function SettingsTab() {
       if (c || !data) { setLoading(false); return; }
       setSettings(data.settings || []);
       const m: Record<string, string> = {};
-      (data.settings || []).forEach((s: any) => { m[s.id] = s.value; });
+      (data.settings || []).forEach((s: any) => {
+        // Secrets arrive MASKED (write-only) — never prefill the masked dots,
+        // otherwise an accidental Save would overwrite the real key.
+        m[s.id] = SECRET_SETTINGS.has(s.key) ? "" : s.value;
+      });
       setEditing(m);
       setLoading(false);
     });
@@ -42,11 +46,17 @@ export function SettingsTab() {
   }, []);
 
   const save = async (id: string) => {
+    const row = settings.find((s) => s.id === id);
+    if (row && SECRET_SETTINGS.has(row.key) && !(editing[id] || "").trim()) {
+      toast.info("Secret unchanged", { description: "Naya value type karoge tabhi save hoga — purani key safe hai." });
+      return;
+    }
     setSaving((s) => ({ ...s, [id]: true }));
     const res = await adminApi.patch("setting", { id, value: editing[id] });
     if (res) {
       toast.success("Setting updated — live on website!");
-      setSettings((prev) => prev.map((s) => s.id === id ? { ...s, value: editing[id] } : s));
+      setSettings((prev) => prev.map((s) => s.id === id ? { ...s, value: SECRET_SETTINGS.has(s.key) ? "••••••••" : editing[id], configured: SECRET_SETTINGS.has(s.key) ? Boolean((editing[id] || "").trim()) : s.configured } : s));
+      setEditing((p) => ({ ...p, [id]: SECRET_SETTINGS.has(settings.find((s) => s.id === id)?.key || "") ? "" : editing[id] }));
       // Invalidate the public-site cache so the new value shows up instantly
       // across every open browser tab.
       refreshSiteContent();
@@ -109,6 +119,9 @@ export function SettingsTab() {
                 </div>
                 {isImage && <Upload className="h-3.5 w-3.5 text-gold-deep" />}
                 {isSecret && <ShieldCheck className="h-3.5 w-3.5 text-teal" />}
+                {isSecret && (s as any).configured && (
+                  <span className="rounded-full bg-teal/10 px-2 py-0.5 font-display text-[9px] font-bold text-teal">CONFIGURED</span>
+                )}
               </div>
 
               {isImage ? (

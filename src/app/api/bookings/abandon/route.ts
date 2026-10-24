@@ -33,6 +33,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
     const bookingId = (body as { bookingId?: string }).bookingId;
+    const token = (body as { token?: string }).token || "";
     if (!bookingId) {
       return NextResponse.json({ error: "bookingId required." }, { status: 400 });
     }
@@ -42,6 +43,13 @@ export async function POST(req: Request) {
       include: { room: { select: { name: true } } },
     });
     if (!booking) {
+      return NextResponse.json({ error: "Booking not found." }, { status: 404 });
+    }
+
+    // Ownership gate: the client holds the downloadToken returned by the
+    // booking-creation response in the same session; a third party with only
+    // the booking id cannot cancel someone else's stay.
+    if (booking.downloadToken && booking.downloadToken !== token) {
       return NextResponse.json({ error: "Booking not found." }, { status: 404 });
     }
 

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { useRouter } from "@/lib/router";
 import { safeJsonArray } from "@/lib/utils";
-import { roomImageAlt, sanitizeRoomView } from "@/lib/room-display";
+import { fixCopyTypos, roomImageAlt, sanitizeRoomView } from "@/lib/room-display";
 import { BUSINESS } from "@/lib/site.config";
 
 type Room = {
@@ -214,8 +214,8 @@ export function Rooms({
   initialRooms?: Room[];
 }) {
   const rLabel = useContentValue("rooms.label", "Accommodation");
-  const rTitle = useContentValue("rooms.title", "Rooms, suites & family ");
-  const rSubtitle = useContentValue("rooms.subtitle", "");
+  const rTitle = fixCopyTypos(useContentValue("rooms.title", "Rooms, suites & family"));
+  const rSubtitle = fixCopyTypos(useContentValue("rooms.subtitle", ""));
   const [rooms, setRooms] = useState<Room[]>(initialRooms || []);
   const [loading, setLoading] = useState(!initialRooms);
   const [filter, setFilter] = useState("all");

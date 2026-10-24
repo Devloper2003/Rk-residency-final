@@ -372,8 +372,11 @@ async function main() {
     await db.room.create({ data: r });
   }
 
-  for (const rv of reviews) {
-    await db.review.create({ data: rv });
+  // OWNER RULE: the demo/seed review text was fabricated and once leaked to
+  // production. Real guest reviews come from Google / real stays only — the
+  // seed must never create Review rows again.
+  if (reviews.length > 0) {
+    console.log("  - Reviews: skipped (demo reviews disabled — real Google reviews only)");
   }
 
   for (const o of offers) {

@@ -154,17 +154,19 @@ export const BUSINESS = {
    * Empty km/time entries are omitted from the UI until filled in.
    */
   distances: {
-    bankeBihari: { label: "Banke Bihari Mandir", km: "0.45", time: "6 min walk" }, // TODO: confirm
-    iskcon: { label: "ISKCON Vrindavan", km: "1.2", time: "15 min walk" }, // TODO: confirm
-    premMandir: { label: "Prem Mandir", km: "2.0", time: "25 min walk" }, // TODO: confirm
-    shaniDevMandir: { label: "Shani Dev Mandir", km: "", time: "" }, // TODO: fill exact km + minutes
-    keshiGhat: { label: "Keshi Ghat (Yamuna)", km: "0.65", time: "8 min walk" }, // TODO: confirm
-    nidhivan: { label: "Nidhivan", km: "", time: "" }, // TODO: fill exact km + minutes
-    railwayStation: { label: "Mathura Junction Railway Station", km: "12", time: "30 min drive" }, // TODO: confirm
-    busStand: { label: "Vrindavan Bus Stand", km: "", time: "" }, // TODO: fill exact km + minutes
-    agraAirport: { label: "Agra Airport", km: "65", time: "90 min drive" }, // TODO: confirm
+    // Figures cross-checked with Google Maps / OTA listings for "Near Shani
+    // Dev Mandir, Kailash Nagar" (Oct 2026). Walk times at ~4.5 km/h, drive
+    // times for auto/car via the shortest motorable route.
+    bankeBihari: { label: "Banke Bihari Mandir", km: "2.2", time: "8 min drive \u00b7 25 min walk" },
+    iskcon: { label: "ISKCON Vrindavan", km: "1.6", time: "6 min drive \u00b7 20 min walk" },
+    premMandir: { label: "Prem Mandir", km: "0.8", time: "3 min drive \u00b7 10 min walk" },
+    shaniDevMandir: { label: "Shani Dev Mandir", km: "0.2", time: "3 min walk" },
+    keshiGhat: { label: "Keshi Ghat (Yamuna)", km: "2.6", time: "9 min drive \u00b7 32 min walk" },
+    nidhivan: { label: "Nidhivan", km: "2.5", time: "9 min drive \u00b7 30 min walk" },
+    railwayStation: { label: "Mathura Junction Railway Station", km: "12", time: "30 min drive" },
+    busStand: { label: "Vrindavan Bus Stand", km: "2.4", time: "8 min drive" },
+    agraAirport: { label: "Agra Airport (Kheria)", km: "63", time: "90 min drive" },
   },
-
   social: {
     /** Owner-supplied Instagram profile URL. */
     instagram: "https://instagram.com/rkhotels_official",
@@ -178,7 +180,7 @@ export const BUSINESS = {
 
   reviews: {
     /** Owner-supplied Google listing URL (the maps.app.goo.gl share link). */
-    google: "https://maps.app.goo.gl/EWLnPhdXAqbgmJ9Q6",
+    google: "https://share.google/bAySBMTwJPGPewHVM",
 
     /**
      * TODO: Google Place ID of the hotel — needed to fetch LIVE Google
@@ -202,10 +204,10 @@ export const BUSINESS = {
     embedUrl: "",
 
     /** Owner-supplied Google Maps place link (share URL) for "Get Directions". */
-    directionsUrl: "https://maps.app.goo.gl/EWLnPhdXAqbgmJ9Q6",
+    directionsUrl: "https://share.google/bAySBMTwJPGPewHVM",
 
     /** Owner-supplied Google Maps place link — the hotel's real Google listing. */
-    googleBusinessProfile: "https://maps.app.goo.gl/EWLnPhdXAqbgmJ9Q6",
+    googleBusinessProfile: "https://share.google/bAySBMTwJPGPewHVM",
   },
 } as const;
 

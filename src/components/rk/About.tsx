@@ -11,7 +11,7 @@ import { BUSINESS } from "@/lib/site.config";
 // time to Banke Bihari comes from BUSINESS.distances, the years counter from
 // BUSINESS.establishedYear, so no hardcoded contradictions are possible.
 const bankeBihariWalkMins =
-  parseInt(BUSINESS.distances.bankeBihari.time, 10) || 0;
+  parseInt((BUSINESS.distances.bankeBihari.time.match(/(\d+)\s*min walk/) || [])[1] || "", 10) || 0;
 const yearsOfHospitality =
   new Date().getFullYear() - BUSINESS.establishedYear;
 
@@ -142,12 +142,12 @@ export function About({ roomsTotal }: { roomsTotal?: number }) {
                   EST. {BUSINESS.establishedYear}
                 </div>
                 <div className="mt-1 font-serif text-2xl font-semibold">
-                  Trusted by
+                  Rated on
                   <br />
-                   Thousands
+                  Google
                 </div>
                 <div className="mt-2 text-xs text-ivory/70">
-                  of happy guests
+                  by guests across India &amp; abroad
                 </div>
               </motion.div>
             </div>

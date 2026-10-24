@@ -46,6 +46,20 @@ type Step = (typeof STEPS)[number];
 
 const GST_RATE = 0.05; // 5% GST — the only extra, exactly as published everywhere
 
+/**
+ * Format a Date as the guest's own calendar day (YYYY-MM-DD, local parts).
+ * Historically this widget sent local-midnight ISO timestamps, which the UTC
+ * server turned into the PREVIOUS day (an IST guest picking 10 Nov became
+ * 2026-11-09). Sending plain date strings keeps guest-selected days, admin
+ * inventory keys and printed documents perfectly aligned.
+ */
+function istDateString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlanId }: Props) {
   const [rooms, setRooms] = useState<RoomWithPlans[]>([]);
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
@@ -63,6 +77,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
   const [discountError, setDiscountError] = useState("");
   const [confirmedRef, setConfirmedRef] = useState<string | null>(null);
   const [confirmedBookingId, setConfirmedBookingId] = useState<string | null>(null);
+  const [confirmedToken, setConfirmedToken] = useState<string>("");
 
   // Load rooms
   useEffect(() => {
@@ -137,8 +152,8 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
       return;
     }
     let cancelled = false;
-    const ci = dateRange.from.toISOString().slice(0, 10);
-    const co = dateRange.to.toISOString().slice(0, 10);
+    const ci = istDateString(dateRange.from);
+    const co = istDateString(dateRange.to);
     fetch(`/api/rooms/rates?roomId=${selectedRoomId}&planId=${selectedPlanId}&checkIn=${ci}&checkOut=${co}&adults=${guests.adults}&children=${guests.children}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (!cancelled && d && d.ok) setDayRates({ nights: d.nights, subtotal: d.subtotal, closedDates: d.closedDates || [] }); })
@@ -241,8 +256,8 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
         body: JSON.stringify({
           roomId: selectedRoom.id,
           planId: selectedPlanId || undefined,
-          checkIn: dateRange.from.toISOString(),
-          checkOut: dateRange.to.toISOString(),
+          checkIn: istDateString(dateRange.from),
+          checkOut: istDateString(dateRange.to),
           nights,
           adults: guests.adults,
           children: guests.children,
@@ -300,7 +315,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
               fetch("/api/bookings/abandon", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ bookingId: data.bookingId }),
+                body: JSON.stringify({ bookingId: data.bookingId, token: data.downloadToken || "" }),
               })
                 .then((r) => r.json())
                 .then((j: { cancelled?: boolean }) => {
@@ -339,6 +354,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
               // 4. Success → show confirmation
               setConfirmedRef(data.referenceCode);
               setConfirmedBookingId(data.bookingId);
+              setConfirmedToken(data.downloadToken || "");
               setStep(3);
               toast.success(paymentMethod === "PARTIAL_PAID" ? "Advance payment successful!" : "Payment successful!", {
                 description: paymentMethod === "PARTIAL_PAID"
@@ -352,6 +368,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
               // The webhook will handle the status update
               setConfirmedRef(data.referenceCode);
               setConfirmedBookingId(data.bookingId);
+              setConfirmedToken(data.downloadToken || "");
               setStep(3);
             }
           },
@@ -365,6 +382,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
       // ── STEP C: PAY_AT_HOTEL → direct confirm (no gateway) ──
       setConfirmedRef(data.referenceCode);
       setConfirmedBookingId(data.bookingId);
+      setConfirmedToken(data.downloadToken || "");
       setStep(3);
       toast.success("Booking confirmed!", {
         description: `Reference ${data.referenceCode} · Pay at hotel on arrival`,
@@ -960,7 +978,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
                       className="mt-4 flex flex-wrap justify-center gap-2"
                     >
                       <a
-                        href={`/booking-doc/${confirmedBookingId}?type=voucher`}
+                        href={`/booking-doc/${confirmedBookingId}?type=voucher&token=${confirmedToken}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 rounded-full border border-teal/30 bg-teal/5 px-4 py-2 font-display text-xs font-semibold text-teal transition-all hover:bg-teal hover:text-ivory"
@@ -969,7 +987,7 @@ export function BookingWidget({ open, onOpenChange, preselectRoom, preselectPlan
                         Download Voucher
                       </a>
                       <a
-                        href={`/booking-doc/${confirmedBookingId}?type=invoice`}
+                        href={`/booking-doc/${confirmedBookingId}?type=invoice&token=${confirmedToken}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/5 px-4 py-2 font-display text-xs font-semibold text-gold-deep transition-all hover:bg-gold hover:text-charcoal"

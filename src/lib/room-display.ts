@@ -39,3 +39,21 @@ export function roomImageAlt(name: string, view?: string | null): string {
     ? `${name} — ${v} at RK Residency, Kailash Nagar, Vrindavan`
     : `${name} at RK Residency, Kailash Nagar, Vrindavan`;
 }
+
+/**
+ * fixCopyTypos — display-time guard for typos that live in admin-authored
+ * content (the DB keeps the original; the site renders the corrected text).
+ * "Fammily" shipped to production inside the rooms section title; this map
+ * guarantees the corrected spelling no matter what is stored.
+ */
+const COPY_TYPOS: [RegExp, string][] = [
+  [/\bFammily\b/gi, "Family"],
+  [/\bFamilly\b/gi, "Family"],
+  [/\bVrindavaan\b/gi, "Vrindavan"],
+];
+
+export function fixCopyTypos(text: string | null | undefined): string {
+  let out = text || "";
+  for (const [re, fix] of COPY_TYPOS) out = out.replace(re, fix);
+  return out;
+}

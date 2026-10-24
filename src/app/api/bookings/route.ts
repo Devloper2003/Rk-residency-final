@@ -1,4 +1,5 @@
 import { NextResponse, after } from "next/server";
+import crypto from "crypto";
 import { rateLimit } from "@/lib/rate-limit";
 import { db } from "@/lib/db";
 import { z } from "zod";
@@ -6,13 +7,16 @@ import { checkRangeAvailability } from "@/lib/inventory";
 import { nightlyOccupancyPrice, type PlanBaseRates } from "@/lib/rate-plans";
 import { payableNow } from "@/lib/payment-modes";
 import { notifyOwnerWhatsApp, bookingWhatsAppText, maybeSweepBookings } from "@/lib/booking-sync";
+import { internalApiSecret } from "@/lib/internal-secret";
 
 export const dynamic = "force-dynamic";
 
 const schema = z.object({
   roomId: z.string().min(1),
-  checkIn: z.string().datetime(),
-  checkOut: z.string().datetime(),
+  // Accept BOTH shapes: plain "YYYY-MM-DD" (preferred — the guest's own
+  // calendar day, no timezone shift) and full ISO datetimes (legacy clients).
+  checkIn: z.string().regex(/^\d{4}-\d{2}-\d{2}(T[\d:.]+Z?)?$/),
+  checkOut: z.string().regex(/^\d{4}-\d{2}-\d{2}(T[\d:.]+Z?)?$/),
   nights: z.number().int().min(1).max(30),
   adults: z.number().int().min(1).max(12),
   children: z.number().int().min(0).max(8),
@@ -242,10 +246,13 @@ export async function POST(req: Request) {
           paymentStatus: "PENDING",
           paidAmount: 0,
           paymentMethod,
+          // Guest-scoped access token for documents/abandon — gates the public
+          // voucher/invoice/doc endpoints against reference-code enumeration.
+          downloadToken: crypto.randomUUID(),
         },
       });
 
-           // Mark coupon as used
+      // Mark coupon as used
       if (discountRecordId) {
         await tx.discountCode.update({
           where: { id: discountRecordId },
@@ -262,9 +269,10 @@ export async function POST(req: Request) {
     //   the moment Razorpay money lands, so the guest only ever receives a
     //   PAID / ADVANCE-RECEIVED voucher — never a PENDING one.
     if (paymentMethod === "PAY_AT_HOTEL") {
+      const secret = await internalApiSecret();
       fetch(`${new URL(req.url).origin}/api/booking-confirmation`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-internal-key": secret },
         body: JSON.stringify({ bookingId: result.booking.id }),
       }).catch(() => {});
     }
@@ -289,6 +297,7 @@ export async function POST(req: Request) {
       ok: true,
       referenceCode: result.booking.referenceCode,
       bookingId: result.booking.id,
+      downloadToken: result.booking.downloadToken,
       roomName: result.room.name,
       checkIn: result.booking.checkIn,
       checkOut: result.booking.checkOut,

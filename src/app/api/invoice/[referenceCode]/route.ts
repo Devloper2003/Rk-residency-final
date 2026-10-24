@@ -22,6 +22,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ refe
     });
     if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
 
+    // Guest-token gate — reference codes are low-entropy (RK-VRD-YYYY-NNNN),
+    // so the document only renders for links carrying the booking's own
+    // downloadToken (embedded in the confirmation email). Silent 404: no
+    // existence leak. Legacy rows with a NULL token stay accessible.
+    const token = new URL(req.url).searchParams.get("token") || "";
+    if (booking.downloadToken && booking.downloadToken !== token) {
+      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+    }
+
     const settings = await db.siteSetting.findMany({
       where: { key: { in: DOC_SETTING_KEYS } },
       select: { key: true, value: true },

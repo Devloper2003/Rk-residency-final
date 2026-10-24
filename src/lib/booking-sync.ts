@@ -1,6 +1,7 @@
 import Razorpay from "razorpay";
 import { db } from "@/lib/db";
 import { payableNow, modeLabel } from "@/lib/payment-modes";
+import { internalApiSecret } from "@/lib/internal-secret";
 
 /**
  * Automatic booking payment lifecycle — zero manual admin work.
@@ -191,7 +192,7 @@ function fmtINR(n: number): string {
 }
 
 function fmtDate(d: Date | string): string {
-  return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" });
 }
 
 /** Rich owner notification text with full booking detail. */
@@ -242,15 +243,18 @@ export function bookingWhatsAppText(
  * Called only when money actually lands, so the guest never receives a
  * PENDING voucher — the email renders the settled payment state.
  */
-export function fireConfirmationEmail(bookingId: string): void {
+export async function fireConfirmationEmail(bookingId: string): Promise<void> {
   const base = (
     process.env.SITE_URL ||
     process.env.NEXT_PUBLIC_SITE_URL ||
     "https://www.rkresidencyvrindavan.in"
   ).replace(/\/+$/, "");
+  // Authenticated internal call — the confirmation endpoint rejects requests
+  // without the shared secret (blocks external email/coupon abuse).
+  const secret = await internalApiSecret();
   fetch(`${base}/api/booking-confirmation`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-internal-key": secret },
     body: JSON.stringify({ bookingId }),
   }).catch(() => {});
 }
@@ -316,6 +320,37 @@ export async function applyCapturedPayment(
         bookingWhatsAppText({ ...existing, paidAmount: paid, paymentStatus: settledStatus }, opts.notifyRoomName, "PAID")
       );
     }
+    return true;
+  }
+
+  // ── Final guard against double-booking ──
+  // Two PENDING bookings can legally co-exist for the same slot (creation only
+  // counts CONFIRMED overlaps), so BEFORE flipping this one to CONFIRMED we
+  // re-check the slot. If another booking already holds it, keep this row
+  // PENDING (do NOT consume the money silently) and raise a loud refund alert.
+  const clash = await db.booking.findFirst({
+    where: {
+      roomId: existing.roomId,
+      id: { not: existing.id },
+      status: "CONFIRMED",
+      AND: [{ checkIn: { lt: existing.checkOut } }, { checkOut: { gt: existing.checkIn } }],
+    },
+    select: { id: true, referenceCode: true, guestName: true },
+  });
+  if (clash) {
+    await notifyOwnerWhatsApp(
+      `*⚠ DOUBLE-BOOKING BLOCKED — REFUND NEEDED — RK Residency*\n` +
+      `Ref: ${existing.referenceCode}\n` +
+      `Guest: ${existing.guestName} (${existing.guestPhone})\n` +
+      `${fmtDate(existing.checkIn)} → ${fmtDate(existing.checkOut)}\n` +
+      `Amount received: ${fmtINR(paid)} (payment ref ${paymentRef})\n` +
+      `Slot already held by ${clash.referenceCode} (${clash.guestName}).\n` +
+      `Booking left PENDING — PLEASE REFUND from the Razorpay dashboard.`
+    );
+    await db.booking.update({
+      where: { id: bookingId },
+      data: { paymentRef, syncedAt: new Date() },
+    });
     return true;
   }
 

@@ -19,17 +19,19 @@ export default async function BookingDocPage({
   searchParams,
 }: {
   params: Promise<{ bookingId: string }>;
-  searchParams: Promise<{ type?: string }>;
+  searchParams: Promise<{ type?: string; token?: string }>;
 }) {
   const { bookingId } = await params;
-  const { type = "voucher" } = await searchParams;
+  const { type = "voucher", token = "" } = await searchParams;
 
   const booking = await db.booking.findUnique({
     where: { id: bookingId },
     include: { room: { select: { name: true, bedType: true } } },
   });
 
-  if (!booking) {
+  if (!booking || (booking.downloadToken && booking.downloadToken !== token)) {
+    // Token mismatch treated as not-found — this page renders full guest PII,
+    // so a bare booking id must not be enough to view it.
     return <div style={{ padding: 40, fontFamily: "sans-serif" }}>Booking not found</div>;
   }
 
@@ -46,7 +48,7 @@ export default async function BookingDocPage({
   cfg.gstin = cfg.gstin || "09GUJPS8343M1ZK";
 
   const fmt = (d: Date) =>
-    d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Kolkata" });
   const m0 = (n: number) => "\u20B9" + Math.round(n).toLocaleString("en-IN");
   const m2 = (n: number) =>
     "\u20B9" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -58,7 +60,7 @@ export default async function BookingDocPage({
   const gross = Math.round((booking.pricePerNight || 0) * (booking.nights || 1));
   const discount = Math.max(gross - subtotal, 0);
   const gst = booking.taxesGst || Math.round(subtotal * 0.05);
-  const cgst = Math.floor(gst / 2);
+  const cgst = Math.round(gst / 2);
   const sgst = gst - cgst;
   const contactLine = `${cfg.address_full} \u00B7 Ph: ${cfg.phone_primary} \u00B7 ${cfg.email_primary} \u00B7 GSTIN: ${cfg.gstin}`;
 

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import { rateLimit } from "@/lib/rate-limit";
 
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,15 @@ const schema = z.object({
  * with proper JWT + httpOnly cookies.
  */
 export async function POST(req: Request) {
+  // Brute-force guard: 5 login attempts per minute per IP. Without this the
+  // admin password is bounded only by request volume.
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (!rateLimit(`admin-login:${ip}`, 5, 60_000)) {
+    return NextResponse.json(
+      { error: "Too many login attempts. Please wait a minute." },
+      { status: 429 }
+    );
+  }
   try {
     const body = await req.json();
     const parsed = schema.safeParse(body);

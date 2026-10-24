@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { modeLabel, paidAmountOf } from "@/lib/payment-modes";
 import { brandLogoPng } from "@/lib/brand-logo";
+import { internalApiSecret, safeEqual } from "@/lib/internal-secret";
+import { notifyOwnerWhatsApp } from "@/lib/booking-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +30,17 @@ export async function POST(req: Request) {
     if (!bookingId)
       return NextResponse.json({ error: "bookingId required" }, { status: 400 });
 
+    /* ───── 0. Internal-only gate ─────
+     * This endpoint fires guest emails AND mints discount coupons, so it must
+     * never be callable from the open internet. Only server-to-server callers
+     * (bookings route, booking-sync verify/webhook flow) that present the
+     * shared secret are allowed. */
+    const presented = req.headers.get("x-internal-key") || "";
+    const expectedSecret = await internalApiSecret();
+    if (!presented || !safeEqual(presented, expectedSecret)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
     /* ───── 1. Fetch booking ───── */
     const booking = await db.booking.findUnique({
       where: { id: bookingId },
@@ -37,6 +50,25 @@ export async function POST(req: Request) {
     });
     if (!booking)
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+
+    /* ───── 1b. Idempotency ─────
+     * The auto 5% coupon is the marker of a completed confirmation: if one
+     * already exists for this booking, the email + coupon were already
+     * processed. Re-firing (webhook retry, double verify, race) must not
+     * mint another coupon or spam the guest with a duplicate email. */
+    const existingCoupon = await db.discountCode.findFirst({
+      where: { createdByBooking: booking.id },
+      select: { code: true },
+    });
+    if (existingCoupon) {
+      return NextResponse.json({
+        ok: true,
+        emailSent: false,
+        couponCreated: false,
+        alreadyConfirmed: true,
+        couponCode: existingCoupon.code,
+      });
+    }
 
     /* ───── 2. Fetch email settings ───── */
     const settings = await db.siteSetting.findMany({
@@ -294,12 +326,12 @@ export async function POST(req: Request) {
     <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:18px;">
       <tr>
         <td align="center" style="padding:2px;">
-          <a href="${siteBase}/api/voucher/${booking.referenceCode}" style="display:inline-block;background:#1D5B45;color:#ffffff;text-decoration:none;padding:12px 26px;font-size:13px;font-weight:bold;border-radius:4px;">Download Voucher (PDF)</a>
+          <a href="${siteBase}/api/voucher/${booking.referenceCode}?token=${booking.downloadToken || ""}" style="display:inline-block;background:#1D5B45;color:#ffffff;text-decoration:none;padding:12px 26px;font-size:13px;font-weight:bold;border-radius:4px;">Download Voucher (PDF)</a>
         </td>
       </tr>
       <tr>
         <td align="center" style="padding:8px 2px 2px;">
-          <a href="${siteBase}/api/invoice/${booking.referenceCode}" style="display:inline-block;background:#B9974C;color:#ffffff;text-decoration:none;padding:12px 26px;font-size:13px;font-weight:bold;border-radius:4px;">Download Invoice (PDF)</a>
+          <a href="${siteBase}/api/invoice/${booking.referenceCode}?token=${booking.downloadToken || ""}" style="display:inline-block;background:#B9974C;color:#ffffff;text-decoration:none;padding:12px 26px;font-size:13px;font-weight:bold;border-radius:4px;">Download Invoice (PDF)</a>
         </td>
       </tr>
     </table>
@@ -356,7 +388,17 @@ export async function POST(req: Request) {
         emailSent = true;
         console.log("[email] Guest email sent to", booking.guestEmail);
       } else {
-        console.error("[email] Guest email failed:", await guestRes.text());
+        const errText = await guestRes.text();
+        console.error("[email] Guest email failed:", errText);
+        // Loud, persistent alert — a confirmed guest with no email otherwise
+        // goes unnoticed until check-in day.
+        await notifyOwnerWhatsApp(
+          `*⚠ CONFIRMATION EMAIL FAILED — RK Residency*\n` +
+          `Ref: ${booking.referenceCode}\n` +
+          `Guest: ${booking.guestName} (${booking.guestPhone}, ${booking.guestEmail})\n` +
+          `Error: ${String(errText).slice(0, 200)}\n` +
+          `Booking is CONFIRMED — please resend the voucher from Admin → Bookings.`
+        ).catch(() => {});
       }
 
       // Admin email

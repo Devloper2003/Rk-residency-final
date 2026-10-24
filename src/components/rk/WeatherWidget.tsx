@@ -69,13 +69,21 @@ export function WeatherWidget() {
 
   useEffect(() => {
     let cancelled = false;
+    // AbortSignal: on a stalled network the fetch used to hang forever and the
+    // pill stayed on "Loading weather…" permanently. Now it falls back to the
+    // seasonal estimate after 8s, and non-OK responses throw to the catch.
     fetch(
-      "https://api.open-meteo.com/v1/forecast?latitude=27.5756&longitude=77.7100&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,wind_speed_10m&timezone=Asia%2FKolkata"
+      "https://api.open-meteo.com/v1/forecast?latitude=27.5756&longitude=77.7100&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,wind_speed_10m&timezone=Asia%2FKolkata",
+      { signal: AbortSignal.timeout(8000) }
     )
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`weather http ${r.status}`);
+        return r.json();
+      })
       .then((data) => {
         if (cancelled) return;
-        const c = data.current;
+        const c = data?.current;
+        if (!c) throw new Error("weather: no current block");
         const meta = WEATHER_CODES[c.weather_code] || { desc: "Clear", icon: "sun" };
         setWeather({
           temperature: Math.round(c.temperature_2m),

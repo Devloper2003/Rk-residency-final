@@ -101,9 +101,11 @@ export function Testimonials({
   // Aggregate rating shown ONLY when the owner sets a verifiable value
   // backed by a real review profile link (BUSINESS.reviews). Empty = hidden;
   const tRating = useContentValue("testimonials.aggregate_rating", "");
-  // Merge order: owner-moderated DB reviews first, then Google's public
-  // reviews (only when the Places API returned real data). Both arrays are
-  // server-rendered; neither contains invented content.
+  // OWNER RULE (Oct 2026): only REAL Google reviews are shown. Database rows
+  // qualify solely when their source is GOOGLE (owner curates real Google
+  // reviews in Admin → Reviews); seeded/demo DIRECT entries never render.
+  // When neither source has content the section falls back to a compact
+  // rating band linking to the Google Business Profile — nothing invented.
   const googleAsReviews: Review[] = (googleData?.reviews || []).map((r, i) => ({
     id: `google-${i}`,
     guestName: r.author,
@@ -114,7 +116,8 @@ export function Testimonials({
     source: "GOOGLE",
     verified: true,
   }));
-  const allReviews = [...(initialReviews || []), ...googleAsReviews];
+  const realDbReviews = (initialReviews || []).filter((r) => r.source === "GOOGLE");
+  const allReviews = [...realDbReviews, ...googleAsReviews];
   const [reviews, setReviews] = useState<Review[]>(allReviews);
   const [loading, setLoading] = useState(!initialReviews);
 
@@ -123,7 +126,7 @@ export function Testimonials({
     fetch("/api/reviews")
       .then((r) => r.json())
       .then((data) => {
-        setReviews(data.reviews || []);
+        setReviews(((data.reviews || []) as Review[]).filter((r) => r.source === "GOOGLE"));
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -133,7 +136,45 @@ export function Testimonials({
   // is nothing real to show — render nothing instead of an empty shell with
   // pulse skeletons. The section reappears automatically the moment a real
   // review is approved in admin (or Google Places data arrives).
-  if (!loading && reviews.length === 0) return null;
+  // No real reviews anywhere → compact Google band instead of fabricated cards.
+  const showCompact = !loading && reviews.length === 0;
+  if (showCompact) {
+    return (
+      <section
+        id="testimonials"
+        className="relative overflow-hidden bg-teal py-16 text-ivory"
+      >
+        <div className="bg-yamuna-ripple pointer-events-none absolute inset-0 opacity-25" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold to-transparent" />
+        <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-4 px-4 text-center">
+          <div className="flex items-center gap-1">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star key={i} className="h-5 w-5 fill-gold text-gold" />
+            ))}
+          </div>
+          <div className="font-serif text-xl font-semibold sm:text-2xl">
+            {googleData
+              ? `${parseFloat(googleData.rating).toFixed(1)} / 5 on Google`
+              : "Rated by our guests on Google"}
+          </div>
+          <p className="max-w-xl font-display text-sm text-ivory/70">
+            {googleData?.count
+              ? `Based on ${googleData.count} public reviews on the RK Residency Google Business Profile.`
+              : "Read verified, public reviews on the RK Residency Google Business Profile — we publish nothing that is not real."}
+          </p>
+          <a
+            href={BUSINESS.reviews.google}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-2.5 font-display text-xs font-bold uppercase tracking-wider text-charcoal transition-transform hover:scale-[1.03]"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            Read reviews on Google
+          </a>
+        </div>
+      </section>
+    );
+  }
 
   // Duplicate for infinite marquee
   const doubled = [...reviews, ...reviews];
