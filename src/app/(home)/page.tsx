@@ -45,6 +45,13 @@ export default async function HomeRoute() {
   // Returns null when GOOGLE_PLACES_API_KEY / Place ID are not configured —
   // the site then falls back to DB reviews only. Nothing invented, ever.
   const googleData = await getGoogleReviews();
+  // SSR offers (audit H5/C2): live, non-expired offers go straight into the
+  // initial HTML — the old client-only fetch left the section empty for
+  // crawlers and made data "appear/disappear" between scans.
+  const offers = await db.offer.findMany({
+    where: { validUntil: { gte: new Date() } },
+    orderBy: [{ featured: "desc" }, { validFrom: "asc" }],
+  });
   return (
     <>
       {/* Structured data — server-rendered into the initial HTML. Built from
@@ -63,7 +70,17 @@ export default async function HomeRoute() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd(FAQS)) }}
       />
-      <HomeClient initialRooms={rooms} initialLatestPosts={latestPosts} initialReviews={reviews} googleData={googleData} />
+      <HomeClient
+        initialRooms={rooms}
+        initialLatestPosts={latestPosts}
+        initialReviews={reviews}
+        googleData={googleData}
+        initialOffers={offers.map((o) => ({
+          ...o,
+          validFrom: o.validFrom.toISOString(),
+          validUntil: o.validUntil.toISOString(),
+        }))}
+      />
     </>
   );
 }

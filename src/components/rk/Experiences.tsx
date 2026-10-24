@@ -83,7 +83,11 @@ const BEST_TIME_META = {
 export function Experiences({ limit }: { limit?: number }) {
   const prefersReducedMotion = useReducedMotion();
   const experiencesRaw = useContentValue("experiences.items", "[]");
-  const experiences = parseJsonArray<Experience>(experiencesRaw, EXPERIENCES);
+  const parsed = parseJsonArray<Experience>(experiencesRaw, EXPERIENCES);
+  // Audit H5: an empty DB value (or missing row) used to render an empty
+  // shell in the SSR HTML. Fall back to the curated list so the section is
+  // never empty; admin entries win as soon as they exist.
+  const experiences = parsed.length > 0 ? parsed : EXPERIENCES;
   const items = limit ? experiences.slice(0, limit) : experiences;
   return (
     <section

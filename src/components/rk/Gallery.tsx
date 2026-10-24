@@ -74,12 +74,16 @@ const SPAN_CLASSES: Record<NonNullable<GalleryItem["span"]>, string> = {
 export function Gallery({ limit }: { limit?: number }) {
   const info = useContactInfo();
   const galleryRaw = useContentValue("gallery.items", "[]");
-    const gallery = parseJsonArray<GalleryItem>(galleryRaw, GALLERY);
-  const items = useMemo(() => {
-    if (!limit) return gallery;
-    const shuffled = [...gallery].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, limit);
-  }, [gallery, limit]);
+  const parsed = parseJsonArray<GalleryItem>(galleryRaw, GALLERY);
+  // Audit H5: empty DB value (or missing row) → curated gallery, never an
+  // empty section in the SSR HTML. Admin entries win as soon as they exist.
+  const gallery = parsed.length > 0 ? parsed : GALLERY;
+  // Audit C2: the old Math.random() shuffle made every crawl see different
+  // images ("data changes between scans"). Deterministic slice instead.
+  const items = useMemo(
+    () => (limit ? gallery.slice(0, limit) : gallery),
+    [gallery, limit]
+  );
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const close = () => setLightboxIndex(null);

@@ -28,16 +28,9 @@ const TEAM = [
   
 ];
 
-const STATS = [
-  { end: new Date().getFullYear() - BUSINESS.establishedYear, suffix: "", label: "Years of paying hospitality" },
-  { end: 35, suffix: "", label: "Rooms, suites & villas" },
-  { end: 48000, suffix: "+", label: "Devotee guests hosted" },
-  { end: 42, suffix: "", label: "Countries guests come from" },
-];
-
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = { HandHeart, Sparkles, Heart, Award, Users, Quote };
 
-export function AboutPage() {
+export function AboutPage({ roomsTotal }: { roomsTotal?: number }) {
   const titleLine1 = useContentValue("about.title_line1", "A heritage hotel in");
   const titleLine2 = useContentValue("about.title_line2", "holy Vrindavan");
   const image = useContentValue("about.image", "/uploads/rk-residency-vrindavan-heritage-room.webp");
@@ -46,11 +39,18 @@ export function AboutPage() {
   const imageCaptionSub = useContentValue("about.image_caption_sub", "A peaceful retreat in Kailash Nagar");
   const closingQuote = useContentValue("about.closing_quote", "Krishna sends them. We serve them. That is the arrangement.");
   const closingAttribution = useContentValue("about.closing_attribution", "— Shailedra Singh, Founder");
-  const story = parseJsonArray<string>(useContentValue("about.story", "[]"), ["In 1986, Shyam Khandelwal's grandparents built a modest four-room house in Kailash Nagar.", "For twenty-eight years, the house was simply the Khandelwal home.", "In 2014, the family opened the residence to paying guests.", "Today, RK Residency has 35 rooms and the founding principle remains unchanged."]);
+  const story = parseJsonArray<string>(useContentValue("about.story", "[]"), ["In 1986, Shyam Khandelwal's grandparents built a modest house in Kailash Nagar.", "For decades, the house was simply the family home.", "The family opened the residence to paying guests, keeping the founding principle unchanged.", "Today, RK Residency welcomes devotees from across the country."]);
   const values = parseJsonArray<{ icon: string; title: string; body: string }>(useContentValue("about.values", "[]"), VALUES.map(v => ({ icon: v.icon.name, title: v.title, body: v.body })));
   const timeline = parseJsonArray<{ year: string; title: string; body: string }>(useContentValue("about.timeline", "[]"), TIMELINE);
   const team = parseJsonArray<{ name: string; role: string; bio: string }>(useContentValue("about.team", "[]"), TEAM);
-  const stats = parseJsonArray<{ value: string; suffix: string; label: string }>(useContentValue("about.stats", "[]"), STATS.map(s => ({ value: String(s.end), suffix: s.suffix, label: s.label })));
+  const stats = parseJsonArray<{ value: string; suffix: string; label: string }>(useContentValue("about.stats", "[]"), [
+    // Audit H2 — verifiable stats only: years (establishedYear) and live DB
+    // room inventory (passed from the server page). The unsourced "48,000+"
+    // and "42 countries" claims were removed; "35 rooms" contradicted the
+    // real inventory. Re-add counters only with documentable numbers.
+    { value: String(new Date().getFullYear() - BUSINESS.establishedYear), suffix: "", label: "Years of heartfelt hospitality" },
+    ...(roomsTotal ? [{ value: String(roomsTotal), suffix: "", label: "Rooms, suites & villas" }] : []),
+  ]);
   return (
     <PageShell
       title={`${titleLine1} ${titleLine2}`}
@@ -130,11 +130,11 @@ export function AboutPage() {
       {/* Stats */}
       <div className="mb-16 rounded-3xl border border-charcoal/10 bg-ivory-deep p-8">
         <SectionDivider className="mb-8" />
-        <div className="grid grid-cols-2 gap-6 sm:gap-8 lg:grid-cols-4">
+        <div className={`grid grid-cols-2 gap-6 sm:gap-8 ${stats.length === 3 ? "lg:grid-cols-3" : stats.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-4"}`}>
           {stats.map((s, i) => (
             <div key={i} className="text-center">
               <div className="font-serif text-4xl font-bold text-teal sm:text-5xl">
-                {/* en-IN thousands separator for numeric values (48,000+),
+                {/* en-IN thousands separator for numeric values,
                     owner-entered text passes through unchanged */}
                 {/^\d+$/.test(s.value) ? Number(s.value).toLocaleString("en-IN") : s.value}{s.suffix}
               </div>

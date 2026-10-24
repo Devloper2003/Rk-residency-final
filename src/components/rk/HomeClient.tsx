@@ -9,7 +9,7 @@ import { DistancesSection } from "@/components/rk/DistancesSection";
 import { Experiences } from "@/components/rk/Experiences";
 import { Dining } from "@/components/rk/Dining";
 import { Gallery } from "@/components/rk/Gallery";
-import { Offers } from "@/components/rk/Offers";
+import { Offers, type Offer } from "@/components/rk/Offers";
 import { Testimonials, type Review } from "@/components/rk/Testimonials";
 import type { GoogleReviewsData } from "@/lib/google-reviews";
 import { FAQ } from "@/components/rk/FAQ";
@@ -97,7 +97,7 @@ function LatestPosts({ posts }: { posts: LatestPost[] }) {
   );
 }
 
-export function HomeClient({ initialRooms, initialLatestPosts = [], initialReviews, googleData }: { initialRooms?: Room[]; initialLatestPosts?: LatestPost[]; initialReviews?: Review[]; googleData?: GoogleReviewsData | null }) {
+export function HomeClient({ initialRooms, initialLatestPosts = [], initialReviews, googleData, initialOffers }: { initialRooms?: Room[]; initialLatestPosts?: LatestPost[]; initialReviews?: Review[]; googleData?: GoogleReviewsData | null; initialOffers?: Offer[] }) {
   const openBooking = useRouter((s) => s.openBooking);
 
   // SSR: rooms are fetched by the server page and rendered into the initial
@@ -114,6 +114,9 @@ export function HomeClient({ initialRooms, initialLatestPosts = [], initialRevie
 
   const openBookingCb = useCallback(() => openBooking(), [openBooking]);
   const openBookingWithRoom = useCallback((room: Room) => openBooking(room.slug), [openBooking]);
+  // Audit H2: the "Rooms & suites" stat derives from the live DB inventory
+  // (sum of totalCount) instead of a hardcoded number.
+  const roomsTotal = (initialRooms || []).reduce((s, r) => s + (r.totalCount || 0), 0);
 
   return (
     <div className="flex min-h-screen flex-col bg-ivory">
@@ -126,7 +129,7 @@ export function HomeClient({ initialRooms, initialLatestPosts = [], initialRevie
       <main className="flex-1">
         <Hero onBookClick={openBookingCb} />
         <TrustBadges />
-        <About />
+        <About roomsTotal={roomsTotal} />
         <SeeMoreButton href="/about" label="Read our full story" />
         {/* Exact, config-driven distances to temples + transport hubs */}
         <DistancesSection />
@@ -139,7 +142,7 @@ export function HomeClient({ initialRooms, initialLatestPosts = [], initialRevie
         <SeeMoreButton href="/dining" label="See full dining menu" />
         <Gallery limit={8} />
         <SeeMoreButton href="/gallery" label="View full gallery" />
-        <Offers onBookClick={openBookingCb} limit={3} />
+        <Offers onBookClick={openBookingCb} limit={3} initialOffers={initialOffers} />
         <SeeMoreButton href="/offers" label="See all offers & packages" />
         <Testimonials initialReviews={initialReviews} googleData={googleData} />
         {/* Latest blog stories — server-rendered internal links to /blog/[slug] */}

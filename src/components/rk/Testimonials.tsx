@@ -129,6 +129,12 @@ export function Testimonials({
       .catch(() => setLoading(false));
   }, [initialReviews]);
 
+  // Audit H5/H2: with zero approved reviews AND no live Google rating there
+  // is nothing real to show — render nothing instead of an empty shell with
+  // pulse skeletons. The section reappears automatically the moment a real
+  // review is approved in admin (or Google Places data arrives).
+  if (!loading && reviews.length === 0) return null;
+
   // Duplicate for infinite marquee
   const doubled = [...reviews, ...reviews];
 

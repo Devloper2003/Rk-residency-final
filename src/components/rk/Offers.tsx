@@ -6,7 +6,7 @@ import { Tag, Calendar, Check, ArrowRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
 
-type Offer = {
+export type Offer = {
   id: string;
   title: string;
   tagline: string;
@@ -19,14 +19,18 @@ type Offer = {
   badge: string | null;
 };
 
-export function Offers({ onBookClick, limit }: { onBookClick: () => void; limit?: number }) {
+export function Offers({ onBookClick, limit, initialOffers }: { onBookClick: () => void; limit?: number; initialOffers?: Offer[] }) {
   const oLabel = useContentValue("offers.label", "Offers & Packages");
   const oTitle = useContentValue("offers.title", "Sacred seasons, thoughtfully packaged");
   const oSubtitle = useContentValue("offers.subtitle", "");
-  const [offers, setOffers] = useState<Offer[]>([]);
-  const [loading, setLoading] = useState(true);
+  // SSR (audit H5/C2): the server page passes live offers so the cards are in
+  // the initial HTML — the old client-only fetch made the whole section empty
+  // for crawlers. The fetch below remains only as a fallback.
+  const [offers, setOffers] = useState<Offer[]>(initialOffers || []);
+  const [loading, setLoading] = useState(!initialOffers);
 
   useEffect(() => {
+    if (initialOffers) return; // already rendered server-side
     fetch("/api/offers")
       .then((r) => r.json())
       .then((data) => {
@@ -34,8 +38,11 @@ export function Offers({ onBookClick, limit }: { onBookClick: () => void; limit?
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [initialOffers]);
   const items = limit ? offers.slice(0, limit) : offers;
+  // Every offer expired (e.g. post-festival season) → hide the section
+  // instead of showing an empty shell.
+  if (!loading && items.length === 0) return null;
   
   return (
     <section id="offers" className="relative bg-ivory py-24 lg:py-32">

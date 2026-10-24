@@ -11,6 +11,22 @@ const nextConfig: NextConfig = {
   // on Vercel. Marking it as a server external package forces the whole
   // pdfkit package (including js/data/*.afm) to be bundled verbatim.
   serverExternalPackages: ["pdfkit", "fontkit", "linebreak", "png-js", "razorpay", "sharp"],
+  async redirects() {
+    return [
+      // Audit H4: duplicate blog posts — 301 the thin duplicate to the rich
+      // canonical post. Owner unpublishes the duplicate row in Admin → Blog.
+      {
+        source: "/blog/janmashtami-2026-vrindavan-calendar",
+        destination: "/blog/janmashtami-in-vrindavan-2026",
+        permanent: true,
+      },
+      {
+        source: "/blog/banke-bihari-mandir-darshan-guide",
+        destination: "/blog/banke-bihari-darshan-guide",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

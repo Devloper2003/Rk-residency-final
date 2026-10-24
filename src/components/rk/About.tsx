@@ -14,14 +14,8 @@ const bankeBihariWalkMins =
   parseInt(BUSINESS.distances.bankeBihari.time, 10) || 0;
 const yearsOfHospitality =
   new Date().getFullYear() - BUSINESS.establishedYear;
-const stats = [
-  { end: yearsOfHospitality, suffix: "", label: "Years of Braj hospitality" },
-  { end: 35, suffix: "", label: "Rooms, suites " },
-  { end: 48000, suffix: "+", label: "Devotee guests hosted" },
-  { end: bankeBihariWalkMins, suffix: "", label: "Min walk to Banke Bihari Mandir" },
-];
 
-export function About() {
+export function About({ roomsTotal }: { roomsTotal?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion();
   const label = useContentValue("about.label", "Our Story");
@@ -35,6 +29,16 @@ export function About() {
   const imageAlt = useContentValue("about.image_alt", "Heritage room");
   const imageCaptionLabel = useContentValue("about.image_caption_label", "Heart of Vrindavan");
   const imageCaptionSub = useContentValue("about.image_caption_sub", "Heart of Vrindavan");
+  // Audit H2 — only VERIFIABLE stats: years (from establishedYear), rooms
+  // (live DB inventory passed down from the server page) and walk time
+  // (site.config). The unsourced "48,000+ devotees hosted" counter and the
+  // wrong "35 rooms" were removed. Re-add a guest counter ONLY with a real,
+  // documentable number.
+  const stats = [
+    { end: yearsOfHospitality, suffix: "", label: "Years of Braj hospitality" },
+    ...(roomsTotal ? [{ end: roomsTotal, suffix: "", label: "Rooms & suites" }] : []),
+    { end: bankeBihariWalkMins, suffix: "", label: "Min walk to Banke Bihari Mandir" },
+  ];
   const aboutStats = parseJsonArray(useContentValue("about.stats", "[]"), stats);
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -190,8 +194,8 @@ export function About() {
         {/* Stats row */}
         <div className="mt-20">
           <SectionDivider className="mb-12" />
-          <div className="grid grid-cols-2 gap-6 sm:gap-8 lg:grid-cols-4">
-            {stats.map((s, i) => (
+          <div className={`grid grid-cols-2 gap-6 sm:gap-8 ${aboutStats.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}>
+            {aboutStats.map((s, i) => (
               <Reveal key={s.label} delay={i * 0.08}>
                 <div className="text-center">
                   <div className="font-serif text-4xl font-bold text-teal sm:text-5xl lg:text-6xl">
