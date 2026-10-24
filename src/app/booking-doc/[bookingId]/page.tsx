@@ -1,23 +1,18 @@
 import { db } from "@/lib/db";
 import { PrintButton } from "../PrintButton";
-import { BUSINESS, SITE_URL } from "@/lib/site.config";
 import { modeLabel, paidAmountOf } from "@/lib/payment-modes";
+import type { ReactNode } from "react";
 
 export const dynamic = "force-dynamic";
 
 /**
- * /booking-doc/[bookingId]?type=voucher
- * /booking-doc/[bookingId]?type=invoice
+ * /booking-doc/[bookingId]?type=voucher|invoice
  *
- * Renders a professional printable HTML page that the user can
- * save as PDF via browser's "Print → Save as PDF" (Ctrl+P / Cmd+P).
- *
- * VOUCHER and INVOICE have completely different layouts:
- *  - Voucher: warm, hospitality-focused, guest-facing confirmation
- *  - Invoice: formal, GST-compliant, accounting-focused tax document
- *
- * The RK Residency logo is embedded as a base64 data URL (loaded from
- * the DB MediaAsset table) so it appears in the printed PDF.
+ * Printable HTML twin of the owner-approved PDF design (cream page, gold frame,
+ * ॥ श्री राधे ॥ motif, deep-green + gold palette) — the same design the admin
+ * panel downloads and guests receive by email, so every copy of the document
+ * looks identical. Guests land here right after booking and can print or
+ * save as PDF (Ctrl+P / Cmd+P).
  */
 export default async function BookingDocPage({
   params,
@@ -31,7 +26,7 @@ export default async function BookingDocPage({
 
   const booking = await db.booking.findUnique({
     where: { id: bookingId },
-    include: { room: { select: { name: true, view: true, bedType: true, maxGuests: true, sizeSqft: true } } },
+    include: { room: { select: { name: true, bedType: true } } },
   });
 
   if (!booking) {
@@ -39,440 +34,422 @@ export default async function BookingDocPage({
   }
 
   const settings = await db.siteSetting.findMany({
-    where: { key: { in: ["brand_name", "brand_tagline", "phone_primary", "email_primary", "address_full", "gstin", "website_url", "logo_image_url"] } },
+    where: { key: { in: ["brand_name", "phone_primary", "email_primary", "address_full", "gstin", "bank_upi_id"] } },
     select: { key: true, value: true },
   });
   const cfg: Record<string, string> = {};
   settings.forEach((s) => { cfg[s.key] = s.value; });
   cfg.brand_name = cfg.brand_name || "RK Residency";
-  cfg.brand_tagline = cfg.brand_tagline || "Heritage Luxury in Vrindavan";
-  cfg.phone_primary = cfg.phone_primary || BUSINESS.phonePrimary; // TODO placeholder until owner fills site.config
-  cfg.email_primary = cfg.email_primary || "reservations@rkresidencyvrindavan.in";
-  cfg.address_full = cfg.address_full || "Krishna Janambhoomi Road, Vrindavan, Mathura, Uttar Pradesh 281121";
-  cfg.website_url = cfg.website_url || new URL(SITE_URL).host; // from SITE_URL env
-  cfg.gstin = cfg.gstin || "—";
+  cfg.phone_primary = cfg.phone_primary || "+91 9760814931";
+  cfg.email_primary = cfg.email_primary || "rkresiddency121@gmail.com";
+  cfg.address_full = cfg.address_full || "Near Shani Dev Mandir, Kailash Nagar, Vrindavan, Uttar Pradesh 281121";
+  cfg.gstin = cfg.gstin || "09GUJPS8343M1ZK";
 
-  // Load logo from DB MediaAsset and convert to base64 data URL for inline embedding.
-  // This makes the logo appear in the printed PDF (external URLs would break print).
-  let logoDataUrl = "";
-  if (cfg.logo_image_url) {
-    const match = cfg.logo_image_url.match(/\/uploads\/(.+)$/);
-    if (match) {
-      try {
-        const asset = await db.mediaAsset.findUnique({
-          where: { filename: match[1] },
-          select: { data: true, mimeType: true },
-        });
-        if (asset) {
-          const base64 = Buffer.from(asset.data).toString("base64");
-          logoDataUrl = `data:${asset.mimeType};base64,${base64}`;
-        }
-      } catch (e) {
-        // Logo load failure is non-fatal — fall back to text-only brand name.
-        console.error("[booking-doc] logo load failed:", e);
-      }
-    }
-  }
+  const fmt = (d: Date) =>
+    d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  const m0 = (n: number) => "\u20B9" + Math.round(n).toLocaleString("en-IN");
+  const m2 = (n: number) =>
+    "\u20B9" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  const fmt = (d: Date) => d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
   const isInvoice = type === "invoice";
+  const paid = paidAmountOf(booking);
+  const balance = Math.max(booking.totalAmount - paid, 0);
+  const subtotal = booking.subtotal || booking.totalAmount;
+  const gross = Math.round((booking.pricePerNight || 0) * (booking.nights || 1));
+  const discount = Math.max(gross - subtotal, 0);
+  const gst = booking.taxesGst || Math.round(subtotal * 0.05);
+  const cgst = Math.floor(gst / 2);
+  const sgst = gst - cgst;
+  const contactLine = `${cfg.address_full} \u00B7 Ph: ${cfg.phone_primary} \u00B7 ${cfg.email_primary} \u00B7 GSTIN: ${cfg.gstin}`;
+
+  const statusText =
+    booking.status === "CONFIRMED" ? "CONFIRMED"
+    : booking.status === "PENDING" ? "PENDING"
+    : booking.status.replace(/_/g, " ").toUpperCase();
+
+  const amountInWords = (num: number): string => {
+    if (num === 0) return "Zero";
+    const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
+      "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+    const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+    const two = (n: number) => n < 20 ? ones[n] : tens[Math.floor(n / 10)] + (n % 10 ? " " + ones[n % 10] : "");
+    const three = (n: number) => {
+      const h = Math.floor(n / 100);
+      const r = n % 100;
+      let s = h > 0 ? ones[h] + " Hundred" : "";
+      if (r > 0) s += (s ? " " : "") + two(r);
+      return s;
+    };
+    const crore = Math.floor(num / 10000000);
+    const lakh = Math.floor((num % 10000000) / 100000);
+    const thousand = Math.floor((num % 100000) / 1000);
+    const rem = num % 1000;
+    const parts: string[] = [];
+    if (crore) parts.push(three(crore) + " Crore");
+    if (lakh) parts.push(two(lakh) + " Lakh");
+    if (thousand) parts.push(two(thousand) + " Thousand");
+    if (rem) parts.push(three(rem));
+    return parts.join(" ");
+  };
+
+  const Label = ({ children }: { children: ReactNode }) => (
+    <div style={{ color: "#B9974C", fontSize: 8, fontWeight: 700, letterSpacing: 1.6, textTransform: "uppercase", marginBottom: 4 }}>{children}</div>
+  );
+
+  const Header = ({ title, right }: { title: string; right: ReactNode }) => (
+    <>
+      {/* Motif */}
+      <div style={{ textAlign: "center", paddingTop: 16 }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/motif-radhe.png" alt="॥ श्री राधे ॥" style={{ height: 22, opacity: 0.95 }} />
+      </div>
+      {/* Brand + title row */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "10px 34px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: "50%", background: "#1D5B45",
+            border: "1px solid #B9974C", display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <span style={{ color: "#B9974C", fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 15, letterSpacing: 0.5 }}>RK</span>
+          </div>
+          <div>
+            <div style={{ color: "#1D5B45", fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 26, lineHeight: 1 }}>{cfg.brand_name}</div>
+            <div style={{ color: "#B9974C", fontSize: 7.5, letterSpacing: 3, textTransform: "uppercase", marginTop: 4 }}>Boutique Hotel &nbsp;&middot;&nbsp; Vrindavan</div>
+          </div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ color: "#22332B", fontFamily: "Georgia, serif", fontWeight: 700, fontSize: title.length > 10 ? 21 : 27, letterSpacing: 2, lineHeight: 1 }}>{title}</div>
+          {right}
+        </div>
+      </div>
+      {/* Contact */}
+      <div style={{ padding: "10px 34px 12px", color: "#78756B", fontSize: 9.5, textAlign: "center", lineHeight: 1.5 }}>{contactLine}</div>
+      <div style={{ margin: "0 34px", borderTop: "1px solid #B9974C" }} />
+    </>
+  );
+
+  const Footer = ({ line, note }: { line: string; note: string }) => (
+    <div style={{ textAlign: "center", padding: "18px 34px 22px" }}>
+      <div style={{ color: "#16493A", fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 14 }}>{line}</div>
+      <div style={{ color: "#98948A", fontSize: 8.5, marginTop: 6 }}>{note}</div>
+    </div>
+  );
+
+  const SignRow = () => (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "0 34px", marginTop: 26 }}>
+      <div style={{ color: "#78756B", fontSize: 9.5 }}>Guest signature</div>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ width: 150, borderTop: "1px solid #9C988B", marginBottom: 6 }} />
+        <div style={{ color: "#78756B", fontSize: 9.5 }}>Authorised signatory</div>
+        <div style={{ color: "#78756B", fontSize: 9.5 }}>{cfg.brand_name}</div>
+      </div>
+    </div>
+  );
+
+  /* ── VOUCHER ── */
+  const plan = (booking.planName || "").toUpperCase();
+  const inclusions: string[] = [];
+  if (plan.includes("CP") || plan.includes("BREAKFAST")) inclusions.push("Complimentary breakfast");
+  inclusions.push("Free Wi-Fi and parking");
+  inclusions.push("Housekeeping and 24\u00D77 reception");
+
+  const VoucherLayout = () => (
+    <>
+      <Header
+        title="BOOKING VOUCHER"
+        right={
+          <>
+            <div style={{ color: "#78756B", fontSize: 10, marginTop: 6 }}>Voucher No. {booking.referenceCode} &nbsp;&middot;&nbsp; Date {fmt(new Date())}</div>
+            <div style={{ display: "inline-block", border: "1.2px solid #1D5B45", color: "#1D5B45", fontWeight: 700, fontSize: 9.5, letterSpacing: 1.6, padding: "4px 14px", borderRadius: 3, marginTop: 8 }}>{statusText}</div>
+          </>
+        }
+      />
+      <div style={{ padding: "16px 34px 0" }}>
+        {/* Guest band */}
+        <div style={{ display: "flex", background: "#EFF3E2" }}>
+          <div style={{ flex: 2, padding: "10px 14px" }}>
+            <Label>Guest name</Label>
+            <div style={{ color: "#16493A", fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 19 }}>{booking.guestName}</div>
+          </div>
+          <div style={{ flex: 1, padding: "10px 14px", borderLeft: "1px solid #D9E0C5" }}>
+            <Label>Contact</Label>
+            <div style={{ color: "#2A352E", fontSize: 12, marginTop: 3 }}>{booking.guestPhone}</div>
+          </div>
+          <div style={{ flex: 1.2, padding: "10px 14px", borderLeft: "1px solid #D9E0C5" }}>
+            <Label>Booking ID</Label>
+            <div style={{ color: "#2A352E", fontSize: 12, fontWeight: 700, marginTop: 3 }}>{booking.referenceCode}</div>
+          </div>
+        </div>
+
+        {/* Check-in / nights / check-out */}
+        <div style={{ display: "flex", alignItems: "stretch", border: "1px solid #D9D3BF", marginTop: 14 }}>
+          <div style={{ flex: 1, padding: "12px 16px" }}>
+            <Label>Check-in</Label>
+            <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 20, color: "#2A352E" }}>{fmt(new Date(booking.checkIn))}</div>
+            <div style={{ color: "#78756B", fontSize: 9.5, marginTop: 2 }}>From 12:00 PM</div>
+          </div>
+          <div style={{ width: 130, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderLeft: "1px solid #D9D3BF", borderRight: "1px solid #D9D3BF", padding: "10px 0" }}>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#1D5B45", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 15 }}>{booking.nights || 1}</div>
+            <div style={{ color: "#78756B", fontSize: 8.5, marginTop: 4 }}>Night(s)</div>
+          </div>
+          <div style={{ flex: 1, padding: "12px 16px", textAlign: "right" }}>
+            <Label>Check-out</Label>
+            <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 20, color: "#2A352E" }}>{fmt(new Date(booking.checkOut))}</div>
+            <div style={{ color: "#78756B", fontSize: 9.5, marginTop: 2 }}>Till 11:00 AM</div>
+          </div>
+        </div>
+
+        {/* 4×2 grid */}
+        <div style={{ display: "flex", flexWrap: "wrap", marginTop: 14, border: "1px solid #D9D3BF" }}>
+          {([
+            ["ROOM TYPE", booking.room?.name || "Room"],
+            ["NO. OF ROOMS", "1"],
+            ["GUESTS", `${booking.adults} Adults, ${booking.children} Child`],
+            ["MEAL PLAN", booking.planName || "Room Only"],
+            ["BOOKED VIA", "Direct \u2014 Website"],
+            ["ARRIVAL TIME", "Approx. 2:00 PM"],
+            ["BED PREFERENCE", booking.room?.bedType || "Double"],
+            ["ID REQUIRED", "Aadhaar / Passport"],
+          ] as [string, string][]).map(([k, v], i) => (
+            <div key={k} style={{
+              width: "25%", boxSizing: "border-box", padding: "8px 10px",
+              borderLeft: i % 4 !== 0 ? "1px solid #D9D3BF" : "none",
+              borderTop: i >= 4 ? "1px solid #D9D3BF" : "none",
+              minHeight: 52,
+            }}>
+              <Label>{k}</Label>
+              <div style={{ color: "#2A352E", fontSize: 11, marginTop: 2 }}>{v}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Money band */}
+        <div style={{ display: "flex", background: "#1D5B45", marginTop: 14 }}>
+          {([
+            ["TOTAL TARIFF (INCL. GST)", m0(booking.totalAmount)],
+            ["ADVANCE RECEIVED", m0(paid)],
+            ["BALANCE AT HOTEL", m0(balance)],
+          ] as [string, string][]).map(([k, v], i) => (
+            <div key={k} style={{ flex: 1, padding: "12px 16px", borderLeft: i > 0 ? "1px solid #3A6E58" : "none" }}>
+              <div style={{ color: "#CFE0D3", fontSize: 7.5, fontWeight: 700, letterSpacing: 1.2 }}>{k}</div>
+              <div style={{ color: "#fff", fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 19, marginTop: 3 }}>{v}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Inclusions + special requests */}
+        <div style={{ display: "flex", marginTop: 16, gap: 24 }}>
+          <div style={{ flex: 1 }}>
+            <Label>Inclusions</Label>
+            {inclusions.map((inc) => (
+              <div key={inc} style={{ color: "#4A473E", fontSize: 11, marginTop: 4 }}>
+                <span style={{ color: "#B9974C", marginRight: 6 }}>&bull;</span>{inc}
+              </div>
+            ))}
+          </div>
+          <div style={{ flex: 1 }}>
+            <Label>Special requests</Label>
+            <div style={{ color: "#4A473E", fontSize: 11, marginTop: 4 }}>{booking.specialRequests?.trim() || "None noted"}</div>
+          </div>
+        </div>
+
+        {/* Terms */}
+        <div style={{ marginTop: 18 }}>
+          <Label>Important terms</Label>
+          {[
+            "Please carry a valid photo ID for every guest; it is mandatory at check-in.",
+            "Check-in 12:00 PM and check-out 11:00 AM; early or late subject to availability.",
+            "Advance is non-refundable if cancelled within 48 hours of arrival.",
+            "Please present this voucher (printed or on phone) at reception.",
+          ].map((t, i) => (
+            <div key={i} style={{ color: "#57544B", fontSize: 10, marginTop: 3 }}>{i + 1}. &nbsp;{t}</div>
+          ))}
+        </div>
+      </div>
+
+      <SignRow />
+
+      {/* Cut line + reception copy */}
+      <div style={{ margin: "20px 0 0", borderTop: "1.5px dashed #B9974C", position: "relative" }}>
+        <span style={{ position: "absolute", left: 30, top: -9, color: "#B9974C", fontSize: 11 }}>&#9986;</span>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 34px 0", color: "#78756B", fontSize: 9.5 }}>
+        <div>Reception copy &nbsp;&middot;&nbsp; Voucher {booking.referenceCode} &nbsp;&middot;&nbsp; Guest {booking.guestName}</div>
+        <div>Guest sign: ____________</div>
+      </div>
+
+      <Footer line={"Radhe Radhe \u2013 we look forward to welcoming you!"} note="This is a computer-generated voucher." />
+    </>
+  );
+
+  /* ── INVOICE ── */
+  const InvoiceLayout = () => (
+    <>
+      <Header
+        title="INVOICE"
+        right={
+          <div style={{ marginTop: 6, fontSize: 10, lineHeight: 1.7 }}>
+            {[["Invoice No.", booking.referenceCode], ["Date", fmt(new Date())], ["Payment", modeLabel(booking.paymentMethod)]].map(([k, v]) => (
+              <div key={k} style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+                <span style={{ color: "#78756B" }}>{k}</span>
+                <span style={{ color: "#2A352E", fontWeight: 600 }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        }
+      />
+      <div style={{ padding: "16px 34px 0" }}>
+        {/* Billed to / booking details */}
+        <div style={{ display: "flex" }}>
+          <div style={{ flex: 1 }}>
+            <Label>Billed to</Label>
+            <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 17, color: "#2A352E" }}>{booking.guestName}</div>
+            <div style={{ color: "#57544B", fontSize: 11, marginTop: 4 }}>{booking.guestEmail}</div>
+            <div style={{ color: "#57544B", fontSize: 11 }}>{booking.guestPhone}</div>
+          </div>
+          <div style={{ flex: 1, paddingLeft: 30 }}>
+            <Label>Booking details</Label>
+            <div style={{ color: "#2A352E", fontSize: 11, marginTop: 4 }}>Booking ID: &nbsp;{booking.referenceCode}</div>
+            <div style={{ color: "#2A352E", fontSize: 11 }}>Guests: &nbsp;{booking.adults} Adults{booking.children > 0 ? `, ${booking.children} Child` : ""}</div>
+            <div style={{ color: "#2A352E", fontSize: 11 }}>Source: &nbsp;Direct &mdash; Website</div>
+          </div>
+        </div>
+
+        {/* Stay band */}
+        <div style={{ display: "flex", background: "#EFF3E2", marginTop: 14 }}>
+          {([
+            ["CHECK-IN", `${fmt(new Date(booking.checkIn))}, 12:00 PM`, 2],
+            ["CHECK-OUT", `${fmt(new Date(booking.checkOut))}, 11:00 AM`, 2],
+            ["ROOM", booking.room?.name || "Room", 1.6],
+            ["NIGHTS", String(booking.nights || 1), 0.8],
+          ] as [string, string, number][]).map(([k, v, flex], i) => (
+            <div key={k} style={{ flex, padding: "9px 12px", borderLeft: i > 0 ? "1px solid #D9E0C5" : "none" }}>
+              <Label>{k}</Label>
+              <div style={{ color: "#2A352E", fontSize: 11.5, marginTop: 2 }}>{v}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Items table */}
+        <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 14 }}>
+          <thead>
+            <tr style={{ background: "#1D5B45" }}>
+              <th style={{ textAlign: "left", padding: "7px 12px", color: "#fff", fontSize: 8.5, letterSpacing: 1.4, fontWeight: 700 }}>DESCRIPTION</th>
+              <th style={{ textAlign: "center", padding: "7px 12px", color: "#fff", fontSize: 8.5, letterSpacing: 1.4, fontWeight: 700, width: 60 }}>QTY</th>
+              <th style={{ textAlign: "right", padding: "7px 12px", color: "#fff", fontSize: 8.5, letterSpacing: 1.4, fontWeight: 700, width: 100 }}>RATE (&#8377;)</th>
+              <th style={{ textAlign: "right", padding: "7px 12px", color: "#fff", fontSize: 8.5, letterSpacing: 1.4, fontWeight: 700, width: 110 }}>AMOUNT (&#8377;)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style={{ borderBottom: "1px solid #D9D3BF" }}>
+              <td style={{ padding: "10px 12px", fontFamily: "Georgia, serif", fontSize: 12, color: "#2A352E" }}>Room tariff &ndash; {booking.room?.name || "Room"}</td>
+              <td style={{ padding: "10px 12px", textAlign: "center", color: "#57544B", fontSize: 11 }}>{booking.nights || 1}</td>
+              <td style={{ padding: "10px 12px", textAlign: "right", color: "#57544B", fontSize: 11 }}>{Math.round(booking.pricePerNight || 0).toLocaleString("en-IN")}</td>
+              <td style={{ padding: "10px 12px", textAlign: "right", color: "#57544B", fontSize: 11 }}>{m2(gross)}</td>
+            </tr>
+            {booking.serviceFee > 0 && (
+              <tr style={{ borderBottom: "1px solid #D9D3BF" }}>
+                <td style={{ padding: "10px 12px", fontFamily: "Georgia, serif", fontSize: 12, color: "#2A352E" }}>Extra bed / breakfast &amp; services</td>
+                <td style={{ padding: "10px 12px", textAlign: "center", color: "#57544B", fontSize: 11 }}>1</td>
+                <td style={{ padding: "10px 12px", textAlign: "right", color: "#57544B", fontSize: 11 }}>{m0(booking.serviceFee)}</td>
+                <td style={{ padding: "10px 12px", textAlign: "right", color: "#57544B", fontSize: 11 }}>{m2(booking.serviceFee)}</td>
+              </tr>
+            )}
+            {discount > 0 && (
+              <tr style={{ borderBottom: "1px solid #D9D3BF" }}>
+                <td style={{ padding: "10px 12px", fontFamily: "Georgia, serif", fontSize: 12, color: "#2A352E" }}>Discount (coupon)</td>
+                <td style={{ padding: "10px 12px", textAlign: "center", color: "#57544B", fontSize: 11 }}>&mdash;</td>
+                <td style={{ padding: "10px 12px", textAlign: "right", color: "#57544B", fontSize: 11 }}>&mdash;</td>
+                <td style={{ padding: "10px 12px", textAlign: "right", color: "#57544B", fontSize: 11 }}>&minus;{m2(discount)}</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+
+        {/* Words + terms | totals */}
+        <div style={{ display: "flex", marginTop: 16 }}>
+          <div style={{ flex: 1.2, paddingRight: 24 }}>
+            <Label>Amount in words</Label>
+            <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 12.5, color: "#2A352E" }}>
+              Rupees {amountInWords(booking.totalAmount)} Only
+            </div>
+            <div style={{ marginTop: 18 }}>
+              <Label>Terms</Label>
+              {[
+                "Check-in 12:00 PM, check-out 11:00 AM.",
+                "Valid photo ID is mandatory for all guests.",
+                "Advance is non-refundable within 48 hours of arrival.",
+                "Balance payable by UPI / Cash / Card at reception.",
+              ].map((t, i) => (
+                <div key={i} style={{ color: "#57544B", fontSize: 10, marginTop: 3 }}>{i + 1}. &nbsp;{t}</div>
+              ))}
+            </div>
+          </div>
+          <div style={{ flex: 1 }}>
+            {([
+              ["Subtotal", m2(gross)],
+              ["Discount (\u20B9)", String(discount)],
+              ["GST (5%)", m2(gst)],
+              ["CGST + SGST (half each)", `${m2(cgst)} + ${m2(sgst)}`],
+            ] as [string, string][]).map(([k, v]) => (
+              <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#57544B", marginTop: 4 }}>
+                <span>{k}</span><span style={{ color: "#2A352E" }}>{v}</span>
+              </div>
+            ))}
+            <div style={{ borderTop: "1.5px solid #1D5B45", marginTop: 8, paddingTop: 6, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <span style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 15, color: "#2A352E" }}>Total</span>
+              <span style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 17, color: "#1D5B45" }}>{m2(booking.totalAmount)}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#57544B", marginTop: 7 }}>
+              <span>Advance paid (&#8377;)</span><span style={{ color: "#2A352E" }}>{m0(paid)}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", background: "#EFF3E2", padding: "7px 10px", marginTop: 7 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#2A352E" }}>Balance due</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#2A352E" }}>{m2(balance)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <SignRow />
+      <Footer line={"Radhe Radhe \u2013 thank you for staying with us!"} note="This is a computer-generated invoice." />
+    </>
+  );
 
   return (
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
-        <title>{isInvoice ? "TAX INVOICE" : "BOOKING VOUCHER"} — {booking.referenceCode}</title>
+        <title>{isInvoice ? "Invoice" : "Booking Voucher"} &mdash; {booking.referenceCode} | {cfg.brand_name}</title>
         <style dangerouslySetInnerHTML={{ __html: SHARED_CSS }} />
       </head>
       <body>
         <PrintButton />
-        {isInvoice ? (
-          <InvoiceLayout booking={booking} cfg={cfg} logoDataUrl={logoDataUrl} fmt={fmt} />
-        ) : (
-          <VoucherLayout booking={booking} cfg={cfg} logoDataUrl={logoDataUrl} fmt={fmt} />
-        )}
+        <div className="sheet">
+          {isInvoice ? <InvoiceLayout /> : <VoucherLayout />}
+        </div>
       </body>
     </html>
   );
 }
 
-// ─── Shared CSS (used by both layouts) ────────────────────────────────
-
 const SHARED_CSS = `
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: Georgia, 'Times New Roman', serif; background: #f5f2ed; color: #231F1C; padding: 20px; }
-  .doc { max-width: 800px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
-  .header { background: linear-gradient(135deg, #0E4C4F, #0A3A3C); padding: 24px 36px; display: flex; justify-content: space-between; align-items: center; }
-  .header-left { display: flex; align-items: center; gap: 14px; }
-  .header .logo { width: 48px; height: 48px; border-radius: 8px; object-fit: contain; background: #fff; padding: 4px; }
-  .header .brand { color: #D4A056; font-size: 22px; font-weight: bold; line-height: 1.1; }
-  .header .tagline { color: #FAF8F5; opacity: 0.7; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-top: 3px; }
-  .header .doc-type { color: #fff; font-size: 18px; font-weight: bold; text-align: right; }
-  .header .doc-date { color: rgba(255,255,255,0.6); font-size: 11px; text-align: right; margin-top: 4px; }
-  .gold-line { height: 3px; background: #D4A056; }
-  .body { padding: 28px 36px; }
-  .label { color: #0E4C4F; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
-  .value { color: #231F1C; font-size: 14px; font-weight: bold; margin-top: 3px; }
-  .section-title { color: #0E4C4F; font-size: 12px; font-weight: bold; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #E5E0D8; text-transform: uppercase; letter-spacing: 1px; }
-  .footer { background: #0E4C4F; padding: 18px 36px; text-align: center; }
-  .footer .name { color: #D4A056; font-size: 13px; font-weight: bold; }
-  .footer .addr { color: rgba(255,255,255,0.7); font-size: 10px; margin-top: 4px; }
-  .footer .contact { color: #D4A056; font-size: 11px; margin-top: 5px; }
-  .footer .gstin { color: rgba(255,255,255,0.5); font-size: 9px; margin-top: 4px; }
-  @media print { body { padding: 0; background: #fff; } .doc { box-shadow: none; border-radius: 0; max-width: 100%; } }
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    background: #EDE9DC;
+    color: #2A352E;
+    padding: 24px 12px;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .sheet {
+    max-width: 800px; margin: 0 auto; background: #FBF9F1;
+    border: 1px solid #B9974C; border-top: 4px solid #B9974C;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10); padding-bottom: 8px;
+  }
+  @media print {
+    body { padding: 0; background: #FBF9F1; }
+    .sheet { box-shadow: none; max-width: 100%; border: none; border-top: 3px solid #B9974C; }
+    @page { size: A4; margin: 10mm; }
+  }
 `;
-
-// ─── Voucher Layout (warm, hospitality-focused) ───────────────────────
-
-function VoucherLayout({ booking, cfg, logoDataUrl, fmt }: {
-  booking: any; cfg: Record<string, string>; logoDataUrl: string; fmt: (d: Date) => string;
-}) {
-  return (
-    <div className="doc">
-      {/* Header with logo */}
-      <div className="header">
-        <div className="header-left">
-          {logoDataUrl && <img className="logo" src={logoDataUrl} alt="Logo" />}
-          <div>
-            <div className="brand">{cfg.brand_name}</div>
-            <div className="tagline">{cfg.brand_tagline}</div>
-          </div>
-        </div>
-        <div>
-          <div className="doc-type">BOOKING VOUCHER</div>
-          <div className="doc-date">{fmt(new Date())}</div>
-        </div>
-      </div>
-      <div className="gold-line" />
-
-      <div className="body">
-        {/* Reference + Status strip */}
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24, padding: "14px 18px", background: "#FAF8F5", borderRadius: 8, border: "1px solid #E5E0D8" }}>
-          <div>
-            <div className="label">Booking Reference</div>
-            <div className="value" style={{ color: "#0E4C4F", fontSize: 18 }}>{booking.referenceCode}</div>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <div className="label">Booking Date</div>
-            <div className="value" style={{ fontSize: 13 }}>{fmt(booking.createdAt)}</div>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <div className="label">Status</div>
-            <div className="value" style={{ color: booking.status === "CANCELLED" ? "#C2410C" : "#0E4C4F" }}>
-              {booking.status.replace(/_/g, " ")}
-            </div>
-          </div>
-        </div>
-
-        {/* Status banner */}
-        <div style={{ background: "#0A3A3C", color: "#fff", textAlign: "center", padding: "10px", borderRadius: 6, marginBottom: 24, fontSize: 13, fontWeight: "bold", letterSpacing: 1 }}>
-          STATUS: {booking.status.replace(/_/g, " ")}  ·  PAYMENT: {booking.paymentStatus}
-        </div>
-
-        {/* Guest + Stay side-by-side */}
-        <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
-          <div style={{ flex: 1, background: "#FAF8F5", borderRadius: 8, padding: 16, border: "1px solid #E5E0D8" }}>
-            <div className="section-title">GUEST DETAILS</div>
-            <div style={{ fontSize: 12, lineHeight: 1.9 }}>
-              <div><span style={{ color: "#6B6560" }}>Name:</span> <strong>{booking.guestName}</strong></div>
-              <div><span style={{ color: "#6B6560" }}>Email:</span> {booking.guestEmail}</div>
-              <div><span style={{ color: "#6B6560" }}>Phone:</span> {booking.guestPhone}</div>
-            </div>
-          </div>
-          <div style={{ flex: 1, background: "#FAF8F5", borderRadius: 8, padding: 16, border: "1px solid #E5E0D8" }}>
-            <div className="section-title">STAY DETAILS</div>
-            <div style={{ fontSize: 12, lineHeight: 1.9 }}>
-              <div><span style={{ color: "#6B6560" }}>Room:</span> <strong>{booking.room.name}</strong></div>
-              <div><span style={{ color: "#6B6560" }}>Check-in:</span> {fmt(booking.checkIn)} (after 12 PM)</div>
-              <div><span style={{ color: "#6B6560" }}>Check-out:</span> {fmt(booking.checkOut)} (before 11 AM)</div>
-              <div><span style={{ color: "#6B6560" }}>Duration:</span> {booking.nights} night(s) · {booking.adults} Adult(s){booking.children > 0 ? `, ${booking.children} Child(ren)` : ""}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Charges */}
-        <div style={{ marginBottom: 24 }}>
-          <div className="section-title">CHARGES SUMMARY</div>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-            <thead>
-              <tr style={{ background: "#0E4C4F", color: "#fff" }}>
-                <th style={{ padding: "8px 12px", textAlign: "left", fontSize: 10, textTransform: "uppercase", letterSpacing: 1 }}>Description</th>
-                <th style={{ padding: "8px 12px", textAlign: "right", fontSize: 10, textTransform: "uppercase", letterSpacing: 1 }}>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td style={{ padding: "8px 12px", borderBottom: "1px solid #f0ede8" }}>Room Tariff ({booking.nights} × Rs. {booking.pricePerNight.toLocaleString("en-IN")})</td><td style={{ padding: "8px 12px", textAlign: "right", borderBottom: "1px solid #f0ede8", fontWeight: 600 }}>Rs. {booking.subtotal.toLocaleString("en-IN")}</td></tr>
-              <tr style={{ background: "#FAF8F5" }}><td style={{ padding: "8px 12px", borderBottom: "1px solid #f0ede8" }}>GST (5%)</td><td style={{ padding: "8px 12px", textAlign: "right", borderBottom: "1px solid #f0ede8", fontWeight: 600 }}>Rs. {booking.taxesGst.toLocaleString("en-IN")}</td></tr>
-              <tr><td style={{ padding: "8px 12px", borderBottom: "1px solid #f0ede8" }}>Service Fee</td><td style={{ padding: "8px 12px", textAlign: "right", borderBottom: "1px solid #f0ede8", fontWeight: 600 }}>Rs. {booking.serviceFee.toLocaleString("en-IN")}</td></tr>
-              <tr style={{ background: "#D4A056" }}><td style={{ padding: "10px 12px", fontSize: 14, fontWeight: "bold" }}>GRAND TOTAL</td><td style={{ padding: "10px 12px", textAlign: "right", fontSize: 14, fontWeight: "bold" }}>Rs. {booking.totalAmount.toLocaleString("en-IN")}</td></tr>
-            </tbody>
-          </table>
-          <div style={{ marginTop: 10, fontSize: 11, color: "#6B6560" }}>
-            Payment Status: <strong style={{ color: booking.paymentStatus === "PAID" ? "#0E4C4F" : "#B8860B" }}>{booking.paymentStatus === "PARTIAL" ? "20% ADVANCE RECEIVED" : booking.paymentStatus}</strong>
-            <span style={{ marginLeft: 16 }}>Mode: {modeLabel(booking.paymentMethod)}</span>
-            {paidAmountOf(booking) > 0 && booking.paymentStatus !== "PAID" && (
-              <span style={{ marginLeft: 16 }}>Received: Rs. {paidAmountOf(booking).toLocaleString("en-IN")} · Due at hotel: Rs. {(booking.totalAmount - paidAmountOf(booking)).toLocaleString("en-IN")}</span>
-            )}
-          </div>
-        </div>
-
-        {/* Inclusions */}
-        <div style={{ background: "#FAF8F5", borderRadius: 8, padding: 14, marginBottom: 24, border: "1px solid #D4A056" }}>
-          <div style={{ color: "#0E4C4F", fontSize: 11, fontWeight: "bold", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>Inclusions</div>
-          <div style={{ fontSize: 11, color: "#231F1C", lineHeight: 1.6 }}>
-             Wi-Fi, daily housekeeping, assistance with temple visits, and all applicable taxes.
-          </div>
-        </div>
-
-        {/* Special requests */}
-        {booking.specialRequests && (
-          <div style={{ background: "#FFF8E7", borderRadius: 8, padding: 14, marginBottom: 24, border: "1px solid #D4A056" }}>
-            <div style={{ color: "#B8860B", fontSize: 11, fontWeight: "bold", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>Special Requests</div>
-            <div style={{ fontSize: 11, color: "#231F1C" }}>{booking.specialRequests}</div>
-          </div>
-        )}
-
-        {/* Cancellation policy */}
-        <div style={{ background: "#FBF1F1", borderRadius: 8, padding: 14, marginBottom: 24, border: "1px solid #C2410C" }}>
-          <div style={{ color: "#C2410C", fontSize: 11, fontWeight: "bold", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>Cancellation Policy</div>
-          <div style={{ fontSize: 11, color: "#231F1C", lineHeight: 1.6 }}>
-            Free cancellation until 7 days before check-in. 50% refund for cancellations 3-6 days before. No refund for cancellations within 48 hours of check-in.
-          </div>
-        </div>
-
-        {/* Thank you note */}
-        <div style={{ textAlign: "center", padding: "16px 0", borderTop: "1px solid #E5E0D8" }}>
-          <div style={{ color: "#0E4C4F", fontSize: 14, fontWeight: "bold", marginBottom: 6 }}>
-            Dear {booking.guestName.split(" ")[0]}, thank you for choosing {cfg.brand_name}.
-          </div>
-          <div style={{ fontSize: 11, color: "#6B6560", lineHeight: 1.6, maxWidth: 600, margin: "0 auto" }}>
-            Please present this voucher at the front desk upon arrival, along with a government-issued photo ID for each guest. Our concierge will assist with your luggage, temple tour bookings, and any special arrangements you may need during your stay in the holy land of Vrindavan.
-          </div>
-        </div>
-      </div>
-
-      <div className="footer">
-        <div className="name">{cfg.brand_name}</div>
-        <div className="addr">{cfg.address_full}</div>
-        <div className="contact">{cfg.phone_primary}  ·  {cfg.email_primary}  ·  {cfg.website_url}</div>
-        {cfg.gstin && cfg.gstin !== "—" && <div className="gstin">GSTIN: {cfg.gstin}</div>}
-      </div>
-    </div>
-  );
-}
-
-// ─── Invoice Layout (formal, GST-compliant) ───────────────────────────
-
-function InvoiceLayout({ booking, cfg, logoDataUrl, fmt }: {
-  booking: any; cfg: Record<string, string>; logoDataUrl: string; fmt: (d: Date) => string;
-}) {
-  const cgst = Math.floor(booking.taxesGst / 2);
-  const sgst = booking.taxesGst - cgst;
-  const invNo = `INV-${booking.referenceCode.split("-").slice(-2).join("-")}`;
-  const amountPaid = paidAmountOf(booking);
-  const balance = booking.totalAmount - amountPaid;
-
-  return (
-    <div className="doc">
-      {/* Header with logo */}
-      <div className="header">
-        <div className="header-left">
-          {logoDataUrl && <img className="logo" src={logoDataUrl} alt="Logo" />}
-          <div>
-            <div className="brand">{cfg.brand_name}</div>
-            <div className="tagline">{cfg.brand_tagline}</div>
-          </div>
-        </div>
-        <div>
-          <div className="doc-type">TAX INVOICE</div>
-          <div className="doc-date">{fmt(booking.createdAt)}</div>
-        </div>
-      </div>
-      <div className="gold-line" />
-
-      <div className="body">
-        {/* Invoice meta strip — 4 columns */}
-        <div style={{ display: "flex", marginBottom: 20, background: "#FAF8F5", borderRadius: 8, border: "1px solid #E5E0D8", padding: "12px 16px" }}>
-          <div style={{ flex: 1, borderRight: "1px solid #E5E0D8", paddingRight: 12 }}>
-            <div className="label">Invoice No.</div>
-            <div className="value" style={{ color: "#0E4C4F" }}>{invNo}</div>
-          </div>
-          <div style={{ flex: 1, borderRight: "1px solid #E5E0D8", paddingRight: 12, paddingLeft: 12 }}>
-            <div className="label">Invoice Date</div>
-            <div className="value" style={{ fontSize: 13 }}>{fmt(booking.createdAt)}</div>
-          </div>
-          <div style={{ flex: 1, borderRight: "1px solid #E5E0D8", paddingRight: 12, paddingLeft: 12 }}>
-            <div className="label">Booking Ref.</div>
-            <div className="value" style={{ fontSize: 13 }}>{booking.referenceCode}</div>
-          </div>
-          <div style={{ flex: 1, paddingLeft: 12 }}>
-            <div className="label">GSTIN</div>
-            <div className="value" style={{ fontSize: 13 }}>{cfg.gstin}</div>
-          </div>
-        </div>
-
-        {/* Billed From / Billed To */}
-        <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
-          <div style={{ flex: 1, background: "#fff", borderRadius: 8, padding: 14, border: "1px solid #E5E0D8" }}>
-            <div className="label" style={{ marginBottom: 8 }}>Billed From</div>
-            <div style={{ fontSize: 13, fontWeight: "bold", color: "#0E4C4F", marginBottom: 6 }}>{cfg.brand_name}</div>
-            <div style={{ fontSize: 11, color: "#231F1C", lineHeight: 1.7 }}>
-              {cfg.address_full}<br />
-              Tel: {cfg.phone_primary}<br />
-              Email: {cfg.email_primary}<br />
-              GSTIN: {cfg.gstin}
-            </div>
-          </div>
-          <div style={{ flex: 1, background: "#fff", borderRadius: 8, padding: 14, border: "1px solid #E5E0D8" }}>
-            <div className="label" style={{ marginBottom: 8 }}>Billed To</div>
-            <div style={{ fontSize: 13, fontWeight: "bold", color: "#0E4C4F", marginBottom: 6 }}>{booking.guestName}</div>
-            <div style={{ fontSize: 11, color: "#231F1C", lineHeight: 1.7 }}>
-              Tel: {booking.guestPhone}<br />
-              Email: {booking.guestEmail}
-            </div>
-          </div>
-        </div>
-
-        {/* Line items table — proper GST format */}
-        <div style={{ marginBottom: 20 }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, border: "1px solid #0E4C4F" }}>
-            <thead>
-              <tr style={{ background: "#0E4C4F", color: "#fff" }}>
-                <th style={{ padding: "8px 10px", textAlign: "center", fontSize: 10, textTransform: "uppercase", letterSpacing: 1, width: "5%" }}>#</th>
-                <th style={{ padding: "8px 10px", textAlign: "left", fontSize: 10, textTransform: "uppercase", letterSpacing: 1 }}>Description</th>
-                <th style={{ padding: "8px 10px", textAlign: "center", fontSize: 10, textTransform: "uppercase", letterSpacing: 1, width: "12%" }}>HSN/SAC</th>
-                <th style={{ padding: "8px 10px", textAlign: "right", fontSize: 10, textTransform: "uppercase", letterSpacing: 1, width: "10%" }}>Qty</th>
-                <th style={{ padding: "8px 10px", textAlign: "right", fontSize: 10, textTransform: "uppercase", letterSpacing: 1, width: "16%" }}>Rate</th>
-                <th style={{ padding: "8px 10px", textAlign: "right", fontSize: 10, textTransform: "uppercase", letterSpacing: 1, width: "16%" }}>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style={{ padding: "10px", textAlign: "center", borderBottom: "1px solid #f0ede8" }}>1</td>
-                <td style={{ padding: "10px", borderBottom: "1px solid #f0ede8" }}>
-                  <div style={{ fontWeight: 600 }}>{booking.room.name}</div>
-                  <div style={{ fontSize: 10, color: "#6B6560", marginTop: 2 }}>Room tariff @ Rs. {booking.pricePerNight.toLocaleString("en-IN")}/night, {booking.nights} night(s)</div>
-                </td>
-                <td style={{ padding: "10px", textAlign: "center", borderBottom: "1px solid #f0ede8" }}>996331</td>
-                <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid #f0ede8" }}>{booking.nights} N</td>
-                <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid #f0ede8" }}>Rs. {booking.pricePerNight.toLocaleString("en-IN")}</td>
-                <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid #f0ede8", fontWeight: 600 }}>Rs. {booking.subtotal.toLocaleString("en-IN")}</td>
-              </tr>
-              <tr style={{ background: "#FAF8F5" }}>
-                <td colSpan={5} style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600, color: "#0E4C4F" }}>Subtotal (Taxable Value)</td>
-                <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600, color: "#0E4C4F" }}>Rs. {booking.subtotal.toLocaleString("en-IN")}</td>
-              </tr>
-              <tr>
-                <td colSpan={5} style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #f0ede8" }}>CGST @ 2.5%</td>
-                <td style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #f0ede8" }}>Rs. {cgst.toLocaleString("en-IN")}</td>
-              </tr>
-              <tr>
-                <td colSpan={5} style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #f0ede8" }}>SGST @ 2.5%</td>
-                <td style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #f0ede8" }}>Rs. {sgst.toLocaleString("en-IN")}</td>
-              </tr>
-              <tr>
-                <td colSpan={5} style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #f0ede8" }}>Service Fee</td>
-                <td style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #f0ede8" }}>Rs. {booking.serviceFee.toLocaleString("en-IN")}</td>
-              </tr>
-              <tr style={{ background: "#0A3A3C", color: "#D4A056" }}>
-                <td colSpan={4} style={{ padding: "10px", fontWeight: "bold", fontSize: 13 }}>GRAND TOTAL</td>
-                <td style={{ padding: "10px", textAlign: "right", fontWeight: "bold" }}>{booking.nights} N</td>
-                <td style={{ padding: "10px", textAlign: "right", fontWeight: "bold", fontSize: 13 }}>Rs. {booking.totalAmount.toLocaleString("en-IN")}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Amount in words */}
-        <div style={{ background: "#FAF8F5", borderRadius: 6, padding: "10px 14px", marginBottom: 20, border: "1px solid #E5E0D8", fontSize: 11 }}>
-          <span style={{ color: "#6B6560", fontWeight: "bold" }}>GRAND TOTAL (IN WORDS): </span>
-          <span style={{ color: "#0E4C4F", fontWeight: "bold" }}>Rupees {amountInWords(booking.totalAmount)} Only</span>
-        </div>
-
-        {/* Payment status */}
-        <div style={{ marginBottom: 20 }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, border: "1px solid #0E4C4F" }}>
-            <thead>
-              <tr style={{ background: "#0E4C4F", color: "#fff" }}>
-                <th style={{ padding: "8px 12px", textAlign: "left", fontSize: 10, textTransform: "uppercase", letterSpacing: 1 }}>Payment Status</th>
-                <th style={{ padding: "8px 12px", textAlign: "right", fontSize: 10, textTransform: "uppercase", letterSpacing: 1 }}>Amount Paid</th>
-                <th style={{ padding: "8px 12px", textAlign: "right", fontSize: 10, textTransform: "uppercase", letterSpacing: 1 }}>Balance Due</th>
-                <th style={{ padding: "8px 12px", textAlign: "right", fontSize: 10, textTransform: "uppercase", letterSpacing: 1 }}>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style={{ padding: "10px 12px", fontWeight: 600 }}>{booking.paymentStatus === "PARTIAL" ? "PARTIAL (20%)" : booking.paymentStatus}</td>
-                <td style={{ padding: "10px 12px", textAlign: "right" }}>Rs. {amountPaid.toLocaleString("en-IN")}</td>
-                <td style={{ padding: "10px 12px", textAlign: "right", color: "#C2410C", fontWeight: 600 }}>Rs. {balance.toLocaleString("en-IN")}</td>
-                <td style={{ padding: "10px 12px", textAlign: "right", color: "#0E4C4F", fontWeight: 600 }}>Rs. {booking.totalAmount.toLocaleString("en-IN")}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Bank details + Signatory */}
-        <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
-          <div style={{ flex: 1, background: "#fff", borderRadius: 8, padding: 14, border: "1px solid #E5E0D8" }}>
-            <div className="label" style={{ marginBottom: 8, color: "#0E4C4F" }}>Bank Details (for balance payment)</div>
-            <div style={{ fontSize: 11, color: "#231F1C", lineHeight: 1.8 }}>
-              Beneficiary: {cfg.brand_name} <br />
-              Bank: Punjab National Bank, Rajpur-Vrindavan (Mathura), U.P.<br />
-              A/C No: 0378102100000965<br />
-              IFSC:  PUNB0037810<br />
-              UPI: 8954289824m@pnb
-            </div>
-          </div>
-          <div style={{ flex: 1, background: "#fff", borderRadius: 8, padding: 14, border: "1px solid #E5E0D8" }}>
-            <div className="label" style={{ marginBottom: 8, color: "#0E4C4F" }}>Authorised Signatory</div>
-            <div style={{ fontSize: 11, color: "#6B6560", marginTop: 40, fontStyle: "italic" }}>For {cfg.brand_name}</div>
-            <div style={{ fontSize: 11, color: "#231F1C", fontWeight: "bold", marginTop: 4 }}>_________________________</div>
-            <div style={{ fontSize: 11, color: "#231F1C", marginTop: 2 }}>Front Office Manager</div>
-          </div>
-        </div>
-
-        {/* Terms & conditions */}
-        <div style={{ fontSize: 10, color: "#6B6560", lineHeight: 1.7, borderTop: "1px solid #E5E0D8", paddingTop: 12 }}>
-          <div style={{ fontWeight: "bold", color: "#C2410C", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Terms &amp; Conditions</div>
-          1. Computer-generated tax invoice — valid without signature.&nbsp;&nbsp;2. GST shown as per applicable rates; any change in tax law will be levied extra.<br />
-          3. Cancellation charges apply as per the booking voucher policy.&nbsp;&nbsp;4. Check-in: 2:00 PM onwards · Check-out: before 11:00 AM.<br />
-          5. All disputes are subject to Vrindavan / Mathura jurisdiction only.
-        </div>
-      </div>
-
-      <div className="footer">
-        <div className="name">{cfg.brand_name}</div>
-        <div className="addr">{cfg.address_full}</div>
-        <div className="contact">{cfg.phone_primary}  ·  {cfg.email_primary}  ·  {cfg.website_url}</div>
-        {cfg.gstin && cfg.gstin !== "—" && <div className="gstin">GSTIN: {cfg.gstin}</div>}
-      </div>
-    </div>
-  );
-}
-
-// ─── Helper: amount in words ──────────────────────────────────────────
-
-function amountInWords(num: number): string {
-  if (num === 0) return "Zero";
-  const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
-    "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
-  const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
-  const two = (n: number) => n < 20 ? ones[n] : tens[Math.floor(n / 10)] + (n % 10 ? " " + ones[n % 10] : "");
-  const three = (n: number) => {
-    const h = Math.floor(n / 100);
-    const r = n % 100;
-    let s = h > 0 ? ones[h] + " Hundred" : "";
-    if (r > 0) s += (s ? " " : "") + two(r);
-    return s;
-  };
-  const crore = Math.floor(num / 10000000);
-  const lakh = Math.floor((num % 10000000) / 100000);
-  const thousand = Math.floor((num % 100000) / 1000);
-  const rem = num % 1000;
-  const parts: string[] = [];
-  if (crore) parts.push(three(crore) + " Crore");
-  if (lakh) parts.push(two(lakh) + " Lakh");
-  if (thousand) parts.push(two(thousand) + " Thousand");
-  if (rem) parts.push(three(rem));
-  return parts.join(" ");
-}
