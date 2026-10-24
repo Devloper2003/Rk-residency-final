@@ -34,7 +34,7 @@ export default async function BookingDocPage({
   }
 
   const settings = await db.siteSetting.findMany({
-    where: { key: { in: ["brand_name", "phone_primary", "email_primary", "address_full", "gstin", "bank_upi_id"] } },
+    where: { key: { in: ["brand_name", "phone_primary", "email_primary", "address_full", "gstin", "bank_upi_id", "logo_image_url"] } },
     select: { key: true, value: true },
   });
   const cfg: Record<string, string> = {};
@@ -106,12 +106,23 @@ export default async function BookingDocPage({
       {/* Brand + title row */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "10px 34px 0" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: "50%", background: "#1D5B45",
-            border: "1px solid #B9974C", display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <span style={{ color: "#B9974C", fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 15, letterSpacing: 0.5 }}>RK</span>
-          </div>
+          {cfg.logo_image_url ? (
+            <div style={{
+              width: 48, height: 48, borderRadius: "50%", background: "#FFFFFF",
+              border: "1px solid #B9974C", display: "flex", alignItems: "center", justifyContent: "center",
+              overflow: "hidden", flexShrink: 0,
+            }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={cfg.logo_image_url} alt={cfg.brand_name} style={{ width: 40, height: 40, objectFit: "contain" }} />
+            </div>
+          ) : (
+            <div style={{
+              width: 44, height: 44, borderRadius: "50%", background: "#1D5B45",
+              border: "1px solid #B9974C", display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <span style={{ color: "#B9974C", fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 15, letterSpacing: 0.5 }}>RK</span>
+            </div>
+          )}
           <div>
             <div style={{ color: "#1D5B45", fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 26, lineHeight: 1 }}>{cfg.brand_name}</div>
             <div style={{ color: "#B9974C", fontSize: 7.5, letterSpacing: 3, textTransform: "uppercase", marginTop: 4 }}>Boutique Hotel &nbsp;&middot;&nbsp; Vrindavan</div>

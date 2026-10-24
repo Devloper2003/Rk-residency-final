@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { modeLabel, paidAmountOf } from "@/lib/payment-modes";
+import { brandLogoPng } from "@/lib/brand-logo";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,7 @@ export async function POST(req: Request) {
             "email_primary",
             "address_full",
             "gstin",
+            "logo_image_url",
           ],
         },
       },
@@ -73,6 +75,24 @@ export async function POST(req: Request) {
     const phone = cfg.phone_primary || "+91 9760814931";
     const addr = cfg.address_full || "Near Shani Dev Mandir, Kailash Nagar, Vrindavan, Uttar Pradesh 281121";
     const gstin = cfg.gstin || "09GUJPS8343M1ZK";
+
+    /* Owner's brand logo → transparent PNG for the email header. Sent as an
+       inline CID attachment so it renders in every client (webp remote images
+       break in Outlook, CID-embedded PNG never does). Falls back to the RK
+       monogram disc when no logo is set. */
+    const logoPng = await brandLogoPng(cfg);
+    const logoCell = logoPng
+      ? `<div style="width:48px;height:48px;border-radius:50%;background:#FFFFFF;border:1px solid #B9974C;text-align:center;"><img src="cid:rk-brand-logo" alt="${brandName}" width="40" height="40" style="border:0;margin-top:3px;display:inline-block;" /></div>`
+      : `<div style="width:44px;height:44px;border-radius:50%;background:#1D5B45;border:1px solid #B9974C;text-align:center;line-height:44px;color:#B9974C;font-size:15px;font-weight:bold;">RK</div>`;
+    const logoAttachment = logoPng
+      ? [{
+          filename: "rk-logo.png",
+          content: logoPng.toString("base64"),
+          content_id: "rk-brand-logo",
+          content_type: "image/png",
+          disposition: "inline",
+        }]
+      : undefined;
 
     const siteBase = (
       process.env.SITE_URL ||
@@ -149,7 +169,7 @@ export async function POST(req: Request) {
     <td style="padding:10px 24px 0;vertical-align:middle;">
       <table cellpadding="0" cellspacing="0" role="presentation"><tr>
         <td style="vertical-align:middle;padding-right:12px;">
-          <div style="width:44px;height:44px;border-radius:50%;background:#1D5B45;border:1px solid #B9974C;text-align:center;line-height:44px;color:#B9974C;font-size:15px;font-weight:bold;">RK</div>
+          ${logoCell}
         </td>
         <td style="vertical-align:middle;">
           <div style="color:#1D5B45;font-size:26px;font-weight:bold;line-height:1;">${brandName}</div>
@@ -329,6 +349,7 @@ export async function POST(req: Request) {
           to: [booking.guestEmail],
           subject: `Booking Confirmed — ${booking.referenceCode} | RK Residency Vrindavan`,
           html: guestHtml,
+          attachments: logoAttachment,
         }),
       });
       if (guestRes.ok) {

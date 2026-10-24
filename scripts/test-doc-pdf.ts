@@ -1,50 +1,50 @@
 /**
- * Local test harness for src/lib/doc-pdf.ts (NOT part of the Next build).
- * Run:  cd /home/z/my-project/site && bun scripts/test-doc-pdf.ts
- * Writes sample invoice + voucher PDFs to /home/z/my-project/assets-tmp/.
+ * Local visual test: build voucher + invoice PDFs with the owner's logo
+ * loaded through the same brandLogoPng pipeline used in production.
+ * Uses the live https URL so no DB is needed locally.
  */
-import { buildInvoicePdf, buildVoucherPdf, type DocData } from "@/lib/doc-pdf";
+import { buildVoucherPdf, buildInvoicePdf } from "../src/lib/doc-pdf";
 import { writeFileSync } from "fs";
 
-const dummy: DocData = {
-  booking: {
-    referenceCode: "RK-VRD-2026-6495",
-    checkIn: new Date("2026-11-02T06:30:00Z"),
-    checkOut: new Date("2026-11-03T06:30:00Z"),
-    nights: 1,
-    adults: 2,
-    children: 0,
-    guestName: "Rahul Sharma",
-    guestEmail: "rahul.sharma@example.com",
-    guestPhone: "+91 98220 12345",
-    specialRequests: "Early check-in if possible, temple darshan guidance",
-    planName: "CP — Breakfast Plan",
-    pricePerNight: 3000,
-    subtotal: 3000,
-    taxesGst: 150,
-    serviceFee: 0,
-    totalAmount: 3150,
-    status: "CONFIRMED",
-    paymentStatus: "PARTIAL",
-    paymentMethod: "PARTIAL_PAID",
-    paidAmount: 630,
-  },
-  roomName: "Deluxe Room",
-  bedType: "Double",
-  cfg: {
-    brand_name: "RK Residency",
-    phone_primary: "+91 9760814931",
-    email_primary: "rkresiddency121@gmail.com",
-    address_full: "Near Banke Bihari Temple, Vrindavan, Mathura, Uttar Pradesh – 281121",
-    gstin: "09GUJPS8343M1ZK",
-    bank_upi_id: "8954289824m@pnb",
-  },
+const cfg: Record<string, string> = {
+  brand_name: "RK Residency",
+  brand_tagline: "Boutique Hotel · Vrindavan",
+  phone_primary: "+91 9760814931",
+  email_primary: "rkresidency121@gmail.com",
+  address_full: "Near Shani Dev Mandir, Kailash Nagar, Vrindavan, Uttar Pradesh 281121",
+  gstin: "09GUJPS8343M1ZK",
+  bank_upi_id: "rkresidency@upi",
+  logo_image_url: "https://www.rkresidencyvrindavan.in/uploads/logo-transparent.webp",
 };
 
-const inv = await buildInvoicePdf(dummy);
-writeFileSync("/home/z/my-project/assets-tmp/test-invoice.pdf", inv);
-console.log("invoice:", inv.length, "bytes");
+const booking = {
+  referenceCode: "RK-TEST-1234",
+  checkIn: new Date("2026-11-10"),
+  checkOut: new Date("2026-11-12"),
+  nights: 2,
+  adults: 2,
+  children: 0,
+  guestName: "Test Guest",
+  guestEmail: "test@example.com",
+  guestPhone: "+91 9999999999",
+  specialRequests: null,
+  status: "CONFIRMED",
+  paymentMethod: "PREPAID",
+  paymentStatus: "PAID",
+  planName: "CP Plan",
+  pricePerNight: 2500,
+  subtotal: 5000,
+  taxesGst: 250,
+  totalAmount: 5250,
+  amountPaid: 5250,
+} as any;
 
-const vou = await buildVoucherPdf(dummy);
-writeFileSync("/home/z/my-project/assets-tmp/test-voucher.pdf", vou);
-console.log("voucher:", vou.length, "bytes");
+const base = "/home/z/my-project/tmp-assets";
+
+const voucher = await buildVoucherPdf({ booking, roomName: "Deluxe Room", bedType: "Double", cfg });
+writeFileSync(`${base}/test-voucher.pdf`, voucher);
+console.log("voucher ok", voucher.length, "bytes");
+
+const invoice = await buildInvoicePdf({ booking, roomName: "Deluxe Room", bedType: "Double", cfg });
+writeFileSync(`${base}/test-invoice.pdf`, invoice);
+console.log("invoice ok", invoice.length, "bytes");

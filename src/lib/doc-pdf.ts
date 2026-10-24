@@ -24,6 +24,7 @@ import {
   TTF_SERIF, TTF_SERIF_BOLD, TTF_SANS, TTF_SANS_BOLD, TTF_SERIF_ITALIC, MOTIF_PNG,
 } from "@/lib/pdfkit-ttf";
 import { modeLabel, paidAmountOf } from "@/lib/payment-modes";
+import { brandLogoPng } from "@/lib/brand-logo";
 
 // Inject standard-font metrics once per process (Vercel safety).
 const g = globalThis as any;
@@ -100,7 +101,7 @@ export interface DocData {
 /* ── Settings keys + defaults (shared by every doc route) ── */
 export const DOC_SETTING_KEYS = [
   "brand_name", "brand_tagline", "phone_primary", "email_primary",
-  "address_full", "gstin", "bank_upi_id",
+  "address_full", "gstin", "bank_upi_id", "logo_image_url",
 ];
 
 export function buildDocCfg(rows: { key: string; value: string }[]): Cfg {
@@ -202,13 +203,21 @@ function drawHeader(doc: Doc, d: DocData, y: number, opts: {
   subLine?: string;
   badge?: string;
   addressSingleLine?: boolean;
+  logo?: Buffer | null;
 }): number {
-  // Monogram
+  // Brand mark — owner's uploaded logo on a white disc with gold ring when
+  // available; built-in RK monogram as fallback.
   const cx = L + 20, cy = y + 22;
-  doc.circle(cx, cy, 19).fill(GREEN);
-  doc.circle(cx, cy, 15.6).lineWidth(0.7).strokeColor(GOLD).stroke();
-  doc.font("Serif-Bold").fontSize(12.5).fillColor(GOLD)
-    .text("RK", cx - 15, cy - 6.5, { width: 30, align: "center", lineGap: 0 });
+  if (opts.logo) {
+    doc.circle(cx, cy, 21.5).fill(WHITE);
+    doc.circle(cx, cy, 21.5).lineWidth(0.9).strokeColor(GOLD).stroke();
+    doc.image(opts.logo, cx - 19, cy - 19, { width: 38, height: 38, fit: [38, 38] });
+  } else {
+    doc.circle(cx, cy, 19).fill(GREEN);
+    doc.circle(cx, cy, 15.6).lineWidth(0.7).strokeColor(GOLD).stroke();
+    doc.font("Serif-Bold").fontSize(12.5).fillColor(GOLD)
+      .text("RK", cx - 15, cy - 6.5, { width: 30, align: "center", lineGap: 0 });
+  }
 
   // Brand
   doc.font("Serif-Bold").fontSize(22).fillColor(GREEN)
@@ -301,7 +310,8 @@ function drawRadheFooter(doc: Doc, line: string, note: string, y: number): void 
 
 /* ═══════════════════════════ INVOICE ═══════════════════════════ */
 
-export function buildInvoicePdf(d: DocData): Promise<Buffer> {
+export async function buildInvoicePdf(d: DocData): Promise<Buffer> {
+  const logo = await brandLogoPng(d.cfg);
   return new Promise<Buffer>((resolve, reject) => {
     try {
       const doc = newDoc(d, "invoice");
@@ -313,6 +323,7 @@ export function buildInvoicePdf(d: DocData): Promise<Buffer> {
       let y = drawPage(doc);
       y = drawHeader(doc, d, y, {
         title: "INVOICE",
+        logo,
         metaRows: [
           ["Invoice No.", d.booking.referenceCode],
           ["Date", fmtShort(new Date())],
@@ -477,7 +488,8 @@ export function buildInvoicePdf(d: DocData): Promise<Buffer> {
 
 /* ═══════════════════════════ VOUCHER ═══════════════════════════ */
 
-export function buildVoucherPdf(d: DocData): Promise<Buffer> {
+export async function buildVoucherPdf(d: DocData): Promise<Buffer> {
+  const logo = await brandLogoPng(d.cfg);
   return new Promise<Buffer>((resolve, reject) => {
     try {
       const doc = newDoc(d, "voucher");
@@ -499,6 +511,7 @@ export function buildVoucherPdf(d: DocData): Promise<Buffer> {
         subLine: `Voucher No. ${d.booking.referenceCode}  \u00B7  Date ${fmtShort(new Date())}`,
         badge: statusText,
         addressSingleLine: true,
+        logo,
       });
 
       const paid = paidAmountOf(d.booking);
