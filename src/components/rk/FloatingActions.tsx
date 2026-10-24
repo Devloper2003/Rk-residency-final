@@ -6,6 +6,7 @@ import { MessageCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import { useSettingValue, useContentValue } from "@/lib/site-content";
 import { sanitizeWhatsapp } from "@/lib/use-contact-info";
+import { BUSINESS } from "@/lib/site.config";
 
 /**
  * Floating WhatsApp button — fixed bottom-right, with subtle pulse ring.
@@ -16,8 +17,13 @@ import { sanitizeWhatsapp } from "@/lib/use-contact-info";
 export function FloatingWhatsApp() {
   const [showLabel, setShowLabel] = useState(false);
 
-  // Live editable contact info — NO hardcoded fallback number.
-  const whatsappNumberRaw = useSettingValue("whatsapp_number", "");
+  // Live editable contact info — falls back to the owner-supplied business
+  // number from site.config so the CTA shows even before the admin saves a
+  // WhatsApp number in Settings; a DB value always wins over this fallback.
+  const whatsappNumberRaw = useSettingValue(
+    "whatsapp_number",
+    BUSINESS.whatsappNumber
+  );
   const conciergeReplyWindow = useSettingValue("concierge_reply_window", "Replies in ~5 min");
   const conciergeHours = useSettingValue("concierge_hours", "7 AM – 11 PM IST");
   const prefillText = useContentValue("contact.whatsapp_prefill_text", "I would like to enquire about availability at RK Residency");

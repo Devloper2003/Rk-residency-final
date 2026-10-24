@@ -9,6 +9,7 @@ import { GoogleTagManager } from "@/components/rk/GoogleTagManager";
 import { GoogleAnalytics } from "@/components/rk/GoogleAnalytics";
 import { SITE_URL } from "@/lib/site.config";
 import { GlobalBookingWidget } from "@/components/rk/GlobalBookingWidget";
+import { GlobalChrome } from "@/components/rk/GlobalChrome";
 import { ThemeProvider } from "@/components/rk/ThemeProvider";
 
 const playfair = Playfair_Display({
@@ -118,6 +119,9 @@ export default function RootLayout({
         <VisitorTracker />
         <GoogleAnalytics />
         <SonnerToaster position="bottom-right" richColors closeButton />
+        {/* Site-wide footer (NAP + Google profile link) + sticky WhatsApp CTA —
+            one single source for every page; hidden on /admin & /booking-doc. */}
+        <GlobalChrome />
           </ThemeProvider>
         {/* Razorpay Checkout.js — loaded lazily, only used when user pays */}
         <Script

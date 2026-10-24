@@ -10,8 +10,7 @@ import { Gallery } from "@/components/rk/Gallery";
 import { Offers } from "@/components/rk/Offers";
 import { Testimonials } from "@/components/rk/Testimonials";
 import { Contact } from "@/components/rk/Contact";
-import { Footer } from "@/components/rk/Footer";
-import { FloatingWhatsApp, ExitIntentModal } from "@/components/rk/FloatingActions";
+import { ExitIntentModal } from "@/components/rk/FloatingActions";
 
 /**
  * The home page sections (below the navbar). Kept in its own file so that the
@@ -41,8 +40,7 @@ export function HomeSections({
         <Testimonials />
         <Contact />
       </main>
-      <Footer />
-      <FloatingWhatsApp />
+      {/* Footer + FloatingWhatsApp now come from GlobalChrome (root layout) */}
       <ExitIntentModal onBookClick={onBook} />
     </>
   );

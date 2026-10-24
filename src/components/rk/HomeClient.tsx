@@ -14,8 +14,7 @@ import { Testimonials, type Review } from "@/components/rk/Testimonials";
 import type { GoogleReviewsData } from "@/lib/google-reviews";
 import { FAQ } from "@/components/rk/FAQ";
 import { Contact } from "@/components/rk/Contact";
-import { Footer } from "@/components/rk/Footer";
-import { FloatingWhatsApp, ExitIntentModal } from "@/components/rk/FloatingActions";
+import { ExitIntentModal } from "@/components/rk/FloatingActions";
 import { ScrollProgress } from "@/components/rk/ScrollProgress";
 import { useRouter } from "@/lib/router";
 import { ArrowRight } from "lucide-react";
@@ -152,9 +151,8 @@ export function HomeClient({ initialRooms, initialLatestPosts = [], initialRevie
         <Contact />
       </main>
 
-      <Footer />
-
-      <FloatingWhatsApp />
+      {/* Footer + sticky WhatsApp CTA are rendered site-wide by GlobalChrome
+          in the root layout — single source, no duplicates. */}
       <ExitIntentModal onBookClick={openBookingCb} />
       {/* BookingWidget is rendered globally in layout.tsx (GlobalBookingWidget) */}
     </div>
