@@ -41,7 +41,22 @@ export function About({ roomsTotal }: { roomsTotal?: number }) {
   ];
   // Empty DB value must NOT wipe the row (parseJsonArray returns [] for "[]").
   const parsedStats = parseJsonArray(useContentValue("about.stats", "[]"), stats);
-  const aboutStats = parsedStats.length > 0 ? parsedStats : stats;
+  // ⚠️ Shape normalization — the admin Content tab saves stats as
+  // {value, suffix, label} (e.g. value: "48,000"), while this component's
+  // fallback uses the legacy {end, suffix, label} shape. Reading s.end on a
+  // DB row returned undefined and crashed the WHOLE homepage inside CountUp
+  // ("Cannot read properties of undefined (reading 'toLocaleString')").
+  // Normalize BOTH shapes: strip thousands separators, coerce to a finite
+  // number, and never let a bad row take the page down.
+  const aboutStats = (parsedStats.length > 0 ? parsedStats : stats).map((raw) => {
+    const s = raw as { end?: unknown; value?: unknown; suffix?: unknown; label?: unknown };
+    const numeric = Number(String(s.end ?? s.value ?? "").replace(/,/g, "").trim());
+    return {
+      end: Number.isFinite(numeric) ? numeric : 0,
+      suffix: typeof s.suffix === "string" ? s.suffix : "",
+      label: typeof s.label === "string" ? s.label : "",
+    };
+  });
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "end start"],

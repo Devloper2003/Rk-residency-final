@@ -244,6 +244,10 @@ export function CountUp({
   duration?: number;
   className?: string;
 }) {
+  // Defense in depth: a malformed prop (undefined/NaN from a bad DB row)
+  // previously crashed the entire page inside toLocaleString. Coerce to a
+  // finite number so a bad stat can never take the site down again.
+  const safeEnd = Number.isFinite(Number(end)) ? Number(end) : 0;
   return (
     <motion.span
       className={className}
@@ -266,7 +270,7 @@ export function CountUp({
           const animate = (now: number) => {
             const p = Math.min(1, (now - start) / (duration * 1000));
             const eased = 1 - Math.pow(1 - p, 3);
-            const val = Math.round(end * eased);
+            const val = Math.round(safeEnd * eased);
             span.textContent = `${prefix}${val.toLocaleString("en-IN")}${suffix}`;
             if (p < 1) requestAnimationFrame(animate);
           };
@@ -277,7 +281,7 @@ export function CountUp({
           {/* Server-side real value (SEO + no-JS): crawlers and users without
               JavaScript see the FINAL number, not "0". The viewport animation
               still replays 0 → end on the client when scrolled into view. */}
-          {prefix}{end.toLocaleString("en-IN")}{suffix}
+          {prefix}{safeEnd.toLocaleString("en-IN")}{suffix}
         </span>
       </motion.span>
     </motion.span>
