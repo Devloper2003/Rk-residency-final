@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Home } from "lucide-react";
 import { useRouter, routeHref } from "@/lib/router";
 import { Logo, SectionDivider } from "./Motifs";
-import { WhatsAppFab } from "./WhatsAppFab";
+import { FloatingWhatsApp } from "./FloatingActions";
 import { breadcrumbJsonLd } from "@/lib/schema-org";
 
 // Stable year for SSR/client hydration; updated on mount.
@@ -121,8 +121,10 @@ export function PageShell({
         {children}
       </div>
 
-      {/* Sticky WhatsApp enquiry CTA — guests overwhelmingly enquire there */}
-      <WhatsAppFab />
+      {/* Sticky WhatsApp enquiry CTA — guests overwhelmingly enquire there.
+          Home renders its own via HomeClient/HomeSections; this covers every
+          interior page (rooms, contact, blog, policies, booking-doc...). */}
+      <FloatingWhatsApp />
 
       {/* Footer credit */}
       <footer className="border-t border-charcoal/10 bg-ivory-deep py-6">
