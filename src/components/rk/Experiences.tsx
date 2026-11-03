@@ -4,6 +4,34 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Clock, MapPin, Footprints, Sun, Moon, Sunrise } from "lucide-react";
 import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { useContentValue, parseJsonArray } from "@/lib/site-content";
+import { BUSINESS } from "@/lib/site.config";
+
+// Single source of truth for distances: site.config BUSINESS.distances — the
+// SAME verified figures the homepage "Distances from RK Residency" section
+// renders. Owner rule: one number everywhere, never "steps/minutes from".
+const D = BUSINESS.distances;
+
+// "8 min drive · 25 min walk" → "25 min walk" (falls back to the full time).
+const walkOnly = (time: string) => time.match(/(\d+\s*min walk)/i)?.[1] || time;
+
+/**
+ * DB-authored experience items (Admin → Content) may carry OLD, unverified
+ * distances. Match each item by name and force the verified site.config
+ * figures so the card can never contradict the Distances section.
+ */
+const DISTANCE_MATCHERS: [RegExp, { km: string; time: string }][] = [
+  [/banke\s*bihari/i, D.bankeBihari],
+  [/iskcon|krishna balaram/i, D.iskcon],
+  [/prem\s*mandir/i, D.premMandir],
+  [/nidhivan/i, D.nidhivan],
+  [/keshi\s*ghat|yamuna aarti/i, D.keshiGhat],
+];
+
+function normalizeExperience<T extends { name: string; distance: string; walkTime: string }>(e: T): T {
+  const hit = DISTANCE_MATCHERS.find(([re]) => re.test(e.name));
+  if (!hit) return e;
+  return { ...e, distance: `${hit[1].km} km`, walkTime: walkOnly(hit[1].time) };
+}
 
 type Experience = {
   name: string;
@@ -19,8 +47,8 @@ type Experience = {
 const EXPERIENCES: Experience[] = [
   {
     name: "Banke Bihari Mandir",
-    distance: "2.6 km",
-    walkTime: "40 min walk",
+    distance: `${D.bankeBihari.km} km`,
+    walkTime: walkOnly(D.bankeBihari.time),
     bestTime: "dawn",
     timings: "Mangala 7:45 AM · Evening 7:00 PM",
     description:
@@ -30,8 +58,8 @@ const EXPERIENCES: Experience[] = [
   },
   {
     name: "ISKCON Sri Krishna Balaram Mandir",
-    distance: "2 km",
-    walkTime: "30 min walk",
+    distance: `${D.iskcon.km} km`,
+    walkTime: walkOnly(D.iskcon.time),
     bestTime: "evening",
     timings: "Sandhya Aarti 7:00 PM · Kirtan till 8:30 PM",
     description:
@@ -41,8 +69,8 @@ const EXPERIENCES: Experience[] = [
   },
   {
     name: "Prem Mandir",
-    distance: "2.3 km",
-    walkTime: "30 min walk",
+    distance: `${D.premMandir.km} km`,
+    walkTime: walkOnly(D.premMandir.time),
     bestTime: "evening",
     timings: "Illumination 7:30 PM · Closes 9:00 PM",
     description:
@@ -52,8 +80,8 @@ const EXPERIENCES: Experience[] = [
   },
   {
     name: "Nidhivan",
-    distance: "2.8 km",
-    walkTime: "40 min walk",
+    distance: `${D.nidhivan.km} km`,
+    walkTime: walkOnly(D.nidhivan.time),
     bestTime: "day",
     timings: "Open till 6:00 PM · Closed after dusk",
     description:
@@ -63,8 +91,8 @@ const EXPERIENCES: Experience[] = [
   },
   {
     name: "Yamuna Aarti at Keshi Ghat",
-    distance: "3.1 km",
-    walkTime: "40 min walk",
+    distance: `${D.keshiGhat.km} km`,
+    walkTime: walkOnly(D.keshiGhat.time),
     bestTime: "evening",
     timings: "Sunset Aarti · Daily (varies by season)",
     description:
@@ -87,7 +115,10 @@ export function Experiences({ limit }: { limit?: number }) {
   // Audit H5: an empty DB value (or missing row) used to render an empty
   // shell in the SSR HTML. Fall back to the curated list so the section is
   // never empty; admin entries win as soon as they exist.
-  const experiences = parsed.length > 0 ? parsed : EXPERIENCES;
+  // Every item (DB or fallback) is normalized against site.config distances
+  // so old admin entries can never show a different number than the rest of
+  // the site.
+  const experiences = (parsed.length > 0 ? parsed : EXPERIENCES).map(normalizeExperience);
   const items = limit ? experiences.slice(0, limit) : experiences;
   return (
     <section

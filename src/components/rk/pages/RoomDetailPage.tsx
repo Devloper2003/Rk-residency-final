@@ -14,6 +14,7 @@ import { AvailabilityCalendar } from "../AvailabilityCalendar";
 import { useRouter } from "@/lib/router";
 import { useContactInfo } from "@/lib/use-contact-info";
 import { sanitizeRoomView } from "@/lib/room-display";
+import { realDistanceCopy } from "@/lib/copy-normalize";
 import type { PublicPlan } from "@/lib/rate-plans";
 import { useContentValue } from "@/lib/site-content";
 
@@ -127,7 +128,7 @@ export function RoomDetailPage({
   return (
     <PageShell
       title={room.name}
-      subtitle={room.tagline}
+      subtitle={realDistanceCopy(room.tagline)}
       accent="teal"
       breadcrumbs={[
         { name: "Home", path: "/" },
@@ -191,7 +192,7 @@ export function RoomDetailPage({
                   </div>
                 )}
                 <h1 className="font-serif text-3xl font-bold text-ivory sm:text-4xl lg:text-5xl">{room.name}</h1>
-                <p className="mt-1 font-display text-sm text-ivory/80">{room.tagline}</p>
+                <p className="mt-1 font-display text-sm text-ivory/80">{realDistanceCopy(room.tagline)}</p>
               </div>
               <div className="hidden shrink-0 rounded-2xl bg-ivory/15 px-5 py-3 text-right backdrop-blur-md sm:block">
                 <div className="font-serif text-2xl font-bold text-ivory">₹{fromPrice.toLocaleString("en-IN")}</div>

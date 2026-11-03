@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { Footer } from "@/components/rk/Footer";
-import { FloatingWhatsApp } from "@/components/rk/FloatingActions";
+import { ContactActionBar, FloatingWhatsApp } from "@/components/rk/FloatingActions";
 
 /**
  * Site-wide chrome rendered once from the root layout so EVERY page gets the
@@ -23,6 +23,12 @@ export function GlobalChrome() {
   return (
     <>
       <Footer />
+      {/* Mobile-only sticky Call/WhatsApp bar (owner ask — guests enquire by
+          call/WhatsApp). The spacer reserves the bar's height so the fixed
+          bar never covers the footer's last line; from `sm` up the round
+          WhatsApp FAB (below) takes over instead. */}
+      <ContactActionBar />
+      <div aria-hidden="true" className="h-[60px] w-full sm:hidden" />
       <FloatingWhatsApp />
     </>
   );

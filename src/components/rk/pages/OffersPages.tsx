@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Reveal, Lotus } from "../Motifs";
 import { useRouter } from "@/lib/router";
 import { useContactInfo } from "@/lib/use-contact-info";
+import { BUSINESS } from "@/lib/site.config";
 
 type Offer = {
   id: string; slug: string; title: string; tagline: string; description: string;
@@ -15,11 +16,24 @@ type Offer = {
   imageUrl: string | null; badge: string | null; featured: boolean;
 };
 
-export function OffersListPage({ onBookClick }: { onBookClick?: () => void }) {
+/** Narrow slice of the DB Room row — the SAME rows /rooms and the homepage
+ *  render, passed in server-side by src/app/offers/page.tsx. */
+type RoomRate = { id: string; slug: string; name: string; basePrice: number };
+
+export function OffersListPage({
+  onBookClick,
+  initialRooms,
+}: {
+  onBookClick?: () => void;
+  /** SSR room rows — keeps the offers-page price list in the initial HTML
+   *  and guarantees it matches the homepage and /rooms to the rupee. */
+  initialRooms?: RoomRate[];
+}) {
   const navigate = useRouter((s) => s.navigate);
   const openBooking = useRouter((s) => s.openBooking);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
+  const rooms = initialRooms || [];
 
   const handleBook = () => {
     if (onBookClick) onBookClick();
@@ -129,6 +143,57 @@ export function OffersListPage({ onBookClick }: { onBookClick?: () => void }) {
             );
           })}
         </div>
+      )}
+
+      {/* ONE price list everywhere — these are the SAME DB room rows the
+          homepage and /rooms render (SSR), so the offers page can never
+          quote a different rate than the rest of the site (owner rule).
+          Breakfast wording derives from the single policy in site.config. */}
+      {rooms.length > 0 && (
+        <section
+          aria-label="Room rates"
+          className="mt-16 rounded-3xl border border-gold/30 bg-white p-6 shadow-sm sm:p-8"
+        >
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2 text-gold-deep">
+              <Lotus size={16} />
+              <span className="font-display text-xs uppercase tracking-[0.32em]">
+                Direct-dial room rates
+              </span>
+              <Lotus size={16} />
+            </div>
+            <h2 className="mt-3 font-serif text-2xl font-semibold text-charcoal sm:text-3xl">
+              Room rates — same as the homepage &amp; Rooms page
+            </h2>
+            <p className="mx-auto mt-2 max-w-xl font-display text-sm text-charcoal-soft">
+              {BUSINESS.breakfastIncluded
+                ? "Per-night direct rates, identical on every page of this site. Daily satvik breakfast is included in all rates."
+                : "Per-night direct rates, identical on every page of this site. All rates exclude daily satvik breakfast."}
+            </p>
+          </div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            {rooms.map((r) => (
+              <div
+                key={r.id}
+                className="flex flex-col items-center rounded-2xl border border-charcoal/10 bg-ivory p-5 text-center"
+              >
+                <h3 className="font-serif text-lg font-semibold text-charcoal">{r.name}</h3>
+                <div className="mt-1 font-serif text-2xl font-bold text-teal">
+                  ₹{r.basePrice.toLocaleString("en-IN")}
+                  <span className="ml-1 font-sans text-xs font-normal text-charcoal-soft">/ night</span>
+                </div>
+                <Button
+                  onClick={() => openBooking(r.slug)}
+                  className="mt-4 w-full rounded-full bg-teal py-2.5 text-sm font-semibold text-ivory transition-all hover:bg-teal-deep"
+                  aria-label={`Book ${r.name} now`}
+                >
+                  Book Now
+                  <ArrowRight className="ml-1.5 h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
     </PageShell>
   );

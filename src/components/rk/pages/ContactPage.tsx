@@ -176,8 +176,7 @@ export function ContactPage() {
                 <p className="mt-1.5 font-display text-sm leading-relaxed text-charcoal-soft">
                   Mathura Junction (12 km) is the nearest major railway station, connected to
                   Delhi, Mumbai, Kolkata, Chennai and Varanasi. We arrange complimentary
-                  station pickups for stays of 2+ nights. Vrindavan's own small station is a
-                  5-minute walk.
+                  station pickups for stays of 2+ nights.
                 </p>
               </div>
 

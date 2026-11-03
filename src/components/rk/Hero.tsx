@@ -8,6 +8,9 @@ import { Diya } from "./Motifs";
 import { WeatherWidget } from "./WeatherWidget";
 import { useContentValue, parseJsonArray } from "@/lib/site-content";
 import { BUSINESS } from "@/lib/site.config";
+import { realDistanceCopy } from "@/lib/copy-normalize";
+
+const D = BUSINESS.distances;
 
 export function Hero({ onBookClick }: { onBookClick: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -25,7 +28,15 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
   const headlineLine2 = useContentValue("hero.headline_line2", "Vrindavan");
   // The old tagline is now a subheading (h2) below the keyword h1.
   const tagline = useContentValue("hero.tagline", "Where the spirit of Braj finds its rest");
-  const subheadline = useContentValue("hero.subheadline", "A heritage-luxury residency minutes from Banke Bihari Mandir & ISKCON Vrindavan. Calm, dignified comfort for pilgrims, devotee families and cultural travellers.");
+  // Owner rule: no vague "minutes from" claims — the default states the REAL
+  // Google-Maps figures from site.config, and realDistanceCopy() rewrites the
+  // same claim if it is stored in the Admin → Content DB row.
+  const subheadline = realDistanceCopy(
+    useContentValue(
+      "hero.subheadline",
+      `A heritage-luxury residency ${D.bankeBihari.km} km from Banke Bihari Mandir & ${D.iskcon.km} km from ISKCON Vrindavan. Calm, dignified comfort for pilgrims, devotee families and cultural travellers.`
+    )
+  );
   const ctaPrimary = useContentValue("hero.cta_primary", "Check Availability");
   const ctaSecondary = useContentValue("hero.cta_secondary", "Explore Rooms");
   // Rating claim (e.g. "4.9 · 1,240+ verified stays") is HIDDEN unless the
@@ -54,7 +65,9 @@ export function Hero({ onBookClick }: { onBookClick: () => void }) {
   const currentSlideData = slides[currentSlide] || {};
   const currentHeadline1 = currentSlideData.headline_line1 || headlineLine1;
   const currentHeadline2 = currentSlideData.headline_line2 || headlineLine2;
-  const currentSubheadline = currentSlideData.subheadline || subheadline;
+  // Slide subheadlines can also carry the banned vague-distance wording from
+  // the DB — normalize them the same way as the base subheadline.
+  const currentSubheadline = realDistanceCopy(currentSlideData.subheadline || subheadline);
 
   const skyY = useTransform(scrollYProgress, [0, 1], ["0%", prefersReducedMotion ? "0%" : "30%"]);
   const midY = useTransform(scrollYProgress, [0, 1], ["0%", prefersReducedMotion ? "0%" : "18%"]);

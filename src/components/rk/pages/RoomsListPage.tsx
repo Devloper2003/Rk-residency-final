@@ -5,8 +5,10 @@ import { motion } from "framer-motion";
 import { Users, Maximize, BedDouble, Sparkles, ArrowRight } from "lucide-react";
 import { PageShell } from "../PageShell";
 import { Reveal, Lotus } from "../Motifs";
+import { Button } from "@/components/ui/button";
 import { useRouter } from "@/lib/router";
 import { BUSINESS } from "@/lib/site.config";
+import { realDistanceCopy } from "@/lib/copy-normalize";
 import { roomImageAlt, sanitizeRoomView } from "@/lib/room-display";
 
 const BREADCRUMBS = [
@@ -50,6 +52,8 @@ function matchFilter(room: Room, filter: string) {
 
 export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
   const navigate = useRouter((s) => s.navigate);
+  // Opens the global booking modal (root layout) with THIS room preselected.
+  const openBooking = useRouter((s) => s.openBooking);
   // SSR: when the server page passes initialRooms, the room cards are part of
   // the initial HTML (crawlable). The client fetch remains only as a fallback.
   const [rooms, setRooms] = useState<Room[]>(initialRooms || []);
@@ -123,16 +127,20 @@ export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
           {visible.map((r, i) => {
             const imgs: string[] = JSON.parse(r.imageUrls || "[]");
             const amenities: string[] = JSON.parse(r.amenities || "[]");
+            const tagline = realDistanceCopy(r.tagline);
             return (
-              <motion.button
+              <motion.div
                 key={r.id}
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: i * 0.06 }}
-                onClick={() => navigate("room-detail", r.slug)}
                 className="group block w-full overflow-hidden rounded-3xl border border-charcoal/10 bg-white text-left shadow-sm transition-all hover:shadow-xl focus-ring"
               >
-                <div className="relative h-64 overflow-hidden">
+                <button
+                  onClick={() => navigate("room-detail", r.slug)}
+                  className="relative block h-64 w-full overflow-hidden focus-ring"
+                  aria-label={`View ${r.name} details`}
+                >
                   <img
                     src={imgs[0] || "/images/heritage-room.webp"}
                     alt={roomImageAlt(r.name, r.view)}
@@ -155,9 +163,9 @@ export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
                       </div>
                     )}
                     <h3 className="mt-1 font-serif text-2xl font-semibold">{r.name}</h3>
-                    <p className="font-display text-sm text-ivory/80">{r.tagline}</p>
+                    <p className="font-display text-sm text-ivory/80">{tagline}</p>
                   </div>
-                </div>
+                </button>
                 <div className="p-5">
                   <div className="mb-3 grid grid-cols-3 gap-2 text-center">
                     <div className="rounded-lg bg-ivory px-2 py-2">
@@ -186,21 +194,38 @@ export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
                       </span>
                     )}
                   </div>
-                  <div className="flex items-end justify-between border-t border-charcoal/10 pt-4">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-wider text-charcoal-soft">From</div>
-                      <div className="font-serif text-2xl font-bold text-teal">
-                        ₹{r.basePrice.toLocaleString("en-IN")}
-                        <span className="ml-1 font-sans text-xs font-normal text-charcoal-soft">/ night</span>
+                  <div className="border-t border-charcoal/10 pt-4">
+                    <div className="flex items-end justify-between gap-3">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wider text-charcoal-soft">From</div>
+                        <div className="font-serif text-2xl font-bold text-teal">
+                          ₹{r.basePrice.toLocaleString("en-IN")}
+                          <span className="ml-1 font-sans text-xs font-normal text-charcoal-soft">/ night</span>
+                        </div>
                       </div>
+                      <button
+                        onClick={() => navigate("room-detail", r.slug)}
+                        className="inline-flex items-center gap-1 font-display text-sm font-semibold text-teal transition-colors hover:text-teal-deep focus-ring"
+                        aria-label={`View ${r.name} details`}
+                      >
+                        View details
+                        <ArrowRight className="h-4 w-4" />
+                      </button>
                     </div>
-                    <span className="inline-flex items-center gap-1 font-display text-sm font-semibold text-teal">
-                      View details
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </span>
+                    {/* Owner ask: a Book Now button on EVERY room card. Opens
+                        the global booking modal with this room preselected —
+                        the same DB price list as the homepage and /offers. */}
+                    <Button
+                      onClick={() => openBooking(r.slug)}
+                      className="cta-glow mt-3 w-full rounded-full bg-teal py-2.5 text-sm font-semibold text-ivory transition-all hover:bg-teal-deep"
+                      aria-label={`Book ${r.name} now`}
+                    >
+                      Book Now
+                      <ArrowRight className="ml-1.5 h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-              </motion.button>
+              </motion.div>
             );
           })}
         </div>

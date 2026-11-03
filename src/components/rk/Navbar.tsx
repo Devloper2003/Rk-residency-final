@@ -19,12 +19,27 @@ const NAV_ITEMS: { id: string; route: RouteName; label: string; labelHi: string 
   { id: "contact", route: "contact", label: "Contact", labelHi: "संपर्क" },
 ];
 
-export function Navbar({ onBookClick: _onBookClick }: { onBookClick?: () => void }) {
+/**
+ * "overlay" — transparent over the dark homepage hero (default).
+ * "solid"   — always uses the scrolled (glass + dark-on-light) look, for
+ *             light sub-pages (Rooms, Offers, Gallery…) rendered via
+ *             PageShell, so the header menu is readable without a hero
+ *             behind it (owner ask: full header menu on the Rooms page).
+ */
+export function Navbar({
+  onBookClick: _onBookClick,
+  variant = "overlay",
+}: {
+  onBookClick?: () => void;
+  variant?: "overlay" | "solid";
+}) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [lang, setLang] = useState<"en" | "hi">("en");
   const [activeId, setActiveId] = useState<string>("");
   const navigate = useRouter((s) => s.navigate);
+  // Solid variant renders with the "scrolled" styling from the first paint.
+  const lookScrolled = scrolled || variant === "solid";
   // Live editable brand info
   const brandName = useSettingValue("brand_name", "RK Residency");
   const brandTagline = useSettingValue("brand_tagline", "Vrindavan · Braj");
@@ -79,7 +94,7 @@ export function Navbar({ onBookClick: _onBookClick }: { onBookClick?: () => void
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${
-          scrolled
+          lookScrolled
             ? "glass shadow-[0_8px_32px_-12px_rgba(35,31,28,0.18)]"
             : "bg-transparent"
         }`}
@@ -97,7 +112,7 @@ export function Navbar({ onBookClick: _onBookClick }: { onBookClick?: () => void
           >
             <span
               className={`grid h-10 w-10 place-items-center rounded-full border transition-all duration-500 ${
-                scrolled
+                lookScrolled
                   ? "border-gold/40 bg-ivory/80 text-teal"
                   : "border-white/30 bg-white/10 text-ivory backdrop-blur-md"
               } group-hover:scale-105`}
@@ -107,14 +122,14 @@ export function Navbar({ onBookClick: _onBookClick }: { onBookClick?: () => void
             <span className="flex flex-col items-start gap-1.5 leading-none sm:gap-2">
               <span
                 className={`font-serif text-base font-semibold tracking-wide transition-colors sm:text-lg ${
-                  scrolled ? "text-teal" : "text-ivory"
+                  lookScrolled ? "text-teal" : "text-ivory"
                 }`}
               >
                 {brandName}
               </span>
               <span
                 className={`font-display text-[9px] uppercase tracking-[0.24em] transition-colors sm:text-[10px] sm:tracking-[0.28em] ${
-                  scrolled ? "text-gold-deep" : "text-gold-soft"
+                  lookScrolled ? "text-gold-deep" : "text-gold-soft"
                 }`}
               >
                 {brandTagline}
@@ -132,10 +147,10 @@ export function Navbar({ onBookClick: _onBookClick }: { onBookClick?: () => void
                 key={item.id}
                 onClick={() => handleNav(item)}
                 className={`relative rounded-md px-3 py-2 text-sm font-medium transition-colors focus-ring ${
-                  scrolled
+                  lookScrolled
                     ? "text-charcoal-soft hover:text-teal"
                     : "text-ivory/85 hover:text-ivory"
-                } ${activeId === item.id ? (scrolled ? "text-teal" : "text-ivory") : ""}`}
+                } ${activeId === item.id ? (lookScrolled ? "text-teal" : "text-ivory") : ""}`}
               >
                 {lang === "hi" ? item.labelHi : item.label}
                 {activeId === item.id && (
@@ -150,7 +165,7 @@ export function Navbar({ onBookClick: _onBookClick }: { onBookClick?: () => void
             <button
               onClick={() => navigate("blog")}
               className={`rounded-md px-3 py-2 text-sm font-medium transition-colors focus-ring ${
-                scrolled
+                lookScrolled
                   ? "text-charcoal-soft hover:text-teal"
                   : "text-ivory/85 hover:text-ivory"
               }`}
@@ -160,7 +175,7 @@ export function Navbar({ onBookClick: _onBookClick }: { onBookClick?: () => void
             <button
               onClick={() => navigate("about")}
               className={`rounded-md px-3 py-2 text-sm font-medium transition-colors focus-ring ${
-                scrolled
+                lookScrolled
                   ? "text-charcoal-soft hover:text-teal"
                   : "text-ivory/85 hover:text-ivory"
               }`}
@@ -175,7 +190,7 @@ export function Navbar({ onBookClick: _onBookClick }: { onBookClick?: () => void
             <button
               onClick={() => setLang(lang === "en" ? "hi" : "en")}
               className={`hidden items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all focus-ring sm:flex ${
-                scrolled
+                lookScrolled
                   ? "border-charcoal/15 text-charcoal-soft hover:border-teal/40 hover:text-teal"
                   : "border-white/25 text-ivory/85 hover:border-gold/60 hover:text-ivory"
               }`}
@@ -202,7 +217,7 @@ export function Navbar({ onBookClick: _onBookClick }: { onBookClick?: () => void
             <button
               onClick={() => setMobileOpen(true)}
               className={`grid h-10 w-10 place-items-center rounded-full border transition-all lg:hidden focus-ring ${
-                scrolled
+                lookScrolled
                   ? "border-charcoal/15 text-charcoal-soft"
                   : "border-white/25 text-ivory"
               }`}

@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Home } from "lucide-react";
-import { useRouter, routeHref } from "@/lib/router";
-import { Logo, SectionDivider } from "./Motifs";
+import { routeHref } from "@/lib/router";
+import { SectionDivider } from "./Motifs";
+import { Navbar } from "./Navbar";
 import { breadcrumbJsonLd } from "@/lib/schema-org";
 
 // Stable year for SSR/client hydration; updated on mount.
@@ -15,8 +15,10 @@ function useYear() {
 }
 
 /**
- * Full-screen page wrapper for the in-app router. Renders above the home
- * page with a sticky top bar containing back/home buttons + the page title.
+ * Full-screen page wrapper for sub-pages. Renders the site-wide Navbar
+ * (solid variant) above the page header so every sub-page carries the same
+ * header menu as the homepage; the sticky WhatsApp CTA and full footer come
+ * from GlobalChrome in the root layout.
  */
 export function PageShell({
   title,
@@ -32,7 +34,6 @@ export function PageShell({
   /** Ordered trail for BreadcrumbList JSON-LD, e.g. [{ name: "Home", path: "/" }, ...] */
   breadcrumbs?: { name: string; path: string }[];
 }) {
-  const navigate = useRouter((s) => s.navigate);
   const year = useYear();
   const accentBg =
     accent === "gold"
@@ -42,14 +43,21 @@ export function PageShell({
       : "bg-gradient-to-r from-teal/8 via-teal/4 to-transparent";
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.35 }}
-      className="min-h-screen bg-ivory scrollbar-thin"
-      role="main"
-    >
+    <>
+      {/* Site-wide header menu — the SAME Navbar as the homepage, in solid
+          variant so it reads on light sub-page backgrounds (owner ask: the
+          Rooms page must carry the full header menu). Rendered OUTSIDE the
+          animated wrapper so its `fixed` positioning is never affected by
+          framer-motion transforms. */}
+      <Navbar variant="solid" />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.35 }}
+        className="min-h-screen bg-ivory scrollbar-thin"
+        role="main"
+      >
       {/* BreadcrumbList structured data — emitted in the server-rendered HTML */}
       {breadcrumbs && breadcrumbs.length > 0 && (
         <script
@@ -57,43 +65,9 @@ export function PageShell({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd(breadcrumbs)) }}
         />
       )}
-      {/* Sticky top bar */}
-      <div className={`sticky top-0 z-10 ${accentBg} border-b border-charcoal/10 backdrop-blur-md`}>
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => window.history.back()}
-              className="group flex items-center gap-1.5 rounded-full border border-charcoal/15 bg-white px-3 py-1.5 text-xs font-semibold text-charcoal-soft transition-all hover:border-teal hover:bg-teal hover:text-ivory focus-ring"
-              aria-label="Go back"
-            >
-              <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
-              Back
-            </button>
-            <a
-              href={routeHref("home")}
-              onClick={(e) => {
-                e.preventDefault();
-                navigate("home");
-              }}
-              className="grid h-9 w-9 place-items-center rounded-full border border-charcoal/15 bg-white text-teal transition-all hover:bg-teal hover:text-ivory focus-ring"
-              aria-label="Home"
-            >
-              <Home className="h-4 w-4" />
-            </a>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-full border border-gold/40 bg-ivory text-teal">
-              <Logo size={18} />
-            </span>
-            <span className="font-display text-[10px] uppercase tracking-[0.28em] text-charcoal-soft">
-              RK Residency · Vrindavan
-            </span>
-          </div>
-        </div>
-      </div>
 
-      {/* Hero header */}
-      <header className={`relative overflow-hidden ${accentBg} pb-8 pt-12`}>
+      {/* Hero header — top padding clears the fixed site Navbar above */}
+      <header className={`relative overflow-hidden ${accentBg} pb-8 pt-28 sm:pt-32`}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 14 }}
@@ -131,7 +105,7 @@ export function PageShell({
               href={routeHref("contact")}
               onClick={(e) => {
                 e.preventDefault();
-                navigate("contact");
+                window.location.href = routeHref("contact");
               }}
               className="ml-1 text-teal hover:underline"
             >
@@ -140,6 +114,7 @@ export function PageShell({
           </p>
         </div>
       </footer>
-    </motion.div>
+      </motion.div>
+    </>
   );
 }

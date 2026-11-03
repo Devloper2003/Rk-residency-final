@@ -8,6 +8,7 @@ import { Reveal, Lotus, SectionDivider } from "./Motifs";
 import { useRouter } from "@/lib/router";
 import { safeJsonArray } from "@/lib/utils";
 import { fixCopyTypos, roomImageAlt, sanitizeRoomView } from "@/lib/room-display";
+import { realDistanceCopy } from "@/lib/copy-normalize";
 import { BUSINESS } from "@/lib/site.config";
 
 type Room = {
@@ -104,7 +105,7 @@ function TiltCard({
               </div>
             )}
             <h3 className="mt-1 line-clamp-2 font-serif text-xl font-semibold leading-tight group-hover:underline sm:text-2xl">{room.name}</h3>
-            <p className="mt-0.5 line-clamp-1 font-display text-xs text-ivory/80 sm:text-sm">{room.tagline}</p>
+            <p className="mt-0.5 line-clamp-1 font-display text-xs text-ivory/80 sm:text-sm">{realDistanceCopy(room.tagline)}</p>
           </button>
         </div>
 

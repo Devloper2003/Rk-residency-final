@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X } from "lucide-react";
+import { MessageCircle, Phone, X } from "lucide-react";
 import { toast } from "sonner";
 import { useSettingValue, useContentValue } from "@/lib/site-content";
-import { sanitizeWhatsapp } from "@/lib/use-contact-info";
+import { sanitizeWhatsapp, sanitizeContactText } from "@/lib/use-contact-info";
 import { BUSINESS } from "@/lib/site.config";
 
 /**
@@ -59,7 +59,7 @@ export function FloatingWhatsApp() {
       transition={{ delay: 1.6, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       onMouseEnter={() => setShowLabel(true)}
       onMouseLeave={() => setShowLabel(false)}
-      className="group fixed bottom-5 right-5 z-50 flex items-center gap-3"
+      className="group fixed bottom-5 right-5 z-50 hidden items-center gap-3 sm:flex"
     >
       <AnimatePresence>
         {showLabel && (
@@ -102,6 +102,68 @@ export function FloatingWhatsApp() {
         <MessageCircle className="relative h-6 w-6" />
       </motion.span>
     </motion.a>
+  );
+}
+
+/**
+ * Sticky contact bar — MOBILE bottom action bar with CALL + WhatsApp.
+ * Owner ask: Vrindavan guests enquire by call/WhatsApp, so those two actions
+ * must be one tap away on every page. Shown on phones only (the round
+ * WhatsApp FAB above takes over from `sm` up, so the two never stack).
+ * Numbers come from the same live settings the Navbar/FAB use — an Admin →
+ * Settings value always wins over the site.config fallback.
+ */
+export function ContactActionBar() {
+  const phoneTel = sanitizeContactText(
+    useSettingValue("phone_primary_tel", BUSINESS.phonePrimaryTel)
+  );
+  const whatsappNumber = sanitizeWhatsapp(
+    useSettingValue("whatsapp_number", BUSINESS.whatsappNumber)
+  );
+  const prefillText = useContentValue(
+    "contact.whatsapp_prefill_text",
+    "I would like to enquire about availability at RK Residency"
+  );
+  const waUrl = whatsappNumber
+    ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(prefillText)}`
+    : "";
+
+  // Nothing configured at all — render nothing (never a dead button).
+  if (!phoneTel && !waUrl) return null;
+
+  return (
+    <div
+      className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-2 border-t border-charcoal/10 bg-white/95 shadow-[0_-8px_24px_-12px_rgba(35,31,28,0.35)] backdrop-blur-md sm:hidden"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      data-testid="contact-action-bar"
+    >
+      {phoneTel && (
+        <a
+          href={`tel:${phoneTel}`}
+          className={`flex items-center justify-center gap-2 py-3.5 font-display text-sm font-bold text-charcoal transition-colors active:bg-ivory-deep ${
+            waUrl ? "" : "col-span-2"
+          }`}
+          aria-label="Call RK Residency now"
+        >
+          <Phone className="h-4 w-4 text-teal" />
+          Call Now
+        </a>
+      )}
+      {waUrl && (
+        <a
+          href={waUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`flex items-center justify-center gap-2 bg-[#25D366] py-3.5 font-display text-sm font-bold text-white transition-colors active:bg-[#1fb857] ${
+            phoneTel ? "" : "col-span-2"
+          }`}
+          aria-label="Chat with RK Residency on WhatsApp"
+        >
+          <MessageCircle className="h-4 w-4" />
+          WhatsApp
+        </a>
+      )}
+    </div>
   );
 }
 

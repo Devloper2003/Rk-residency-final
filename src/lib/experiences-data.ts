@@ -107,10 +107,7 @@ export const EXPERIENCES: Experience[] = [
   {
     slug: "nidhivan",
     name: "Nidhivan",
-    // TODO(owner): fill BUSINESS.distances.nidhivan in site.config — the
-    // figures below are the pre-existing site copy, unverified.
-    distance: "2.8 km",
-    walkTime: "40 min walk",
+    ...fromConfig(D.nidhivan, "2.8 km", "40 min walk"),
     bestTime: "day",
     timings: "Open till 6:00 PM · Closed after dusk",
     description:
