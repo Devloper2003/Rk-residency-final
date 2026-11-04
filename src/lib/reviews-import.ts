@@ -101,6 +101,17 @@ const REAL_REVIEWS: RealReview[] = [
       "Rooms are clean, comfortable and well maintained. Overall a pleasant stay with courteous staff. Bathroom toiletries could be provided or improved, which would take the guest experience one notch higher. Overall a good stay.",
     weeksAgo: 18,
   },
+  {
+    // Owner instruction (Nov 2026): include the "Arneogh Security" 5-star
+    // screenshot, updated for RK Residency, Vrindavan (the original text
+    // referenced the RR Residency property name).
+    guestName: "Arneogh Security",
+    rating: 5,
+    title: "RK Residency, Vrindavan — 5 Star Review",
+    body:
+      "My stay at RK Residency, Vrindavan was truly exceptional. From the moment I arrived, I was welcomed with warm hospitality and a level of professionalism that set the tone for an incredible experience.\n\nThe rooms were spacious, well-maintained and thoughtfully designed with all modern amenities. The bed was incredibly comfortable, and housekeeping was prompt — everything stayed perfectly tidy throughout my stay.\n\nThe staff members were truly exceptional — polite, professional and always ready to help with a smile. Whether it was room service or assistance at the front desk, their service was quick and efficient.\n\nThe food was another highlight. The restaurant offered a wide variety of delicious dishes, and the breakfast spread was particularly flavourful. The overall dining experience was top-notch.\n\nThe location is also very convenient, making it easy to access nearby attractions and transport.\n\nOverall, RK Residency exceeded my expectations in every way. I highly recommend it to anyone looking for a comfortable, clean and well-managed place to stay in Vrindavan. I will definitely choose it again on my next visit!",
+    weeksAgo: 4,
+  },
 ];
 
 function weeksAgoToDate(w: number): Date {
