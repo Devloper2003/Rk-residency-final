@@ -26,6 +26,7 @@ export function PageShell({
   children,
   accent = "teal",
   breadcrumbs,
+  backgroundImage,
 }: {
   title: string;
   subtitle?: string;
@@ -33,6 +34,10 @@ export function PageShell({
   accent?: "teal" | "gold" | "marsala";
   /** Ordered trail for BreadcrumbList JSON-LD, e.g. [{ name: "Home", path: "/" }, ...] */
   breadcrumbs?: { name: string; path: string }[];
+  /** Optional decorative photo behind the header (e.g. "/images/heritage-room.webp").
+   *  Rendered under a strong ivory veil so the title always reads cleanly —
+   *  the page keeps its premium pastel look with a hint of the property. */
+  backgroundImage?: string;
 }) {
   const year = useYear();
   const accentBg =
@@ -68,7 +73,22 @@ export function PageShell({
 
       {/* Hero header — top padding clears the fixed site Navbar above */}
       <header className={`relative overflow-hidden ${accentBg} pb-8 pt-28 sm:pt-32`}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {backgroundImage && (
+          <div aria-hidden className="absolute inset-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={backgroundImage}
+              alt=""
+              loading="eager"
+              className="h-full w-full object-cover"
+            />
+            {/* Ivory veil + left-to-right fade — text side stays solid, the
+                photo shows through gently on the right. Decorative only. */}
+            <div className="absolute inset-0 bg-ivory/78" />
+            <div className="absolute inset-0 bg-gradient-to-r from-ivory via-ivory/85 to-ivory/35" />
+          </div>
+        )}
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}

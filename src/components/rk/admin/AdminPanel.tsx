@@ -105,10 +105,21 @@ export function AdminPanel() {
   const authed = stored !== null;
   const [tab, setTab] = useState<Tab>("dashboard");
   // Deep-link + OAuth-callback support: /admin?tab=marketing opens that tab
-  // directly (Meta login bounces back to this URL after connecting).
+  // directly (Meta login bounces back to this URL after connecting). Also
+  // re-applied on popstate and on the rk-admin-tab event so in-app shortcuts
+  // (Marketing Hub → other tabs) can deep-link without a full reload.
   useEffect(() => {
-    const param = new URLSearchParams(window.location.search).get("tab") as Tab | null;
-    if (param && TABS.some((t) => t.id === param)) setTab(param);
+    const applyTab = () => {
+      const param = new URLSearchParams(window.location.search).get("tab") as Tab | null;
+      if (param && TABS.some((t) => t.id === param)) setTab(param);
+    };
+    applyTab();
+    window.addEventListener("popstate", applyTab);
+    window.addEventListener("rk-admin-tab", applyTab);
+    return () => {
+      window.removeEventListener("popstate", applyTab);
+      window.removeEventListener("rk-admin-tab", applyTab);
+    };
   }, []);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);

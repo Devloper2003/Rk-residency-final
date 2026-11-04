@@ -86,6 +86,7 @@ export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
       subtitle="Every room at RK Residency is thoughtfully curated to provide comfort, elegance, and a peaceful escape in the sacred city of Vrindavan. Explore each room category to view detailed amenities, photo galleries, and seamless booking options."
       accent="teal"
       breadcrumbs={BREADCRUMBS}
+      backgroundImage="/images/heritage-room.webp"
     >
       {/* Starting price — visible in the initial HTML (SEO + conversion) */}
       {startingFrom > 0 && (
