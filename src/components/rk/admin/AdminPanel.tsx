@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef, lazy, Suspense } from "react";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, CalendarDays, BedDouble, Star, Mail,
@@ -18,6 +18,7 @@ import { useRouter } from "@/lib/router";
 import {
   getAdmin, setAdminSession, clearAdminSession,
 } from "@/lib/admin-client";
+import { TabErrorBoundary, useLazyTab, type TabFactory } from "./lazyTab";
 import { toast } from "sonner";
 
 type AdminUser = { id: string; email: string; name: string; role: string };
@@ -58,32 +59,39 @@ const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: st
 
 const TAB_GROUPS = ["Overview", "Growth", "Operations", "Content", "Settings"];
 
-// Lazy-load ALL tab components so Turbopack compiles them on-demand
-const DashboardTab = lazy(() => import("./tabs/DashboardTab").then(m => ({ default: m.DashboardTab })));
-const AnalyticsTab = lazy(() => import("./tabs/AnalyticsTab").then(m => ({ default: m.AnalyticsTab })));
-const BookingsTab = lazy(() => import("./tabs/BookingsTab").then(m => ({ default: m.BookingsTab })));
-const RoomsTab = lazy(() => import("./tabs/RoomsTab").then(m => ({ default: m.RoomsTab })));
-const OffersTab = lazy(() => import("./tabs/OffersTab").then(m => ({ default: m.OffersTab })));
-const BlogTab = lazy(() => import("./tabs/BlogTab").then(m => ({ default: m.BlogTab })));
-const CalendarTab = lazy(() => import("./tabs/CalendarTab").then(m => ({ default: m.CalendarTab })));
-const ReviewsTab = lazy(() => import("./tabs/ReviewsTab").then(m => ({ default: m.ReviewsTab })));
-const ContentTab = lazy(() => import("./tabs/ContentTab").then(m => ({ default: m.ContentTab })));
-const SeoKeywordsTab = lazy(() => import("./tabs/SeoKeywordsTab").then(m => ({ default: m.SeoKeywordsTab })));
-const ThemeTab = lazy(() => import("./tabs/ThemeTab").then(m => ({ default: m.ThemeTab })));
-const SettingsTab = lazy(() => import("./tabs/SettingsTab").then(m => ({ default: m.SettingsTab })));
-const UsersTab = lazy(() => import("./tabs/UsersTab").then(m => ({ default: m.UsersTab })));
-const LeadsTab = lazy(() => import("./tabs/LeadsTab").then(m => ({ default: m.LeadsTab })));
-const AuditTab = lazy(() => import("./tabs/AuditTab").then(m => ({ default: m.AuditTab })));
-const MediaTab = lazy(() => import("./tabs/MediaTab").then(m => ({ default: m.MediaTab })));
-const ExperiencesTab = lazy(() => import("./tabs/ExperiencesTab").then(m => ({ default: m.ExperiencesTab })));
-const DiningTab = lazy(() => import("./tabs/DiningTab").then(m => ({ default: m.DiningTab })));
-const GalleryTab = lazy(() => import("./tabs/GalleryTab").then(m => ({ default: m.GalleryTab })));
-const PaymentTab = lazy(() => import("./tabs/PaymentTab").then(m => ({ default: m.PaymentTab })));
-const HeroTab = lazy(() => import("./tabs/HeroTab").then(m => ({ default: m.HeroTab })));
-const InventoryTab = lazy(() => import("./tabs/InventoryTab").then(m => ({ default: m.InventoryTab })));
-const CouponsTab = lazy(() => import("./tabs/CouponsTab").then(m => ({ default: m.CouponsTab })));
-const BookingEngineTab = lazy(() => import("./tabs/BookingEngineTab").then(m => ({ default: m.BookingEngineTab })));
-const MarketingTab = lazy(() => import("./tabs/MarketingTab").then(m => ({ default: m.MarketingTab })));
+/**
+ * Per-tab chunk factories. Loaded through useLazyTab → lazyRetry so a failed
+ * chunk request is retried automatically and a broken tab shows an in-place
+ * error card (with a working "Try again") instead of killing the whole
+ * console with the full-page error boundary.
+ */
+const TAB_FACTORIES: Record<Tab, TabFactory> = {
+  dashboard: () => import("./tabs/DashboardTab").then((m) => ({ default: m.DashboardTab })),
+  analytics: () => import("./tabs/AnalyticsTab").then((m) => ({ default: m.AnalyticsTab })),
+  "booking-engine": () => import("./tabs/BookingEngineTab").then((m) => ({ default: m.BookingEngineTab })),
+  marketing: () => import("./tabs/MarketingTab").then((m) => ({ default: m.MarketingTab })),
+  bookings: () => import("./tabs/BookingsTab").then((m) => ({ default: m.BookingsTab })),
+  rooms: () => import("./tabs/RoomsTab").then((m) => ({ default: m.RoomsTab })),
+  offers: () => import("./tabs/OffersTab").then((m) => ({ default: m.OffersTab })),
+  coupons: () => import("./tabs/CouponsTab").then((m) => ({ default: m.CouponsTab })),
+  experiences: () => import("./tabs/ExperiencesTab").then((m) => ({ default: m.ExperiencesTab })),
+  dining: () => import("./tabs/DiningTab").then((m) => ({ default: m.DiningTab })),
+  gallery: () => import("./tabs/GalleryTab").then((m) => ({ default: m.GalleryTab })),
+  reviews: () => import("./tabs/ReviewsTab").then((m) => ({ default: m.ReviewsTab })),
+  hero: () => import("./tabs/HeroTab").then((m) => ({ default: m.HeroTab })),
+  content: () => import("./tabs/ContentTab").then((m) => ({ default: m.ContentTab })),
+  seo: () => import("./tabs/SeoKeywordsTab").then((m) => ({ default: m.SeoKeywordsTab })),
+  blog: () => import("./tabs/BlogTab").then((m) => ({ default: m.BlogTab })),
+  calendar: () => import("./tabs/CalendarTab").then((m) => ({ default: m.CalendarTab })),
+  media: () => import("./tabs/MediaTab").then((m) => ({ default: m.MediaTab })),
+  theme: () => import("./tabs/ThemeTab").then((m) => ({ default: m.ThemeTab })),
+  payment: () => import("./tabs/PaymentTab").then((m) => ({ default: m.PaymentTab })),
+  settings: () => import("./tabs/SettingsTab").then((m) => ({ default: m.SettingsTab })),
+  users: () => import("./tabs/UsersTab").then((m) => ({ default: m.UsersTab })),
+  leads: () => import("./tabs/LeadsTab").then((m) => ({ default: m.LeadsTab })),
+  audit: () => import("./tabs/AuditTab").then((m) => ({ default: m.AuditTab })),
+  inventory: () => import("./tabs/InventoryTab").then((m) => ({ default: m.InventoryTab })),
+};
 
 function TabFallback() {
   return (
@@ -106,6 +114,11 @@ export function AdminPanel() {
   const [mounted, setMounted] = useState(false);
   const authed = stored !== null;
   const [tab, setTab] = useState<Tab>("dashboard");
+  // Bumped when a tab chunk fails, so "Try again" remounts the tab with a
+  // FRESH lazy component (a rejected React.lazy import is cached forever —
+  // without this the retry would just replay the same failure).
+  const [tabAttempt, setTabAttempt] = useState(0);
+  const LazyTab = useLazyTab(tab, tabAttempt, TAB_FACTORIES);
   // Deep-link + OAuth-callback support: /admin?tab=marketing opens that tab
   // directly (Meta login bounces back to this URL after connecting). Also
   // re-applied on popstate and on the rk-admin-tab event so in-app shortcuts
@@ -132,6 +145,8 @@ export function AdminPanel() {
   // deep-scrolled list (e.g. Bookings) never lands mid-page on the next tab.
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0 });
+    // New tab → reset the chunk-load attempt counter.
+    setTabAttempt(0);
   }, [tab]);
 
   useEffect(() => {
@@ -310,45 +325,31 @@ export function AdminPanel() {
           </div>
         </header>
 
-        {/* Tab content */}
+        {/* Tab content — Suspense lives INSIDE each tab frame so a slow
+            chunk shows the skeleton in-place and can never swap the whole
+            AnimatePresence out mid-exit; the boundary keeps a broken tab
+            from taking down the rest of the console. */}
         <div className="p-4 sm:p-6 lg:p-8">
-          <Suspense fallback={<TabFallback />}>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={tab}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.18 }}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={tab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.18 }}
+            >
+              <TabErrorBoundary
+                resetKey={`${tab}:${tabAttempt}`}
+                onRetry={() => setTabAttempt((a) => a + 1)}
               >
-                {tab === "dashboard" && <DashboardTab />}
-                {tab === "analytics" && <AnalyticsTab />}
-                {tab === "booking-engine" && <BookingEngineTab />}
-                {tab === "marketing" && <MarketingTab />}
-                {tab === "bookings" && <BookingsTab />}
-                {tab === "inventory" && <InventoryTab />}
-                {tab === "rooms" && <RoomsTab onOpenInventory={() => setTab("inventory")} />}
-                {tab === "offers" && <OffersTab />}
-                {tab === "experiences" && <ExperiencesTab />}
-                {tab === "dining" && <DiningTab />}
-                {tab === "gallery" && <GalleryTab />}
-                {tab === "blog" && <BlogTab />}
-                {tab === "calendar" && <CalendarTab />}
-                {tab === "reviews" && <ReviewsTab />}
-                {tab === "hero" && <HeroTab />}
-                {tab === "content" && <ContentTab />}
-                {tab === "seo" && <SeoKeywordsTab />}
-                {tab === "media" && <MediaTab />}
-                {tab === "theme" && <ThemeTab />}
-                {tab === "payment" && <PaymentTab />}
-                {tab === "settings" && <SettingsTab />}
-                {tab === "users" && <UsersTab />}
-                {tab === "leads" && <LeadsTab />}
-                {tab === "audit" && <AuditTab />}
-                {tab === "coupons" && <CouponsTab />}
-              </motion.div>
-            </AnimatePresence>
-          </Suspense>
+                <Suspense fallback={<TabFallback />}>
+                  {tab === "rooms"
+                    ? <LazyTab onOpenInventory={() => setTab("inventory")} />
+                    : <LazyTab />}
+                </Suspense>
+              </TabErrorBoundary>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </main>
 

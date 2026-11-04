@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Check, Loader2, Image as ImageIcon, Code } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { adminApi, LoadingSpinner } from "./_shared";
+import { adminApi, LoadingSpinner, ErrorState } from "./_shared";
 import { ImageUploader } from "../ImageUploader";
 import { refreshSiteContent } from "@/lib/site-content";
 import { toast } from "sonner";
@@ -30,28 +30,58 @@ const SECTION_META: Record<string, { label: string; description: string }> = {
 export function ContentTab() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  // Bumped by the retry button — re-runs the fetch effect.
+  const [reloadTick, setReloadTick] = useState(0);
   const [activeSection, setActiveSection] = useState("hero");
   const [editing, setEditing] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     let c = false;
+    setLoading(true);
+    setLoadError(false);
     adminApi.get("content").then((data) => {
-      if (c || !data) { setLoading(false); return; }
+      if (c) return;
+      if (!data || !Array.isArray(data.items)) {
+        // Null response = 401 (session handled globally) or repeated network
+        // failure; non-array = unexpected API payload. Either way, show the
+        // retry state instead of silently rendering an empty editor.
+        setLoadError(true);
+        setLoading(false);
+        return;
+      }
+      // Defensive row normalisation: one malformed DB row must never break
+      // the whole editor (e.g. a NULL section from an older schema crashes
+      // the API and every string operation in this component).
+      const safeItems = (data.items as any[]).filter(Boolean).map((i: any, idx: number) => ({
+        ...i,
+        id: String(i?.id ?? i?.key ?? `row-${idx}`),
+        key: String(i?.key ?? `row-${idx}`),
+        section: typeof i?.section === "string" && i.section.trim() ? i.section.trim() : "other",
+        value: typeof i?.value === "string" ? i.value : "",
+        type: typeof i?.type === "string" ? i.type : "text",
+        label: typeof i?.label === "string" ? i.label : null,
+      }));
       // "seo.keywords" (global) and "seo.keywords.pages" (per-page JSON) are
       // owned by the dedicated SEO Keywords tab — keep a single editing
       // surface so the two can never drift apart.
-      setItems(((data.items || []) as any[]).filter((i) => i.key !== "seo.keywords" && i.key !== "seo.keywords.pages"));
+      const visibleItems = safeItems.filter((i) => i.key !== "seo.keywords" && i.key !== "seo.keywords.pages");
+      setItems(visibleItems);
       const m: Record<string, string> = {};
-      (data.items || []).forEach((i: any) => { m[i.id] = i.value; });
+      safeItems.forEach((i: any) => { m[i.id] = i.value; });
       setEditing(m);
       // Auto-pick the first available section if "hero" doesn't exist
-      const sections: string[] = Array.from(new Set((data.items || []).map((i: any) => i.section as string)));
+      const sections: string[] = Array.from(new Set(visibleItems.map((i: any) => i.section as string)));
       if (sections.length > 0 && !sections.includes("hero")) setActiveSection(sections[0]);
+      setLoading(false);
+    }).catch(() => {
+      if (c) return;
+      setLoadError(true);
       setLoading(false);
     });
     return () => { c = true; };
-  }, []);
+  }, [reloadTick]);
 
   const save = async (id: string) => {
     setSaving((s) => ({ ...s, [id]: true }));
@@ -68,6 +98,15 @@ export function ContentTab() {
   };
 
   if (loading) return <LoadingSpinner />;
+  if (loadError) {
+    return (
+      <ErrorState
+        title="Page Editor failed to load"
+        message="The content could not be fetched right now — usually a temporary network issue. Nothing was lost; saved edits are already live."
+        onRetry={() => setReloadTick((t) => t + 1)}
+      />
+    );
+  }
   const sections = Array.from(new Set(items.map((i) => i.section)));
   const visible = items.filter((i) => i.section === activeSection);
 
