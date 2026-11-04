@@ -17,6 +17,10 @@ import { NextRequest, NextResponse } from "next/server";
  *  - Skipped in development unless FORCE_SEO_REDIRECTS=1, so localhost,
  *    preview deployments and tests are never redirected.
  *  - /api/webhooks/* is excluded — webhook receivers must never be 301'd.
+ *  - Every pass-through response also carries the x-rk-pathname request
+ *    header so the root layout's generateMetadata can resolve the
+ *    PER-PAGE admin-managed SEO keywords (Admin → SEO Keywords) without
+ *    each route needing its own metadata plumbing.
  *  - Vercel deployment step: attach ALL of these domains to the project so
  *    their DNS reaches this middleware: rkresidency.in, www.rkresidency.in,
  *    rkresidencyvrindavan.in, www.rkresidencyvrindavan.in (primary).
@@ -35,7 +39,7 @@ function normalizeHost(raw: string): string {
 
 export function middleware(req: NextRequest) {
   if (process.env.NODE_ENV !== "production" && process.env.FORCE_SEO_REDIRECTS !== "1") {
-    return NextResponse.next();
+    return withPathname(req, NextResponse.next());
   }
 
   const host = normalizeHost(req.headers.get("host") || "");
@@ -60,7 +64,22 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(target, 301);
   }
 
-  return NextResponse.next();
+  return withPathname(req, NextResponse.next());
+}
+
+/**
+ * Tag the pass-through request so server components (root layout
+ * generateMetadata) can read the original pathname via headers().
+ * Next.js only forwards request headers to RSC when they are set on
+ * `NextResponse.next({ request: { headers } })` — a response header would
+ * never reach the layout. Only the pathname is forwarded — never query
+ * strings, so no PII lands in metadata resolution.
+ */
+function withPathname(req: NextRequest, res: NextResponse): NextResponse {
+  const headers = new Headers(req.headers);
+  headers.set("x-rk-pathname", req.nextUrl.pathname);
+  res.headers.set("x-rk-pathname", req.nextUrl.pathname); // debuggability in the browser
+  return NextResponse.next({ request: { headers } });
 }
 
 export const config = {

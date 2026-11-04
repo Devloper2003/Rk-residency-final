@@ -20,6 +20,43 @@ export const SEO_KEYWORDS_SECTION = "seo";
 export const SEO_KEYWORDS_TYPE = "textarea";
 export const SEO_KEYWORDS_LABEL = "Primary SEO keywords";
 
+/**
+ * Per-page keyword sets (OWNER FEATURE, Nov 2026). One SiteContent row holds
+ * a JSON object mapping a page key -> comma-separated keywords. A page with
+ * its own set renders THAT set; every other page falls back to the global
+ * "seo.keywords" list (then to the code defaults below).
+ */
+export const SEO_KEYWORDS_PAGES_CONTENT_KEY = "seo.keywords.pages";
+
+/** The public pages the owner can give their own keyword list, in admin order. */
+export const SEO_PAGES: { key: string; label: string; path: string }[] = [
+  { key: "home", label: "Home", path: "/" },
+  { key: "rooms", label: "Rooms", path: "/rooms" },
+  { key: "dining", label: "Dining", path: "/dining" },
+  { key: "gallery", label: "Gallery", path: "/gallery" },
+  { key: "offers", label: "Offers", path: "/offers" },
+  { key: "blog", label: "Blog", path: "/blog" },
+  { key: "about", label: "About", path: "/about" },
+  { key: "experiences", label: "Experiences", path: "/experiences" },
+  { key: "festivals", label: "Festivals", path: "/festivals" },
+  { key: "contact", label: "Contact", path: "/contact" },
+];
+
+const SEO_PAGE_KEYS = new Set(SEO_PAGES.map((p) => p.key));
+
+/**
+ * Map a request pathname to a page key. Detail pages (e.g. /rooms/deluxe,
+ * /blog/some-post) inherit their section's set; unknown paths (policies,
+ * booking-doc, ...) resolve to null -> global list.
+ */
+export function pageKeyForPath(path: string | null | undefined): string | null {
+  if (!path) return null;
+  const clean = path.split("?")[0].split("#")[0];
+  if (clean === "/" || clean === "") return "home";
+  const first = clean.split("/").filter(Boolean)[0] || "";
+  return SEO_PAGE_KEYS.has(first) ? first : null;
+}
+
 /** Hard caps so one bad paste can never bloat the HTML head. */
 export const SEO_KEYWORDS_MAX_COUNT = 50;
 export const SEO_KEYWORDS_MAX_LENGTH = 100;
@@ -65,4 +102,55 @@ export function parseKeywords(raw: string | null | undefined): string[] {
     if (out.length >= SEO_KEYWORDS_MAX_COUNT) break;
   }
   return out;
+}
+
+/**
+ * Parse the stored per-page JSON ("{"home":"kw1, kw2","dining":"kw3"}") into
+ * a clean Record<pageKey, string[]>. Unknown page keys are dropped so a
+ * stale/hand-edited row can never inject sets for pages that do not exist.
+ */
+export function parsePageSets(raw: string | null | undefined): Record<string, string[]> {
+  if (!raw) return {};
+  let obj: unknown;
+  try { obj = JSON.parse(raw); } catch { return {}; }
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return {};
+  const out: Record<string, string[]> = {};
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    if (!SEO_PAGE_KEYS.has(key) || typeof value !== "string") continue;
+    const list = parseKeywords(value);
+    if (list.length > 0) out[key] = list;
+  }
+  return out;
+}
+
+/** Serialize per-page sets back into the compact stored JSON form. */
+export function serializePageSets(sets: Record<string, string[]>): string {
+  const clean: Record<string, string> = {};
+  for (const [key, list] of Object.entries(sets)) {
+    if (!SEO_PAGE_KEYS.has(key)) continue;
+    const parsed = parseKeywords(list.join(","));
+    if (parsed.length > 0) clean[key] = parsed.join(", ");
+  }
+  return JSON.stringify(clean);
+}
+
+/** Where a rendered keyword list came from — shown as the admin badge too. */
+export type SeoKeywordsSource = "page" | "global" | "default";
+
+/**
+ * Resolve the effective keyword list for one page:
+ *   1. the page's own admin-saved set  (source "page")
+ *   2. the global admin-saved list     (source "global")
+ *   3. the curated code defaults       (source "default")
+ */
+export function resolveSeoKeywords(
+  pageKey: string | null,
+  pageSets: Record<string, string[]>,
+  globalList: string[],
+): { keywords: string[]; source: SeoKeywordsSource } {
+  if (pageKey && pageSets[pageKey]?.length) {
+    return { keywords: pageSets[pageKey], source: "page" };
+  }
+  if (globalList.length > 0) return { keywords: globalList, source: "global" };
+  return { keywords: [...DEFAULT_SEO_KEYWORDS], source: "default" };
 }

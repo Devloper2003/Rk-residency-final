@@ -1,6 +1,7 @@
 import { NextRouterBridge } from "@/components/rk/NextRouterBridge";
 import type { Metadata } from "next";
 import Script from "next/script";
+import { headers } from "next/headers";
 import { Playfair_Display, Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
@@ -48,6 +49,9 @@ const inter = Inter({
  * Base metadata. `keywords` is injected per-request in generateMetadata()
  * from the admin-managed SEO keywords (Admin → SEO Keywords) so the owner
  * controls the live primary keywords — code only holds the fallback.
+ * Since Nov 2026 each page can ALSO have its own admin-saved keyword set:
+ * the middleware tags every request with x-rk-pathname, so the layout
+ * resolves page-specific keywords first, then the global admin list.
  */
 const baseMetadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -99,9 +103,19 @@ const baseMetadata: Metadata = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  // Admin-managed primary keywords (falls back to the curated defaults when
-  // the owner has not saved a list yet, or if the DB is unreachable).
-  const { keywords } = await getSeoKeywords();
+  // Per-page admin-managed primary keywords: the middleware forwards the
+  // request pathname (x-rk-pathname), and getSeoKeywords resolves
+  //   page set (Admin → SEO Keywords → that page)
+  //   → global admin list → curated code defaults.
+  // Falls back to the global view when the header is missing (e.g. direct
+  // render without middleware) and to the defaults when the DB is down.
+  let pathname: string | undefined;
+  try {
+    pathname = (await headers()).get("x-rk-pathname") || undefined;
+  } catch {
+    pathname = undefined;
+  }
+  const { keywords } = await getSeoKeywords(pathname);
   return { ...baseMetadata, keywords };
 }
 

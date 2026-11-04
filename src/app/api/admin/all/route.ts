@@ -7,9 +7,13 @@ import {
   SEO_KEYWORDS_CONTENT_KEY,
   SEO_KEYWORDS_LABEL,
   SEO_KEYWORDS_MAX_COUNT,
+  SEO_KEYWORDS_PAGES_CONTENT_KEY,
   SEO_KEYWORDS_SECTION,
   SEO_KEYWORDS_TYPE,
+  SEO_PAGES,
   parseKeywords,
+  parsePageSets,
+  serializePageSets,
 } from "@/lib/seo-keywords";
 import { getSeoKeywords } from "@/lib/seo-keywords.server";
 
@@ -258,9 +262,11 @@ export async function GET(req: Request) {
 
       case "seo_keywords": {
         // Effective primary keywords + where they came from, so the admin
-        // editor always shows exactly what the live site renders.
-        const { keywords, source } = await getSeoKeywords();
-        return NextResponse.json({ keywords, source });
+        // editor always shows exactly what the live site renders. Also returns
+        // every per-page set in one shot so the tab's page selector can switch
+        // targets without extra round-trips.
+        const { keywords, source, pageSets, globalKeywords } = await getSeoKeywords();
+        return NextResponse.json({ keywords, source, pageSets, globalKeywords });
       }
 
       case "settings": {
@@ -302,7 +308,7 @@ export async function GET(req: Request) {
  * Body: { action: "XXX", ...payload }
  * Consolidated admin PATCH endpoint.
  *
- * Actions: booking_status, content, seo_keywords, setting, theme, review, room, offer, blog_post
+ * Actions: booking_status, content, seo_keywords, seo_keywords_page, setting, theme, review, room, offer, blog_post
  */
 export async function PATCH(req: Request) {
   const admin = await verifyAdmin(req);
@@ -382,6 +388,54 @@ export async function PATCH(req: Request) {
           data: { adminId: admin.id, action: "SEO_KEYWORDS_UPDATED", entity: "SiteContent", entityId: item.id, details: `Primary SEO keywords updated (${parseKeywords(value).length} keywords)` },
         });
         return NextResponse.json({ ok: true, keywords: parseKeywords(value), source: "custom" });
+      }
+
+      case "seo_keywords_page": {
+        // OWNER FEATURE (Nov 2026): per-page keyword sets. body = { pageKey,
+        // keywords[] }. An empty keywords array CLEARS the page's own set so
+        // the page falls back to the global list — nothing else is touched.
+        // Same parse/dedupe/cap helper the site renders with: saved = live.
+        const { pageKey, keywords: rawKeywords } = body as { pageKey?: string; keywords?: unknown };
+        if (!pageKey || !SEO_PAGES.some((p) => p.key === pageKey)) {
+          return NextResponse.json({ error: "Invalid pageKey" }, { status: 400 });
+        }
+        if (!Array.isArray(rawKeywords) || rawKeywords.some((k) => typeof k !== "string")) {
+          return NextResponse.json({ error: "Invalid keywords" }, { status: 400 });
+        }
+        const parsed = parseKeywords(rawKeywords.join(",")).slice(0, SEO_KEYWORDS_MAX_COUNT);
+
+        const existing = await db.siteContent.findUnique({
+          where: { key: SEO_KEYWORDS_PAGES_CONTENT_KEY },
+          select: { id: true, value: true },
+        });
+        const currentSets = parsePageSets(existing?.value);
+        if (parsed.length === 0) delete currentSets[pageKey];
+        else currentSets[pageKey] = parsed;
+        const value = serializePageSets(currentSets);
+
+        const item = await db.siteContent.upsert({
+          where: { key: SEO_KEYWORDS_PAGES_CONTENT_KEY },
+          update: { value },
+          create: {
+            key: SEO_KEYWORDS_PAGES_CONTENT_KEY,
+            value,
+            section: SEO_KEYWORDS_SECTION,
+            type: SEO_KEYWORDS_TYPE,
+            label: "Per-page SEO keywords",
+          },
+        });
+        await db.auditLog.create({
+          data: {
+            adminId: admin.id,
+            action: "SEO_KEYWORDS_PAGE_UPDATED",
+            entity: "SiteContent",
+            entityId: item.id,
+            details: parsed.length === 0
+              ? `Per-page keywords cleared for "${pageKey}" (falls back to global list)`
+              : `Per-page keywords updated for "${pageKey}" (${parsed.length} keywords)`,
+          },
+        });
+        return NextResponse.json({ ok: true, pageKey, keywords: parsed, pageSets: currentSets });
       }
 
       case "setting": {

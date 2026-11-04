@@ -51,9 +51,10 @@ export default async function HomeRoute() {
   // Returns null when GOOGLE_PLACES_API_KEY / Place ID are not configured —
   // the site then falls back to DB reviews only. Nothing invented, ever.
   const googleData = await getGoogleReviews();
-  // Admin-managed primary SEO keywords — the same list the <meta
-  // name="keywords"> tag renders, kept in sync inside the Hotel JSON-LD too.
-  const { keywords: seoKeywords } = await getSeoKeywords();
+  // Admin-managed primary SEO keywords for the HOMEPAGE — the same list the
+  // <meta name="keywords"> tag renders here, kept in sync inside the Hotel
+  // JSON-LD too (page set for "/" → global admin list → code defaults).
+  const { keywords: seoKeywords } = await getSeoKeywords("/");
   // SSR offers (audit H5/C2): live, non-expired offers go straight into the
   // initial HTML — the old client-only fetch left the section empty for
   // crawlers and made data "appear/disappear" between scans.

@@ -38,9 +38,10 @@ export function ContentTab() {
     let c = false;
     adminApi.get("content").then((data) => {
       if (c || !data) { setLoading(false); return; }
-      // "seo.keywords" is owned by the dedicated SEO Keywords tab — keep a
-      // single editing surface so the two can never drift apart.
-      setItems(((data.items || []) as any[]).filter((i) => i.key !== "seo.keywords"));
+      // "seo.keywords" (global) and "seo.keywords.pages" (per-page JSON) are
+      // owned by the dedicated SEO Keywords tab — keep a single editing
+      // surface so the two can never drift apart.
+      setItems(((data.items || []) as any[]).filter((i) => i.key !== "seo.keywords" && i.key !== "seo.keywords.pages"));
       const m: Record<string, string> = {};
       (data.items || []).forEach((i: any) => { m[i.id] = i.value; });
       setEditing(m);
