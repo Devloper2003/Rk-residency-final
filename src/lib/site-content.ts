@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, createElement, useContext, useEffect, useState, type ReactNode } from "react";
 
 /**
  * In-memory cache shared across all hook consumers on the same page.
@@ -22,6 +22,24 @@ let contentPromise: Promise<ContentMap> | null = null;
 let settingsPromise: Promise<SettingsMap> | null = null;
 
 const VERSION_KEY = "rk_content_version";
+
+/**
+ * Server-side content hydration (fixes the "code fallback flashes first"
+ * problem): the root layout is a server component that reads the live
+ * SiteContent map from the DB on every request and provides it here. Every
+ * useSiteContent()/useContentValue() consumer then renders the ADMIN-SET
+ * value in the very first (SSR + hydration) paint — no brief flash of the
+ * hardcoded code fallback, and admin image/text changes are visible on a
+ * plain reload with zero delay. The post-mount fetch + 30s poll + admin
+ * refresh events below continue to keep values fresh exactly as before.
+ * Pages without the provider (none today) behave exactly as before.
+ */
+const SiteContentContext = createContext<ContentMap | null>(null);
+
+export function SiteContentProvider({ initial, children }: { initial: ContentMap; children: ReactNode }) {
+  // .ts file (no JSX) — createElement keeps this module extension unchanged.
+  return createElement(SiteContentContext.Provider, { value: initial }, children);
+}
 
 // Read initial version from localStorage so a freshly-loaded public page
 // picks up the latest version written by the admin tab.
@@ -80,7 +98,11 @@ async function fetchSettings(): Promise<SettingsMap> {
  * Use `useContentValue("hero.headline", "Fallback text")` for individual values.
  */
 export function useSiteContent(): ContentMap | null {
-  const [content, setContent] = useState<ContentMap | null>(null);
+  // Initial state: the server-provided map when available (first paint = DB
+  // truth), else null → consumers show their code fallback until the fetch
+  // below resolves (unchanged legacy behaviour).
+  const ctx = useContext(SiteContentContext);
+  const [content, setContent] = useState<ContentMap | null>(ctx);
   const [localVersion, setLocalVersion] = useState(contentVersion);
 
   useEffect(() => {

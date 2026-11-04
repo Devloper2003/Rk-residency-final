@@ -173,6 +173,9 @@ export function ContactActionBar() {
  */
 export function ExitIntentModal({ onBookClick }: { onBookClick: () => void }) {
   const [open, setOpen] = useState(false);
+  // Admin-editable image (Content tab → Exit Modal). Previously hardcoded,
+  // so admin changes to exit_modal.image never showed.
+  const exitImage = useContentValue("exit_modal.image", "/images/marigold-garland.webp");
 
   useEffect(() => {
     // Desktop only — exit intent doesn't work well on touch
@@ -232,7 +235,7 @@ export function ExitIntentModal({ onBookClick }: { onBookClick: () => void }) {
             {/* Image header */}
             <div className="relative h-44 overflow-hidden">
               <img
-                src="/images/marigold-garland.webp"
+                src={exitImage}
                 alt="Marigold garland"
                 className="h-full w-full object-cover"
               />

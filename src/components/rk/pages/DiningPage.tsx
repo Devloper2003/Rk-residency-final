@@ -58,6 +58,9 @@ export function DiningPage() {
   const dLabel = useContentValue("dining.label", "Satvik Dining");
   const dTitle = useContentValue("dining.title", "Pure food, prepared with intention");
   const dSubtitle = useContentValue("dining.subtitle", "");
+  // Same admin key as the home-page Dining section — one control drives both.
+  const dImage = useContentValue("dining.image", "/uploads/rk-residency-vrindavan-satvik-dining.webp");
+  const dImageAlt = useContentValue("dining.image_alt", "Satvik thali on a heritage crockery plate at RK Residency");
   return (
     <PageShell
       title="Satvik Dining in Vrindavan"
@@ -71,11 +74,11 @@ export function DiningPage() {
       {/* Hero image */}
       <div className="relative mb-12 aspect-[16/9] overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
         <img
-          src="/uploads/rk-residency-vrindavan-satvik-dining.webp"
+          src={dImage}
           width={1600}
           height={900}
           loading="eager"
-          alt="Satvik thali on a heritage crockrey plate at RK Residency"
+          alt={dImageAlt}
           className="h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-transparent to-transparent" />

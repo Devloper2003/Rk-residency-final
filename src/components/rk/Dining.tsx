@@ -84,6 +84,11 @@ const AMENITIES = [
 
 export function Dining() {
   const dishes = parseJsonArray<{ name: string; desc: string; price: string; veg: boolean }>(useContentValue("dining.signature_dishes", "[]"), SIGNATURE_DISHES);
+  // Admin-editable image (Content tab → Dining). The key already existed in
+  // the DB but was never read here — the img below used to be hardcoded,
+  // so admin changes never showed. Fixed: DB value (or this fallback) wins.
+  const diningImage = useContentValue("dining.image", "/uploads/rk-residency-vrindavan-satvik-thali.webp");
+  const diningImageAlt = useContentValue("dining.image_alt", "Satvik thali on a heritage brass plate at RK Residency");
   return (
     <section id="dining" className="relative bg-ivory py-24 lg:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -121,8 +126,8 @@ export function Dining() {
           <Reveal>
             <div className="relative h-full min-h-[420px] overflow-hidden rounded-3xl border-4 border-gold/20 shadow-xl">
               <img
-                src="/uploads/rk-residency-vrindavan-satvik-thali.webp"
-                alt="Satvik thali on a heritage brass plate at RK Residency"
+                src={diningImage}
+                alt={diningImageAlt}
                 width={1200}
                 height={1500}
                 className="h-full w-full object-cover"

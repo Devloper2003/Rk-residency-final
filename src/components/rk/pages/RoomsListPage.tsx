@@ -7,6 +7,7 @@ import { PageShell } from "../PageShell";
 import { Reveal, Lotus } from "../Motifs";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/lib/router";
+import { useContentValue } from "@/lib/site-content";
 import { BUSINESS } from "@/lib/site.config";
 import { realDistanceCopy } from "@/lib/copy-normalize";
 import { roomImageAlt, sanitizeRoomView } from "@/lib/room-display";
@@ -59,6 +60,10 @@ export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
   const [rooms, setRooms] = useState<Room[]>(initialRooms || []);
   const [loading, setLoading] = useState(!initialRooms);
   const [filter, setFilter] = useState("all");
+  // Admin-editable header background (Content tab → Rooms Page Header).
+  // Previously hardcoded, so admin changes to rooms_page.background_image
+  // would never have shown.
+  const headerBg = useContentValue("rooms_page.background_image", "/images/heritage-room.webp");
 
   useEffect(() => {
     if (initialRooms) return; // data already rendered server-side
@@ -86,7 +91,7 @@ export function RoomsListPage({ initialRooms }: { initialRooms?: Room[] }) {
       subtitle="Every room at RK Residency is thoughtfully curated to provide comfort, elegance, and a peaceful escape in the sacred city of Vrindavan. Explore each room category to view detailed amenities, photo galleries, and seamless booking options."
       accent="teal"
       breadcrumbs={BREADCRUMBS}
-      backgroundImage="/images/heritage-room.webp"
+      backgroundImage={headerBg}
     >
       {/* Starting price — visible in the initial HTML (SEO + conversion) */}
       {startingFrom > 0 && (

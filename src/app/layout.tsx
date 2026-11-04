@@ -11,6 +11,8 @@ import { SITE_URL } from "@/lib/site.config";
 import { GlobalBookingWidget } from "@/components/rk/GlobalBookingWidget";
 import { GlobalChrome } from "@/components/rk/GlobalChrome";
 import { ThemeProvider } from "@/components/rk/ThemeProvider";
+import { SiteContentProvider } from "@/lib/site-content";
+import { db } from "@/lib/db";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -82,9 +84,22 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Server-side content hydration: read the live SiteContent map (every
+  // admin-editable text + image on the site) once per request and provide
+  // it to all client sections. First paint therefore shows the ADMIN-SET
+  // values — hardcoded code fallbacks are no longer visible, ever. The
+  // fetch is wrapped in try/catch: if the DB is unreachable the map is
+  // simply empty and consumers use their code fallbacks (previous behaviour).
+  let initialContent: Record<string, string> = {};
+  try {
+    const rows = await db.siteContent.findMany({ select: { key: true, value: true } });
+    initialContent = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  } catch {
+    // Fall back to empty map — sections use their code fallbacks.
+  }
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -112,7 +127,8 @@ export default function RootLayout({
           })(window,document,'script','dataLayer','GTM-KSSWNL9K');`}
         </Script>
         <ThemeProvider>
-         <NextRouterBridge />
+         <SiteContentProvider initial={initialContent}>
+          <NextRouterBridge />
         {children}
         
         <GlobalBookingWidget />
@@ -122,6 +138,7 @@ export default function RootLayout({
         {/* Site-wide footer (NAP + Google profile link) + sticky WhatsApp CTA —
             one single source for every page; hidden on /admin & /booking-doc. */}
         <GlobalChrome />
+          </SiteContentProvider>
           </ThemeProvider>
         {/* Razorpay Checkout.js — loaded lazily, only used when user pays */}
         <Script

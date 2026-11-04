@@ -14,6 +14,7 @@ const SECTION_META: Record<string, { label: string; description: string }> = {
   trust: { label: "Trust Badges", description: "The 4 trust badges under the hero rating" },
   about: { label: "About Section", description: "Our Story — body text, founder quote, image, stats" },
   rooms: { label: "Rooms Section", description: "Section header above the rooms grid" },
+  rooms_page: { label: "Rooms Page Header", description: "Background photo behind the Rooms & Suites page title" },
   experiences: { label: "Experiences", description: "5 sacred walks + section header" },
   dining: { label: "Dining", description: "Satvik principles, signature dishes, image, amenities" },
   gallery: { label: "Gallery", description: "Photo gallery items + section header" },
