@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { ensureRealReviews } from "@/lib/reviews-import";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    // One-time demo→real reviews swap (no-op after first success).
+    await ensureRealReviews();
     const reviews = await db.review.findMany({
       where: { approved: true },
       orderBy: [{ createdAt: "desc" }],

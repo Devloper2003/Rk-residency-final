@@ -6,6 +6,7 @@ import { FAQS } from "@/lib/faq-data";
 import { faqJsonLd, hotelJsonLd } from "@/lib/schema-org";
 import { publicPostWhere } from "@/lib/blog-utils";
 import { getGoogleReviews } from "@/lib/google-reviews";
+import { ensureRealReviews } from "@/lib/reviews-import";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,10 @@ export const metadata: Metadata = {
 };
 
 export default async function HomeRoute() {
+  // One-time swap of the fabricated demo reviews for the owner's REAL
+  // Google reviews (no-op after the first successful run). Best-effort —
+  // never blocks rendering.
+  await ensureRealReviews();
   // SSR: the first three rooms (hero-adjacent section) are fetched on the
   // server so room names, taglines and prices are in the initial HTML.
   const rooms = await db.room.findMany({ orderBy: [{ sortOrder: "asc" }] });

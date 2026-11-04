@@ -16,6 +16,7 @@ export type Review = {
   body: string;
   source: string; // DIRECT | GOOGLE | TRIPADVISOR (DB stores a plain string)
   verified: boolean;
+  avatarUrl?: string | null; // reviewer photo — shown when the owner adds one
 };
 
 const SOURCE_LABEL: Record<Review["source"], string> = {
@@ -56,9 +57,21 @@ function ReviewCard({ r }: { r: Review }) {
         {r.body}
       </p>
       <div className="mt-5 flex items-center gap-3 border-t border-charcoal/10 pt-4">
-        <div className="grid h-10 w-10 place-items-center rounded-full bg-teal/10 font-serif text-base font-semibold text-teal">
-          {r.guestName.charAt(0)}
-        </div>
+        {r.avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={r.avatarUrl}
+            alt={r.guestName}
+            width={40}
+            height={40}
+            loading="lazy"
+            className="h-10 w-10 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-teal/10 font-serif text-base font-semibold text-teal">
+            {r.guestName.charAt(0)}
+          </div>
+        )}
         <div className="flex-1">
           <div className="flex items-center gap-1.5">
             <span className="font-serif text-sm font-semibold text-charcoal">
@@ -115,6 +128,7 @@ export function Testimonials({
     body: r.text,
     source: "GOOGLE",
     verified: true,
+    avatarUrl: r.profilePhotoUrl || null,
   }));
   const realDbReviews = (initialReviews || []).filter((r) => r.source === "GOOGLE");
   const allReviews = [...realDbReviews, ...googleAsReviews];

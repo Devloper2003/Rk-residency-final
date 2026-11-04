@@ -188,6 +188,7 @@ model Review {
   verified      Boolean  @default(true)
   approved      Boolean  @default(true)
   roomId        String?
+  avatarUrl     String? // reviewer photo (admin uploads or static /images/reviews/*)
   createdAt     DateTime @default(now())
 }
 

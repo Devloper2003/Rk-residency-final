@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verifyAdmin } from "@/lib/admin-auth";
 import { payableNow } from "@/lib/payment-modes";
+import { ensureRealReviews } from "@/lib/reviews-import";
 
 export const dynamic = "force-dynamic";
 
@@ -235,6 +236,8 @@ export async function GET(req: Request) {
       }
 
       case "reviews": {
+        // One-time demo→real reviews swap (no-op after first success).
+        await ensureRealReviews();
         const reviews = await db.review.findMany({ orderBy: [{ createdAt: "desc" }] });
         return NextResponse.json({ reviews });
       }
@@ -357,6 +360,62 @@ export async function PATCH(req: Request) {
         const review = await db.review.update({ where: { id }, data: { approved: reviewAction === "APPROVE" } });
         await db.auditLog.create({ data: { adminId: admin.id, action: reviewAction === "APPROVE" ? "REVIEW_APPROVED" : "REVIEW_HIDDEN", entity: "Review", entityId: review.id, details: `Review "${review.title}"` } });
         return NextResponse.json({ ok: true, review });
+      }
+
+      case "review_create": {
+        // Owner adds a review manually (Admin → Reviews → Add Review).
+        // Owner-entered reviews go live immediately and are verified by
+        // definition — the owner is the source of truth for his own hotel.
+        const { guestName, guestLocation, rating, title, body: reviewBody, source, avatarUrl, verified } = body as {
+          guestName?: string; guestLocation?: string; rating?: number; title?: string;
+          body?: string; source?: string; avatarUrl?: string; verified?: boolean;
+        };
+        if (!guestName || !title || !reviewBody || !rating || rating < 1 || rating > 5) {
+          return NextResponse.json({ error: "Name, rating (1-5), title and review text are required" }, { status: 400 });
+        }
+        const created = await db.review.create({
+          data: {
+            guestName: guestName.trim(),
+            guestLocation: guestLocation?.trim() || null,
+            rating: Math.round(rating),
+            title: title.trim(),
+            body: reviewBody.trim(),
+            source: source || "GOOGLE",
+            verified: verified !== false,
+            approved: true,
+            avatarUrl: avatarUrl?.trim() || null,
+          },
+        });
+        await db.auditLog.create({ data: { adminId: admin.id, action: "REVIEW_CREATED", entity: "Review", entityId: created.id, details: `Added review "${created.title}" by ${created.guestName}` } });
+        return NextResponse.json({ ok: true, review: created });
+      }
+
+      case "review_update": {
+        const { id, ...patch } = body as Record<string, any> & { id: string };
+        if (!id) return NextResponse.json({ error: "Review id required" }, { status: 400 });
+        const data: Record<string, any> = {};
+        if (typeof patch.guestName === "string" && patch.guestName.trim()) data.guestName = patch.guestName.trim();
+        if (typeof patch.guestLocation === "string") data.guestLocation = patch.guestLocation.trim() || null;
+        if (typeof patch.rating === "number" && patch.rating >= 1 && patch.rating <= 5) data.rating = Math.round(patch.rating);
+        if (typeof patch.title === "string" && patch.title.trim()) data.title = patch.title.trim();
+        if (typeof patch.body === "string" && patch.body.trim()) data.body = patch.body.trim();
+        if (typeof patch.source === "string" && patch.source) data.source = patch.source;
+        if (typeof patch.avatarUrl === "string") data.avatarUrl = patch.avatarUrl.trim() || null;
+        if (typeof patch.verified === "boolean") data.verified = patch.verified;
+        if (typeof patch.approved === "boolean") data.approved = patch.approved;
+        const updated = await db.review.update({ where: { id }, data });
+        await db.auditLog.create({ data: { adminId: admin.id, action: "REVIEW_UPDATED", entity: "Review", entityId: updated.id, details: `Edited review "${updated.title}"` } });
+        return NextResponse.json({ ok: true, review: updated });
+      }
+
+      case "review_delete": {
+        const { id } = body as { id?: string };
+        if (!id) return NextResponse.json({ error: "Review id required" }, { status: 400 });
+        const existing = await db.review.findUnique({ where: { id } });
+        if (!existing) return NextResponse.json({ error: "Review not found" }, { status: 404 });
+        await db.review.delete({ where: { id } });
+        await db.auditLog.create({ data: { adminId: admin.id, action: "REVIEW_DELETED", entity: "Review", entityId: id, details: `Deleted review "${existing.title}" by ${existing.guestName}` } });
+        return NextResponse.json({ ok: true });
       }
 
       case "setting_create": {
