@@ -13,6 +13,15 @@ import { GlobalChrome } from "@/components/rk/GlobalChrome";
 import { ThemeProvider } from "@/components/rk/ThemeProvider";
 import { SiteContentProvider } from "@/lib/site-content";
 import { db } from "@/lib/db";
+import { getSeoKeywords } from "@/lib/seo-keywords.server";
+
+/**
+ * OWNER RULE (Nov 2026): every public page re-renders per request so
+ * admin-managed content (SEO keywords, page texts, images) is always live
+ * without a rebuild. Root-level force-dynamic covers the whole segment tree,
+ * including pages that were previously statically prerendered.
+ */
+export const dynamic = "force-dynamic";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -35,7 +44,12 @@ const inter = Inter({
   display: "swap",
 });
 
-export const metadata: Metadata = {
+/**
+ * Base metadata. `keywords` is injected per-request in generateMetadata()
+ * from the admin-managed SEO keywords (Admin → SEO Keywords) so the owner
+ * controls the live primary keywords — code only holds the fallback.
+ */
+const baseMetadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Hotel near Banke Bihari Mandir, Vrindavan | RK Residency",
   description:
@@ -83,6 +97,13 @@ export const metadata: Metadata = {
     apple: "/uploads/rk-residency-vrindavan-logo.webp",
   },
 };
+
+export async function generateMetadata(): Promise<Metadata> {
+  // Admin-managed primary keywords (falls back to the curated defaults when
+  // the owner has not saved a list yet, or if the DB is unreachable).
+  const { keywords } = await getSeoKeywords();
+  return { ...baseMetadata, keywords };
+}
 
 export default async function RootLayout({
   children,

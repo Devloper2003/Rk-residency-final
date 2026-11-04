@@ -3,6 +3,15 @@ import { db } from "@/lib/db";
 import { verifyAdmin } from "@/lib/admin-auth";
 import { payableNow } from "@/lib/payment-modes";
 import { ensureRealReviews } from "@/lib/reviews-import";
+import {
+  SEO_KEYWORDS_CONTENT_KEY,
+  SEO_KEYWORDS_LABEL,
+  SEO_KEYWORDS_MAX_COUNT,
+  SEO_KEYWORDS_SECTION,
+  SEO_KEYWORDS_TYPE,
+  parseKeywords,
+} from "@/lib/seo-keywords";
+import { getSeoKeywords } from "@/lib/seo-keywords.server";
 
 export const dynamic = "force-dynamic";
 
@@ -247,6 +256,13 @@ export async function GET(req: Request) {
         return NextResponse.json({ items });
       }
 
+      case "seo_keywords": {
+        // Effective primary keywords + where they came from, so the admin
+        // editor always shows exactly what the live site renders.
+        const { keywords, source } = await getSeoKeywords();
+        return NextResponse.json({ keywords, source });
+      }
+
       case "settings": {
         const settings = await db.siteSetting.findMany({ orderBy: [{ category: "asc" }, { key: "asc" }] });
         return NextResponse.json({ settings });
@@ -286,7 +302,7 @@ export async function GET(req: Request) {
  * Body: { action: "XXX", ...payload }
  * Consolidated admin PATCH endpoint.
  *
- * Actions: booking_status, content, setting, theme, review, room, offer, blog_post
+ * Actions: booking_status, content, seo_keywords, setting, theme, review, room, offer, blog_post
  */
 export async function PATCH(req: Request) {
   const admin = await verifyAdmin(req);
@@ -339,6 +355,33 @@ export async function PATCH(req: Request) {
         const item = await db.siteContent.update({ where: { id }, data: { value } });
         await db.auditLog.create({ data: { adminId: admin.id, action: "CONTENT_UPDATED", entity: "SiteContent", entityId: item.id, details: `Updated "${item.key}"` } });
         return NextResponse.json({ ok: true, item });
+      }
+
+      case "seo_keywords": {
+        // Owner-saved primary keyword list. Parsed/capped/deduped by the same
+        // helper the site renders with, so what is saved is what goes live.
+        const raw = (body as { keywords?: unknown }).keywords;
+        if (!Array.isArray(raw) || raw.some((k) => typeof k !== "string")) {
+          return NextResponse.json({ error: "Invalid keywords" }, { status: 400 });
+        }
+        const value = parseKeywords(raw.join(","))
+          .slice(0, SEO_KEYWORDS_MAX_COUNT)
+          .join(", ");
+        const item = await db.siteContent.upsert({
+          where: { key: SEO_KEYWORDS_CONTENT_KEY },
+          update: { value },
+          create: {
+            key: SEO_KEYWORDS_CONTENT_KEY,
+            value,
+            section: SEO_KEYWORDS_SECTION,
+            type: SEO_KEYWORDS_TYPE,
+            label: SEO_KEYWORDS_LABEL,
+          },
+        });
+        await db.auditLog.create({
+          data: { adminId: admin.id, action: "SEO_KEYWORDS_UPDATED", entity: "SiteContent", entityId: item.id, details: `Primary SEO keywords updated (${parseKeywords(value).length} keywords)` },
+        });
+        return NextResponse.json({ ok: true, keywords: parseKeywords(value), source: "custom" });
       }
 
       case "setting": {

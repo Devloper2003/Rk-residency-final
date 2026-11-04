@@ -7,6 +7,7 @@ import { faqJsonLd, hotelJsonLd } from "@/lib/schema-org";
 import { publicPostWhere } from "@/lib/blog-utils";
 import { getGoogleReviews } from "@/lib/google-reviews";
 import { ensureRealReviews } from "@/lib/reviews-import";
+import { getSeoKeywords } from "@/lib/seo-keywords.server";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,9 @@ export default async function HomeRoute() {
   // Returns null when GOOGLE_PLACES_API_KEY / Place ID are not configured —
   // the site then falls back to DB reviews only. Nothing invented, ever.
   const googleData = await getGoogleReviews();
+  // Admin-managed primary SEO keywords — the same list the <meta
+  // name="keywords"> tag renders, kept in sync inside the Hotel JSON-LD too.
+  const { keywords: seoKeywords } = await getSeoKeywords();
   // SSR offers (audit H5/C2): live, non-expired offers go straight into the
   // initial HTML — the old client-only fetch left the section empty for
   // crawlers and made data "appear/disappear" between scans.
@@ -68,6 +72,7 @@ export default async function HomeRoute() {
           rating: googleData?.rating && googleData.count
             ? { value: googleData.rating, count: googleData.count }
             : undefined,
+          keywords: seoKeywords,
         })) }}
       />
       {/* FAQPage built from the SAME data the FAQ section renders. */}

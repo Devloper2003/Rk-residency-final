@@ -42,6 +42,8 @@ export function hotelJsonLd(opts?: {
   rooms?: { basePrice: number }[];
   /** Live rating from the Google Places API — overrides BUSINESS.rating. */
   rating?: { value: string; count: string | number };
+  /** Admin-managed primary SEO keywords (falls back to the curated defaults). */
+  keywords?: string[];
 }) {
   const prices = (opts?.rooms || [])
     .map((r) => r.basePrice)
@@ -113,6 +115,7 @@ export function hotelJsonLd(opts?: {
         }
       : {}),
     ...(sameAs.length ? { sameAs } : {}),
+    ...((opts?.keywords?.length ?? 0) > 0 ? { keywords: opts!.keywords!.join(", ") } : {}),
   };
 }
 

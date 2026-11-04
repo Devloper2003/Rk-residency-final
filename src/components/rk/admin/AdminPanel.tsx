@@ -26,7 +26,7 @@ type Tab =
   | "blog" | "calendar" | "reviews" | "content" | "theme"
   | "experiences" | "dining" | "gallery" | "payment" | "hero"
   | "settings" | "users" | "leads" | "audit" | "media" | "inventory" | "coupons"
-  | "booking-engine" | "marketing";
+  | "booking-engine" | "marketing" | "seo";
 
 const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }>; group: string }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Overview" },
@@ -44,6 +44,7 @@ const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: st
   { id: "reviews", label: "Reviews", icon: Star, group: "Operations" },
   { id: "hero", label: "Hero Section", icon: Sparkles, group: "Content" },
   { id: "content", label: "Page Editor", icon: Edit, group: "Content" },
+  { id: "seo", label: "SEO Keywords", icon: Search, group: "Content" },
   { id: "blog", label: "Blog", icon: FileText, group: "Content" },
   { id: "calendar", label: "Content Calendar", icon: CalendarDays, group: "Content" },
   { id: "media", label: "Media Library", icon: ImageIcon, group: "Content" },
@@ -67,6 +68,7 @@ const BlogTab = lazy(() => import("./tabs/BlogTab").then(m => ({ default: m.Blog
 const CalendarTab = lazy(() => import("./tabs/CalendarTab").then(m => ({ default: m.CalendarTab })));
 const ReviewsTab = lazy(() => import("./tabs/ReviewsTab").then(m => ({ default: m.ReviewsTab })));
 const ContentTab = lazy(() => import("./tabs/ContentTab").then(m => ({ default: m.ContentTab })));
+const SeoKeywordsTab = lazy(() => import("./tabs/SeoKeywordsTab").then(m => ({ default: m.SeoKeywordsTab })));
 const ThemeTab = lazy(() => import("./tabs/ThemeTab").then(m => ({ default: m.ThemeTab })));
 const SettingsTab = lazy(() => import("./tabs/SettingsTab").then(m => ({ default: m.SettingsTab })));
 const UsersTab = lazy(() => import("./tabs/UsersTab").then(m => ({ default: m.UsersTab })));
@@ -335,6 +337,7 @@ export function AdminPanel() {
                 {tab === "reviews" && <ReviewsTab />}
                 {tab === "hero" && <HeroTab />}
                 {tab === "content" && <ContentTab />}
+                {tab === "seo" && <SeoKeywordsTab />}
                 {tab === "media" && <MediaTab />}
                 {tab === "theme" && <ThemeTab />}
                 {tab === "payment" && <PaymentTab />}
