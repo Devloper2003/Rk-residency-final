@@ -18,6 +18,8 @@ export async function GET(req: Request) {
     "email_api_key", "razorpay_key_secret", "razorpay_webhook_secret",
     "stripe_secret_key", "stripe_webhook_secret", "internal_api_secret",
     "whatsapp_api_key", "cron_secret",
+    // Marketing → Meta (Facebook/Instagram) integration secrets
+    "meta_app_secret", "meta_oauth_state", "meta_user_token", "meta_page_token",
   ]);
   const masked = settings.map((s) =>
     SECRET_KEYS.has(s.key)

@@ -9,6 +9,7 @@
     "postinstall": "prisma generate && node scripts/patch-pdfkit-fonts.cjs",
     "start": "next start",
     "lint": "eslint .",
+    "check:routes": "node scripts/check-admin-routes.mjs",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",

@@ -25,24 +25,44 @@ export function MediaTab() {
   const [files, setFiles] = useState<MediaFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(false);
+  // Detailed diagnostics: the UI shows the real reason (status code + server
+  // message) so a broken tab is instantly diagnosable instead of a generic
+  // "Try again" that hides whether it was a 401, 404, 500 or network blip.
+  const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
 
-  const reload = useCallback(async () => {
+  const reload = useCallback(async (attempt = 0): Promise<void> => {
     setRefreshing(true);
-    setError(false);
+    setError(null);
     const token = getAdminToken();
     try {
       const res = await fetch("/api/admin/upload", {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed");
+      // The API may not even be compiled yet on a fresh serverless instance —
+      // detect that distinctly instead of dumping a misleading generic error.
+      let data: { files?: MediaFile[]; error?: string } = {};
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error(`API responded with ${res.status} and a non-JSON body — the route may be missing or still booting`);
+      }
+      if (res.status === 401) throw new Error("Session expired — please sign in again (top-right)");
+      if (res.status === 404) throw new Error("Upload API route not found (404) — deployment may be mid-rollout, retry in a minute");
+      if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
       setFiles(data.files || []);
+      setError(null);
     } catch (e) {
-      console.error(e);
-      setError(true);
+      console.error("[MediaTab] load failed:", e);
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      // One silent fast retry for transient cold-start / network blips —
+      // serverless instances occasionally take a beat on first hit.
+      if (attempt < 1) {
+        await new Promise((r) => setTimeout(r, 1200));
+        return reload(attempt + 1);
+      }
+      setError(msg);
     } finally {
       setRefreshing(false);
       setLoading(false);
@@ -77,7 +97,7 @@ export function MediaTab() {
   };
 
   if (loading) return <LoadingSpinner />;
-  if (error) return <ErrorState title="Could not load media" message="Try again." onRetry={reload} />;
+  if (error) return <ErrorState title="Could not load media" message={error} onRetry={() => reload()} />;
 
   const totalSize = files.reduce((s, f) => s + f.size, 0);
 

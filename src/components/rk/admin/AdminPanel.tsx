@@ -8,6 +8,7 @@ import {
   Tag, FileText, ShieldCheck, Edit, Sparkles, Warehouse, PlusCircle,
   BarChart3, Users, Search, ExternalLink, Image as ImageIcon,
   Eye, EyeOff, MapPin, Utensils, Camera, CreditCard, Ticket,
+  Rocket, Megaphone,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,11 +25,14 @@ type Tab =
   | "dashboard" | "analytics" | "bookings" | "rooms" | "offers"
   | "blog" | "calendar" | "reviews" | "content" | "theme"
   | "experiences" | "dining" | "gallery" | "payment" | "hero"
-  | "settings" | "users" | "leads" | "audit" | "media" | "inventory" | "coupons";
+  | "settings" | "users" | "leads" | "audit" | "media" | "inventory" | "coupons"
+  | "booking-engine" | "marketing";
 
 const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }>; group: string }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Overview" },
   { id: "analytics", label: "Analytics & SEO", icon: BarChart3, group: "Overview" },
+  { id: "booking-engine", label: "Booking Engine", icon: Rocket, group: "Growth" },
+  { id: "marketing", label: "Marketing Hub", icon: Megaphone, group: "Growth" },
   { id: "bookings", label: "Bookings", icon: CalendarDays, group: "Operations" },
   { id: "inventory", label: "Inventory", icon: Warehouse, group: "Operations" },
   { id: "rooms", label: "Rooms & Rates", icon: BedDouble, group: "Operations" },
@@ -51,7 +55,7 @@ const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: st
   { id: "audit", label: "Audit Log", icon: ScrollText, group: "Settings" },
 ];
 
-const TAB_GROUPS = ["Overview", "Operations", "Content", "Settings"];
+const TAB_GROUPS = ["Overview", "Growth", "Operations", "Content", "Settings"];
 
 // Lazy-load ALL tab components so Turbopack compiles them on-demand
 const DashboardTab = lazy(() => import("./tabs/DashboardTab").then(m => ({ default: m.DashboardTab })));
@@ -76,6 +80,8 @@ const PaymentTab = lazy(() => import("./tabs/PaymentTab").then(m => ({ default: 
 const HeroTab = lazy(() => import("./tabs/HeroTab").then(m => ({ default: m.HeroTab })));
 const InventoryTab = lazy(() => import("./tabs/InventoryTab").then(m => ({ default: m.InventoryTab })));
 const CouponsTab = lazy(() => import("./tabs/CouponsTab").then(m => ({ default: m.CouponsTab })));
+const BookingEngineTab = lazy(() => import("./tabs/BookingEngineTab").then(m => ({ default: m.BookingEngineTab })));
+const MarketingTab = lazy(() => import("./tabs/MarketingTab").then(m => ({ default: m.MarketingTab })));
 
 function TabFallback() {
   return (
@@ -98,6 +104,12 @@ export function AdminPanel() {
   const [mounted, setMounted] = useState(false);
   const authed = stored !== null;
   const [tab, setTab] = useState<Tab>("dashboard");
+  // Deep-link + OAuth-callback support: /admin?tab=marketing opens that tab
+  // directly (Meta login bounces back to this URL after connecting).
+  useEffect(() => {
+    const param = new URLSearchParams(window.location.search).get("tab") as Tab | null;
+    if (param && TABS.some((t) => t.id === param)) setTab(param);
+  }, []);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -298,6 +310,8 @@ export function AdminPanel() {
               >
                 {tab === "dashboard" && <DashboardTab />}
                 {tab === "analytics" && <AnalyticsTab />}
+                {tab === "booking-engine" && <BookingEngineTab />}
+                {tab === "marketing" && <MarketingTab />}
                 {tab === "bookings" && <BookingsTab />}
                 {tab === "inventory" && <InventoryTab />}
                 {tab === "rooms" && <RoomsTab onOpenInventory={() => setTab("inventory")} />}
